@@ -16,6 +16,7 @@ Route::prefix('matches')->group(function () {
     Route::get('/{match_id}', [MatchController::class, 'show']);
     Route::get('/display-arena/{match_id}', [MatchController::class, 'displayArena']);
     Route::get('/judges/{match_id}', [MatchController::class, 'displayJudge']);
+    Route::get('/referees/{match_id}', [MatchController::class, 'displayReferee']);
 });
 
 // API Routes (should typically be in api.php)
@@ -36,6 +37,7 @@ Route::prefix('api')->group(function () {
 
 
     Route::post('/local-judge-scores', [LocalMatchController::class, 'submitPoint']);
+    Route::post('/local-referee-actions', [LocalMatchController::class, 'refereeAction']);
     
     Route::get('/judge/current-match', function () {
         $match = \App\Models\LocalMatch::where('is_active', true)->first();

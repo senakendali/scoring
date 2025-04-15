@@ -1,6 +1,6 @@
 $(document).ready(function () {
     let matchId = parseInt($("#match-id").val());
-
+   
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
     let roundId = null;
@@ -25,21 +25,6 @@ $(document).ready(function () {
 
     const channel = pusher.subscribe(`match.${matchId}`);
     const globalChannel = pusher.subscribe('global.match');
-
-    channel.bind('referee.action', function (data) {
-        console.log("📣 Referee Action Received:", data);
-    
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"]`;
-    
-        const $item = $(selector);
-        $item.addClass("active");
-    
-        // Kasih efek sebentar (misalnya 2 detik)
-        setTimeout(() => {
-            $item.removeClass("active");
-        }, 1000);
-    });
-    
 
     // 🔥 Saat juri tekan tombol
     channel.bind('judge.point.submitted', function (data) {
@@ -111,8 +96,30 @@ $(document).ready(function () {
         setTimeout(() => $("#red-score").removeClass("flash"), 500);
     
         // Tambahan poin di sisi masing-masing
-        $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
-        $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
+        //$(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
+        //$(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
+    });
+
+    $(".item[data-action]").on("click", function () {
+        const action = $(this).data("action");
+        const point = $(this).data("point");
+        const corner = $(this).data("corner");
+
+        console.log(`🟢 Aksi: ${action}, Corner: ${corner}, Point: ${point}`);
+
+        $.post("/api/local-referee-actions", {
+            local_match_id: matchId,
+            round_id: roundId,
+            action: action,
+            point_change: point,
+            corner: corner,
+        })
+        .done(function (res) {
+            console.log("✅ Referee action sent", res);
+        })
+        .fail(function (xhr) {
+            console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
+        });
     });
     
 

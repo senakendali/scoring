@@ -37,16 +37,16 @@
         <div class="blue">
             <div class="additional-score">
                 <div class="score-items">
-                    <div class="item text-white">Binaan 1</div>
-                    <div class="item text-white">Binaan 2</div>
+                    <div class="item text-white" data-action="binaan_1" data-corner="blue">Binaan 1</div>
+                    <div class="item text-white" data-action="binaan_2" data-corner="blue">Binaan 2</div>
                 </div>
                 <div class="score-items">
-                    <div class="item text-white">Teguran 1</div>
-                    <div class="item text-white">Teguran 2</div>
+                    <div class="item text-white" data-action="teguran_1" data-corner="blue">Teguran 1</div>
+                    <div class="item text-white" data-action="teguran_2" data-corner="blue">Teguran 2</div>
                 </div>
                 <div class="score-items">
-                    <div class="item text-white">Peringatan 1</div>
-                    <div class="item text-white">Peringatan 2</div>
+                    <div class="item text-white"  data-action="peringatan_1" data-corner="blue">Peringatan 1</div>
+                    <div class="item text-white"  data-action="peringatan_2" data-corner="blue">Peringatan 2</div>
                 </div>
             </div>
             <div class="score">
@@ -59,16 +59,16 @@
             </div>  
             <div class="additional-score">
                 <div class="score-items">
-                    <div class="item text-white">Binaan 1</div>
-                    <div class="item text-white">Binaan 2</div>
+                    <div class="item text-white" data-action="binaan_1" data-corner="red">Binaan 1</div>
+                    <div class="item text-white" data-action="binaan_2" data-corner="red">Binaan 2</div>
                 </div>
                 <div class="score-items">
-                    <div class="item text-white">Teguran 1</div>
-                    <div class="item text-white">Teguran 2</div>
+                    <div class="item text-white" data-action="teguran_1" data-corner="red">Teguran 1</div>
+                    <div class="item text-white" data-action="teguran_2" data-corner="red">Teguran 2</div>
                 </div>
                 <div class="score-items">
-                    <div class="item text-white">Peringatan 1</div>
-                    <div class="item text-white">Peringatan 2</div>
+                    <div class="item text-white" data-action="peringatan_1" data-corner="red">Peringatan 1</div>
+                    <div class="item text-white" data-action="peringatan_2" data-corner="red">Peringatan 2</div>
                 </div>
             </div>
         </div>

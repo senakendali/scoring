@@ -60,6 +60,28 @@ class MatchController extends Controller
         ]);
     }
 
+    public function displayReferee($match_id)
+    {
+        $match = LocalMatch::with('rounds')->findOrFail($match_id);
+
+        // Cek apakah sudah ada ronde, kalau belum auto generate
+        if (!$match->rounds()->exists()) {
+            for ($i = 1; $i <= $match->total_rounds; $i++) {
+                LocalMatchRound::create([
+                    'local_match_id' => $match->id,
+                    'round_number' => $i,
+                ]);
+            }
+            $match->load('rounds'); // reload ulang dengan ronde baru
+        }
+
+        return view('pages.matches.referees', [
+            'match_id' => $match->id,
+            'round_id' => $match->rounds()->first()->id,
+            'js' => 'matches/referees.js'
+        ]);
+    }
+
 
     public function displayArena($match_id){
         $match = LocalMatch::with('rounds')->findOrFail($match_id);

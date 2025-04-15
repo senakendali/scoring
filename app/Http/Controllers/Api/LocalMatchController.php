@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller; // Added this import
 use App\Models\LocalMatch;
 use App\Models\LocalJudgeScore;
 use App\Models\LocalRefereeAction;
+use App\Models\LocalValidScore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Events\ScoreUpdated;
 use App\Events\JudgePointSubmitted;
+use App\Events\RefereeActionSubmitted;
 
 class LocalMatchController extends Controller
 {
@@ -196,14 +198,35 @@ class LocalMatchController extends Controller
 
                 // baru kirim event
                // Kirim event
-                broadcast(new ScoreUpdated(
+                /*broadcast(new ScoreUpdated(
                     $data['match_id'],
                     $data['round_id'],
                     $newBlue,
                     $newRed,
                     $newBlue - $prevBlue,
                     $newRed - $prevRed
+                ))->toOthers();*/
+                // Ambil penyesuaian dari tindakan wasit
+                $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['match_id'])
+                ->where('round_id', $data['round_id'])
+                ->where('corner', 'blue')
+                ->sum('point_change');
+
+                $redAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['match_id'])
+                ->where('round_id', $data['round_id'])
+                ->where('corner', 'red')
+                ->sum('point_change');
+
+                // Kirim broadcast lengkap
+                broadcast(new ScoreUpdated(
+                $data['match_id'],
+                $data['round_id'],
+                $newBlue + $blueAdjustment,
+                $newRed + $redAdjustment,
+                $newBlue - $prevBlue,
+                $newRed - $prevRed
                 ))->toOthers();
+
 
 
                 logger('📢 Broadcast ScoreUpdated', [
@@ -215,6 +238,76 @@ class LocalMatchController extends Controller
         }
 
         return response()->json(['message' => 'Point submitted']);
+    }
+
+    public function refereeAction(Request $request)
+    {
+        $data = $request->validate([
+            'local_match_id' => 'required|exists:local_matches,id',
+            'round_id' => 'required|exists:local_match_rounds,id',
+            'corner' => 'required|in:red,blue',
+            'action' => 'required|in:jatuhan,binaan_1,binaan_2,teguran_1,teguran_2,peringatan_1,peringatan_2',
+        ]);
+
+        // 🎯 Hitung perubahan poin berdasarkan action
+        $actionPoints = [
+            'jatuhan' => 3,
+            'binaan_1' => 0,
+            'binaan_2' => 0,
+            'teguran_1' => -1,
+            'teguran_2' => -2,
+            'peringatan_1' => -5,
+            'peringatan_2' => -10,
+        ];
+
+        $data['point_change'] = $actionPoints[$data['action']];
+
+        // 💾 Simpan ke DB
+        LocalRefereeAction::create($data);
+
+        broadcast(new \App\Events\RefereeActionSubmitted(
+            $data['local_match_id'],
+            $data['corner'],
+            $data['action'],
+            $data['point_change']
+        ))->toOthers();
+
+        // 🔢 Hitung total score
+        $blueScore = LocalValidScore::where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', 'blue')
+            ->sum('point');
+
+        $redScore = LocalValidScore::where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', 'red')
+            ->sum('point');
+
+        // Tambahan poin dari tindakan wasit
+        $blueAdjustment = LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', 'blue')
+            ->sum('point_change');
+
+        $redAdjustment = LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', 'red')
+            ->sum('point_change');
+
+        // 🔊 Broadcast score ke semua layar
+        broadcast(new ScoreUpdated(
+            $data['local_match_id'],
+            $data['round_id'],
+            $blueScore + $blueAdjustment,
+            $redScore + $redAdjustment,
+            $blueAdjustment,
+            $redAdjustment
+        ))->toOthers();
+
+        
+        
+
+        return response()->json(['message' => 'Tindakan wasit berhasil disimpan']);
     }
 
 

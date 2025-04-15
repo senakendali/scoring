@@ -22,7 +22,7 @@
             <div class="logo">
                 <img src="{{ asset('images/logo.png') }}" alt="">
             </div>
-            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'judges')
+            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'judges' || request()->segment(2) == 'referees')
                 <div id="timer" class="timer">
                     03:00
                 </div>

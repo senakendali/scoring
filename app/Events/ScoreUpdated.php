@@ -41,7 +41,7 @@ class ScoreUpdated implements ShouldBroadcast
     }
 
     // Tambahan (di dalam broadcastWith)
-    public function broadcastWith()
+    public function broadcastWith___()
     {
         $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
             ->where('round_id', $this->roundId)
@@ -69,6 +69,19 @@ class ScoreUpdated implements ShouldBroadcast
             'redAdjustment' => $this->redAdjustment,
         ];
     }
+
+    public function broadcastWith()
+    {
+        return [
+            'match_id' => $this->matchId,
+            'round_id' => $this->roundId,
+            'blueScore' => $this->blueScore,
+            'redScore' => $this->redScore,
+            'blueAdjustment' => $this->blueAdjustment,
+            'redAdjustment' => $this->redAdjustment,
+        ];
+    }
+
 
 }
 
