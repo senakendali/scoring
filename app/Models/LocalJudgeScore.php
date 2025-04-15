@@ -15,4 +15,9 @@ class LocalJudgeScore extends Model
     {
         return $this->belongsTo(LocalMatchRound::class);
     }
+
+    public function localMatch()
+    {
+        return $this->belongsTo(LocalMatch::class);
+    }
 }

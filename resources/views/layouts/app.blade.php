@@ -22,9 +22,9 @@
             <div class="logo">
                 <img src="{{ asset('images/logo.png') }}" alt="">
             </div>
-            @if(request()->segment(1) == 'display-arena' || request()->segment(1) == 'judges')
-                <div class="timer">
-                    10:00
+            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'judges')
+                <div id="timer" class="timer">
+                    03:00
                 </div>
             @endif
         </div>
@@ -40,6 +40,27 @@
     <script src="{{ asset('bootstrap/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js"></script>
+
+    <script>
+        window.Pusher = Pusher;
+
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: 'reverb',
+            wsHost: '192.168.1.3',
+            wsPort: 6001,
+            forceTLS: false,
+            encrypted: false,
+            disableStats: true,
+            cluster: 'mt1',
+            wsPath: '', // penting buat Reverb
+        });
+    </script>
+
+
+    
     @if(isset($js))
         <script src="{{ asset('js/'.$js.'?v='.time()) }}"></script>
     @endif

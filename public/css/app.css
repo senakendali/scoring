@@ -340,6 +340,13 @@ body{
 100% { background-color: transparent; color: white; }
 }
   
+.judge.active {
+    background-color: var(--secondary-color);
+    color: #FFFFFF;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
 
 .judges-display{
     background-color: #2A2A2A;

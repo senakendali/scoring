@@ -16,6 +16,12 @@ class MatchController extends Controller
 
     public function show($match_id)
     {
+        // Reset semua jadi false dulu
+        \App\Models\LocalMatch::query()->update(['is_active' => false]);
+
+        // Set match ini jadi aktif
+        //\App\Models\LocalMatch::where('id', $id)->update(['is_active' => true]);
+
         $match = LocalMatch::with('rounds')->findOrFail($match_id);
 
         // Cek apakah sudah ada ronde, kalau belum auto generate
@@ -33,13 +39,48 @@ class MatchController extends Controller
         ]);
     }
 
-    public function displayArena($match_id){
-        return view('pages.matches.arena'); 
+    public function displayJudge($match_id)
+    {
+        $match = LocalMatch::with('rounds')->findOrFail($match_id);
+
+        // Cek apakah sudah ada ronde, kalau belum auto generate
+        if (!$match->rounds()->exists()) {
+            for ($i = 1; $i <= $match->total_rounds; $i++) {
+                LocalMatchRound::create([
+                    'local_match_id' => $match->id,
+                    'round_number' => $i,
+                ]);
+            }
+            $match->load('rounds'); // reload ulang dengan ronde baru
+        }
+
+        return view('pages.matches.judges', [
+            'match_id' => $match->id,
+            'js' => 'matches/judges.js'
+        ]);
     }
 
-    public function displayJudge($match_id){
-        return view('pages.matches.judges');
+
+    public function displayArena($match_id){
+        $match = LocalMatch::with('rounds')->findOrFail($match_id);
+
+        // Cek apakah sudah ada ronde, kalau belum auto generate
+        if (!$match->rounds()->exists()) {
+            for ($i = 1; $i <= $match->total_rounds; $i++) {
+                LocalMatchRound::create([
+                    'local_match_id' => $match->id,
+                    'round_number' => $i,
+                ]);
+            }
+            $match->load('rounds'); // reload ulang dengan ronde baru
+        }
+        return view('pages.matches.arena', [
+            'match_id' => $match->id,
+            'js' => 'matches/arena.js'
+        ]); 
     }
+
+    
     
     // Contoh penggunaan:
     

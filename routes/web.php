@@ -32,6 +32,19 @@ Route::prefix('api')->group(function () {
     Route::post('/local-match-rounds/{id}/resume', [LocalMatchRoundController::class, 'resume']);
     Route::post('/local-match-rounds/{id}/reset', [LocalMatchRoundController::class, 'reset']);
     Route::post('/local-match-rounds/{id}/finish', [LocalMatchRoundController::class, 'finish']);
+    Route::post('/matches/{id}/next', [LocalMatchRoundController::class, 'changeToNextMatch']);
+
+
+    Route::post('/local-judge-scores', [LocalMatchController::class, 'submitPoint']);
+    
+    Route::get('/judge/current-match', function () {
+        $match = \App\Models\LocalMatch::where('is_active', true)->first();
+    
+        return response()->json([
+            'current_match_id' => $match?->id
+        ]);
+    });
+    
 });
 
 

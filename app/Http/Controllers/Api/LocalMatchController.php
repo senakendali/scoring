@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller; // Added this import
 use App\Models\LocalMatch;
+use App\Models\LocalJudgeScore;
+use App\Models\LocalRefereeAction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Events\ScoreUpdated;
+use App\Events\JudgePointSubmitted;
 
 class LocalMatchController extends Controller
 {
@@ -101,6 +105,119 @@ class LocalMatchController extends Controller
             'red_score' => $scores['red'] ?? 0,
         ]);
     }
+
+    public function submitPoint(Request $request)
+    {
+        $data = $request->validate([
+            'match_id' => 'required|exists:local_matches,id',
+            'round_id' => 'required|exists:local_match_rounds,id',
+            'judge_number' => 'required|integer',
+            'judge_name' => 'required|string',
+            'corner' => 'required|in:red,blue',
+            'type' => 'required|in:punch,kick',
+        ]);
+
+        $now = now();
+
+        // 1. Simpan ke local_judge_scores
+        \App\Models\LocalJudgeScore::create([
+            'local_match_id' => $data['match_id'],
+            'round_id' => $data['round_id'],
+            'judge_number' => $data['judge_number'],
+            'judge_name' => $data['judge_name'],
+            'corner' => $data['corner'],
+            'type' => $data['type'],
+            'point' => $data['type'] === 'punch' ? 1 : 2,
+            'scored_at' => $now,
+        ]);
+
+        // Broadcast ke semua client
+        broadcast(new \App\Events\JudgePointSubmitted(
+            $data['match_id'],
+            $data['judge_number'],
+            $data['corner'],
+            $data['type']
+        ))->toOthers();
+        
+
+        // 2. Ambil skor dalam 1.5 detik terakhir
+        $recent = \App\Models\LocalJudgeScore::where('round_id', $data['round_id'])
+            ->where('corner', $data['corner'])
+            ->where('type', $data['type'])
+            ->where('scored_at', '>=', $now->copy()->subMilliseconds(1500)) // gunakan milidetik biar akurat
+            ->get();
+
+        logger('🧪 Recent scores:', $recent->toArray());
+
+        // 3. Cek minimal 2 juri berbeda
+        $uniqueJudges = $recent->pluck('judge_number')->unique();
+
+        if ($uniqueJudges->count() >= 2) {
+            // 4. Cek apakah sudah ada validasi untuk waktu tersebut
+            $alreadyExists = \App\Models\LocalValidScore::where('round_id', $data['round_id'])
+                ->where('corner', $data['corner'])
+                ->where('type', $data['type'])
+                ->where('validated_at', '>=', $now->copy()->subMilliseconds(1500))
+                ->exists();
+
+            if (!$alreadyExists) {
+                // Simpan total sebelumnya sebelum insert
+                $prevBlue = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
+                ->where('round_id', $data['round_id'])
+                ->where('corner', 'blue')
+                ->sum('point');
+
+                $prevRed = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
+                ->where('round_id', $data['round_id'])
+                ->where('corner', 'red')
+                ->sum('point');
+                // 5. Simpan ke local_valid_scores
+                \App\Models\LocalValidScore::create([
+                    'local_match_id' => $data['match_id'],
+                    'round_id' => $data['round_id'],
+                    'corner' => $data['corner'],
+                    'type' => $data['type'],
+                    'point' => $data['type'] === 'punch' ? 1 : 2,
+                    'validated_at' => $now,
+                ]);
+
+                // Hitung ulang total setelah insert
+                $newBlue = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
+                ->where('round_id', $data['round_id'])
+                ->where('corner', 'blue')
+                ->sum('point');
+
+                $newRed = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
+                ->where('round_id', $data['round_id'])
+                ->where('corner', 'red')
+                ->sum('point');
+
+               
+
+                // baru kirim event
+               // Kirim event
+                broadcast(new ScoreUpdated(
+                    $data['match_id'],
+                    $data['round_id'],
+                    $newBlue,
+                    $newRed,
+                    $newBlue - $prevBlue,
+                    $newRed - $prevRed
+                ))->toOthers();
+
+
+                logger('📢 Broadcast ScoreUpdated', [
+                    'match_id' => $data['match_id'],
+                    'blue_score' => $blueScore,
+                    'red_score' => $redScore,
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Point submitted']);
+    }
+
+
 
 
 }

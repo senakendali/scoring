@@ -17,6 +17,42 @@ $(document).ready(function () {
         }
     });
 
+    // Setup Pusher
+    Pusher.logToConsole = true;
+
+    const pusher = new Pusher('reverb', {
+        wsHost: '192.168.1.3',
+        wsPort: 6001,
+        forceTLS: false,
+        encrypted: false,
+        enabledTransports: ['ws'],
+        disableStats: true,
+    });
+
+    // Subscribe ke channel dan event
+    const channel = pusher.subscribe(`match.${matchId}`);
+
+    channel.bind_global(function (event, data) {
+        console.log("🌍 Global Event:", event, data);
+    });
+
+    channel.bind('score.updated', function (data) {
+        console.log("🎯 Score updated:", data); // HARUS MUNCUL DULU DI CONSOLE
+    
+        $("#blue-score").text(data.blueScore).addClass("flash");
+        setTimeout(() => $("#blue-score").removeClass("flash"), 500);
+    
+        $("#red-score").text(data.redScore).addClass("flash");
+        setTimeout(() => $("#red-score").removeClass("flash"), 500);
+    });
+
+    channel.bind('score.updated', function (data) {
+        console.log('Score updated via WebSocket:', data);
+        $("#blue-score").text(data.blue_score);
+        $("#red-score").text(data.red_score);
+    });
+
+
     function setButtonLoading(button, isLoading) {
         if (isLoading) {
             button.data("original-text", button.html());
@@ -213,9 +249,17 @@ $(document).ready(function () {
     
 
     $(".next-match").on("click", function () {
-        const nextMatchId = parseInt(matchId) + 1;
-        window.location.href = `/matches/${nextMatchId}`;
+        $.post(`/api/matches/${matchId}/next`, function (res) {
+            if (res.new_match_id) {
+                window.location.href = `/matches/${res.new_match_id}`;
+            } else {
+                alert("Tidak ada pertandingan berikutnya.");
+            }
+        }).fail(function (xhr) {
+            console.error("❌ Gagal ganti match:", xhr.responseJSON?.message || xhr.statusText);
+        });
     });
+    
 
     let lastBlue = 0;
     let lastRed = 0;
@@ -240,7 +284,7 @@ $(document).ready(function () {
         }, 1500); // bisa disesuaikan intervalnya
     }
 
-    startLiveScorePolling();
+    
 
 
     fetchMatch();
