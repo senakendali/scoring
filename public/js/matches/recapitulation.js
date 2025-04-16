@@ -94,11 +94,11 @@ $(document).ready(function () {
                 </tr>`;
     
                 // ⛳ Nilai Final
-                html += `<tr>
-                    <td>Nilai Final</td>
+                html += `<tr class="final-row">
+                    <td colspan="2">Nilai Final</td>
+                   
                     <td class="blue">${round.final.blue}</td>
-                    <td class="blue">${round.final.blue}</td>
-                    <td class="red">${round.final.red}</td>
+                    <td class="red"></td>
                     <td class="red">${round.final.red}</td>
                 </tr>`;
     

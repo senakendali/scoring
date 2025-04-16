@@ -574,4 +574,10 @@ th, td {
     font-size: 1.2rem;
 }
 
+.final-row td {
+    background-color: var(--secondary-color) !important; /* atau bisa #111 atau #000 sesuai tema */
+    border: 1px solid var(--secondary-color) !important;
+}
+
+
 

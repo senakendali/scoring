@@ -2,6 +2,7 @@ $(document).ready(function () {
     const url = window.location.origin;
     const matchId = window.location.pathname.split("/").pop();
     const timerEl = $("#timer");
+    
     const duration = 180;
     let interval = null;
     let roundId = null;

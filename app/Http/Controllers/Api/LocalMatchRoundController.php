@@ -203,7 +203,16 @@ class LocalMatchRoundController extends Controller
         broadcast(new \App\Events\TimerUpdated($round))->toOthers();
     
         // Broadcast skor reset (biar UI client juga refresh ke 0)
-        broadcast(new \App\Events\ScoreUpdated($round->local_match_id, 0, 0))->toOthers();
+        //broadcast(new \App\Events\ScoreUpdated($round->local_match_id, 0, 0))->toOthers();
+        broadcast(new \App\Events\ScoreUpdated(
+            $round->local_match_id,
+            $round->id,
+            0, // blue score
+            0, // red score
+            0, // blue adjustment
+            0  // red adjustment
+        ))->toOthers();
+        
     
         return response()->json(['message' => 'Ronde dan skor direset.']);
     }
