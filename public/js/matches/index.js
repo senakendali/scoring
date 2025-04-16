@@ -37,7 +37,8 @@ $(document).ready(function () {
                         <td>-</td>
                         <td>${match.status}</td>
                         <td>
-                        <a href="#" class="btn btn-outline-secondary btn-enter-match" data-id="${match.id}">Masuk</a>
+                        <a href="#" class="btn btn-outline-success btn-enter-match" data-id="${match.id}">Masuk</a>
+                        <a href="/matches/${match.id}/recap" class="btn btn-outline-warning btn-recap-match ms-1">Rekapitulasi</a>
                         </td>
                     </tr>`;
             });

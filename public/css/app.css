@@ -564,3 +564,14 @@ body{
     background-color: #4E25FF;
 }
 
+th, td {
+    vertical-align: middle;
+   
+}
+.table-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+

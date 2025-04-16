@@ -82,6 +82,14 @@ class MatchController extends Controller
         ]);
     }
 
+    public function displayRecapitulation($match_id)
+    {
+        return view('pages.matches.recapitulation', [
+            'match_id' => $match_id,
+            'js' => 'matches/recapitulation.js'
+        ]);
+    }
+
 
     public function displayArena($match_id){
         $match = LocalMatch::with('rounds')->findOrFail($match_id);

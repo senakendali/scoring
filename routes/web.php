@@ -17,6 +17,7 @@ Route::prefix('matches')->group(function () {
     Route::get('/display-arena/{match_id}', [MatchController::class, 'displayArena']);
     Route::get('/judges/{match_id}', [MatchController::class, 'displayJudge']);
     Route::get('/referees/{match_id}', [MatchController::class, 'displayReferee']);
+    Route::get('/{match_id}/recap', [MatchController::class, 'displayRecapitulation']);
 });
 
 // API Routes (should typically be in api.php)
@@ -25,6 +26,7 @@ Route::prefix('api')->group(function () {
     Route::get('/local-matches/{id}', [LocalMatchController::class, 'show']);
     Route::post('/local-matches/{id}/end-match', [LocalMatchController::class, 'endMatch']);
     Route::get('/local-matches/{id}/live-score', [LocalMatchController::class, 'liveScore']);
+    Route::get('/local-matches/{id}/recap', [LocalMatchController::class, 'getRecap']);
 
    
     Route::get('/local-match-rounds/{id}', [LocalMatchRoundController::class, 'show']);

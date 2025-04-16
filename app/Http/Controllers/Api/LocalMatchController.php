@@ -64,7 +64,7 @@ class LocalMatchController extends Controller
         ]);
     }
 
-    private function calculateScore($matchId, $corner)
+    private function calculateScore__($matchId, $corner)
     {
         $judgePoints = \App\Models\LocalJudgeScore::where('local_match_id', $matchId)
             ->where('corner', $corner)
@@ -76,6 +76,22 @@ class LocalMatchController extends Controller
 
         return $judgePoints + $refereePoints;
     }
+
+    private function calculateScore($matchId, $corner)
+    {
+        // Ambil dari nilai yang sah (valid score)
+        $validPoints = \App\Models\LocalValidScore::where('local_match_id', $matchId)
+            ->where('corner', $corner)
+            ->sum('point');
+
+        // Ambil dari tindakan wasit (referee)
+        $refereePoints = \App\Models\LocalRefereeAction::where('local_match_id', $matchId)
+            ->where('corner', $corner)
+            ->sum('point_change');
+
+        return $validPoints + $refereePoints;
+    }
+
 
     public function endMatch($id)
     {
@@ -231,9 +247,10 @@ class LocalMatchController extends Controller
 
                 logger('📢 Broadcast ScoreUpdated', [
                     'match_id' => $data['match_id'],
-                    'blue_score' => $blueScore,
-                    'red_score' => $redScore,
+                    'blue_score' => $newBlue + $blueAdjustment,
+                    'red_score' => $newRed + $redAdjustment,
                 ]);
+                
             }
         }
 
@@ -309,6 +326,96 @@ class LocalMatchController extends Controller
 
         return response()->json(['message' => 'Tindakan wasit berhasil disimpan']);
     }
+
+    public function getRecap($matchId)
+    {
+        $match = LocalMatch::with('rounds')->findOrFail($matchId);
+        $recap = [];
+
+        foreach ($match->rounds as $round) {
+            $roundData = [
+                'round_number' => $round->round_number,
+                'judges' => [],
+                'valid_scores' => ['blue' => [], 'red' => []],
+                'jatuhan' => ['blue' => 0, 'red' => 0],
+                'hukuman' => ['blue' => 0, 'red' => 0],
+                'final' => ['blue' => 0, 'red' => 0],
+            ];
+
+            // 💥 Nilai juri
+            for ($i = 1; $i <= 3; $i++) {
+                foreach (['blue', 'red'] as $corner) {
+                    $points = LocalJudgeScore::where([
+                            'local_match_id' => $matchId,
+                            'round_id' => $round->id,
+                            'judge_number' => $i,
+                            'corner' => $corner
+                        ])
+                        ->orderBy('scored_at')
+                        ->pluck('point')
+                        ->toArray();
+
+                    $roundData['judges'][] = [
+                        'judge' => "Juri $i",
+                        'corner' => $corner,
+                        'points' => $points,
+                        'total' => array_sum($points),
+                    ];
+                }
+            }
+
+            // ✅ Nilai Sah
+            foreach (['blue', 'red'] as $corner) {
+                $valid = LocalValidScore::where([
+                        'local_match_id' => $matchId,
+                        'round_id' => $round->id,
+                        'corner' => $corner,
+                    ])->pluck('point')->toArray();
+
+                $roundData['valid_scores'][$corner] = [
+                    'points' => $valid,
+                    'total' => array_sum($valid),
+                ];
+            }
+
+            // ✅ Jatuhan
+            foreach (['blue', 'red'] as $corner) {
+                $jatuhan = LocalRefereeAction::where([
+                        'local_match_id' => $matchId,
+                        'round_id' => $round->id,
+                        'corner' => $corner,
+                        'action' => 'jatuhan'
+                    ])->sum('point_change');
+                $roundData['jatuhan'][$corner] = $jatuhan;
+            }
+
+            // ✅ Hukuman
+            foreach (['blue', 'red'] as $corner) {
+                $hukuman = LocalRefereeAction::where([
+                        'local_match_id' => $matchId,
+                        'round_id' => $round->id,
+                        'corner' => $corner
+                    ])->whereIn('action', [
+                        'teguran_1', 'teguran_2',
+                        'peringatan_1', 'peringatan_2',
+                    ])->sum('point_change');
+                $roundData['hukuman'][$corner] = $hukuman;
+            }
+
+            // ✅ Nilai akhir = sah + jatuhan + hukuman
+            foreach (['blue', 'red'] as $corner) {
+                $roundData['final'][$corner] =
+                    $roundData['valid_scores'][$corner]['total'] +
+                    $roundData['jatuhan'][$corner] +
+                    $roundData['hukuman'][$corner];
+            }
+
+            $recap[] = $roundData;
+        }
+
+        return response()->json($recap);
+    }
+
 
 
 
