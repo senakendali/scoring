@@ -1,11 +1,13 @@
 $(document).ready(function () {
+    let currentRoundNumber = 1;
+
     let matchId = parseInt($("#match-id").val());
     let roundId = null;
-    let judgeNumber = localStorage.getItem("judge_number");
-    let judgeName = localStorage.getItem("judge_name");
+    let judgeNumber = $("#judge-number").val();
+
     let lastBlue = 0;
     let lastRed = 0;
-    let countdownInterval = null;
+    
 
     $.ajaxSetup({
         headers: {
@@ -15,9 +17,9 @@ $(document).ready(function () {
 
     Pusher.logToConsole = true;
 
-    // ✅ Setup WebSocket Reverb
+    const host = window.location.hostname;
     const pusher = new Pusher('reverb', {
-        wsHost: '192.168.1.3',
+        wsHost: host,
         wsPort: 6001,
         forceTLS: false,
         encrypted: false,
@@ -32,129 +34,250 @@ $(document).ready(function () {
         console.log("🌍 Global Event:", event, data);
     });
 
-    // ✅ Timer started
-    channel.bind('timer.started', function (data) {
-        console.log('🔥 Timer started triggered:', data);
-        
-        // ✅ Update round ID dan tampilkan nomor ronde baru
-        roundId = data.round_id;
-        $("#current-round").text(`ROUND ${data.round_number}`);
     
-        // ✅ Reset skor tampilan ke 0
-        $("#blue-score").text("0");
-        $("#red-score").text("0");
-    
-        // ✅ Reset skor cache juga
-        lastBlue = 0;
-        lastRed = 0;
-    
-        // ✅ Jalankan countdown timer
-        const start = new Date(data.start_time).getTime();
-        const duration = data.duration || 180;
-        startCountdown(start, duration);
-    });
     
     
     
 
-   // 🎯 Update Timer dari Operator
-   channel.bind('timer.updated', function (data) {
-        if (parseInt(data.round_id) !== roundId) return;
-
-        console.log("🕒 Timer updated:", data);
-
-        if (data.status === 'in_progress') {
-            const start = new Date(data.start_time).getTime();
-            const now = new Date(data.now).getTime();
-
-            const elapsed = Math.floor((now - start) / 1000);
-            const remaining = Math.max(0, data.remaining);
-
-            // Sinkron ke server, bukan pakai Date.now()
-            startCountdown(now - (elapsed * 1000), 180);
-        } else if (data.status === 'paused') {
-            clearInterval(countdownInterval);
-            $(".timer").text("PAUSED");
-        } else if (data.status === 'finished') {
-            clearInterval(countdownInterval);
-            $(".timer").text("00:00");
-        } else if (data.status === 'not_started') {
-            clearInterval(countdownInterval);
-            $(".timer").text("03:00");
-        }
-    });
+   
 
 
-    // ✅ Score update
-    channel.bind('score.updated', function (data) {
-        console.log("🎯 Score updated:", data); // HARUS MUNCUL DULU DI CONSOLE
+
     
-        $("#blue-score").text(data.blueScore).addClass("flash");
-        setTimeout(() => $("#blue-score").removeClass("flash"), 500);
-    
-        $("#red-score").text(data.redScore).addClass("flash");
-        setTimeout(() => $("#red-score").removeClass("flash"), 500);
-    });
 
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed to:", data.new_match_id);
         window.location.href = `/matches/judges/${data.new_match_id}`; // atau operator, screen, sesuai page lo
     });
     
+    channel.bind('timer.started', function (data) {
+        console.log("🔥 Timer started event di juri:", data);
+    
+        // Update roundId
+        roundId = data.round_id;
+
+        // Update currentRoundNumber
+        currentRoundNumber = data.round_number || 1;
+
+        
+        const roundNumber = data.round_number || 1;
+        
+        // Tampilkan tulisan "START" lalu balik ke "ROUND x"
+        const originalText = `ROUND ${roundNumber}`;
+        $("#current-round").text("START");
+        setTimeout(() => {
+            $("#current-round").text(originalText);
+        }, 3000);
+    
+        // ✅ ENABLE semua tombol setelah start
+        $(".button-item").prop("disabled", false);
+    });
+    
+    
+    channel.bind('timer.updated', function (data) {
+        console.log("🕒 Timer updated:", data);
+    
+        roundId = data.round_id;
+    
+        if (data.status === 'in_progress') {
+            $("#current-round").text(`ROUND ${currentRoundNumber}`);
+            $(".button-item").prop("disabled", false);
+        } else if (data.status === 'paused') {
+            $("#current-round").text("PAUSED");
+            $(".button-item").prop("disabled", true);
+        } else if (data.status === 'finished') {
+            $("#current-round").text("FINISHED");
+            $(".button-item").prop("disabled", true);
+        } else if (data.status === 'not_started') {
+            $("#current-round").text(`ROUND ${currentRoundNumber}`);
+        }
+    });
+
+    // Variabel global untuk simpan data verifikasi
+    let currentVerification = {};
+
+    // Dengerin event VerificationRequested
+    let myModal = null;
+
+    Echo.channel('match.' + matchId)
+        .listen('.verification.requested', (e) => {
+            console.log('Verification Requested:', e);
+
+            // Simpan data untuk submit nanti
+            currentVerification = {
+                match_id: e.match_id,
+                round_id: e.round_id,
+                type: e.type,
+            };
+
+            // Update teks deskriptif
+            let description = '';
+            if (e.type === 'jatuhan') {
+                description = 'Verifikasi Jatuhan';
+            } else if (e.type === 'hukuman') {
+                description = 'Verifikasi Hukuman';
+            } else {
+                description = 'Verifikasi';
+            }
+
+            $('#verificationVoteQuestion').html(`<b>${description}</b>`);
+
+            // Buka Modal + Set agar tidak bisa ditutup
+            myModal = new bootstrap.Modal(document.getElementById('verificationVoteModal'), {
+                backdrop: 'static',    // Klik di luar modal tidak menutup
+                keyboard: false        // Tombol ESC tidak menutup
+            });
+            myModal.show();
+        });
+
+
+    
+    $('#voteBlue').click(function () {
+        submitVerificationVote('blue');
+    });
+    
+    $('#voteInvalid').click(function () {
+        submitVerificationVote('invalid');
+    });
+    
+    $('#voteRed').click(function () {
+        submitVerificationVote('red');
+    });
+    
+    function submitVerificationVote(vote) {
+        if (!currentVerification.match_id || !currentVerification.round_id) return;
+    
+        $.ajax({
+            url: '/api/submit-verification-vote',
+            method: 'POST',
+            data: {
+                match_id: currentVerification.match_id,
+                round_id: currentVerification.round_id,
+                vote: vote,
+                judge_name: 'Juri ' + judgeNumber,
+            },
+            success: function (response) {
+                console.log('Vote submitted:', response);
+                if (myModal) {
+                    myModal.hide();
+                }
+            },
+            error: function (xhr) {
+                console.error('Vote failed:', xhr.responseText);
+                alert('Gagal mengirim vote.');
+            }
+        });
+    }
+        
+
+
+   
+    
+    
+    
+    
+    $(".button-item").prop("disabled", true); // Disable semua tombol diawal
+
+    
     
     
 
     // ✅ Setup juri jika belum
-    if (!judgeNumber || !judgeName) {
-        const modal = new bootstrap.Modal(document.getElementById("setupJudgeModal"), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        modal.show();
+    initializeScoring();
+    loadJudgeRecap();
 
-        $("#startJudgeBtn").on("click", function () {
-            const selected = $("#judge_number").val();
-            const name = $("#judge_name").val().trim();
-
-            if (!name) {
-                alert("Nama juri wajib diisi.");
-                return;
-            }
-
-            localStorage.setItem("judge_number", selected);
-            localStorage.setItem("judge_name", name);
-
-            judgeNumber = selected;
-            judgeName = name;
-
-            modal.hide();
-            initializeScoring();
-        });
-    } else {
-        initializeScoring();
+    function updateJudgeIcon(corner, judgeNumber, type) {
+        const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
+    
+        if (!judgeEl.length) return; // Kalau elemen gak ketemu, skip
+    
+        // Simpan teks asli dulu
+        const originalText = `J${judgeNumber}`;
+    
+        // Ganti jadi ikon
+        if (type === 'kick') {
+            judgeEl.html('<img src="/images/kick-icon.png" style="height:40px;">');
+        } else if (type === 'punch') {
+            judgeEl.html('<img src="/images/punch-icon.png" style="height:40px;">');
+        }
+    
+        // Setelah 2 detik, kembalikan lagi ke tulisan "J1", "J2", dll
+        setTimeout(() => {
+            judgeEl.text(originalText);
+        }, 2000);
     }
+    
 
     function initializeScoring() {
         fetchMatchData();
         
 
         $(".button-item").on("click", function () {
-            const corner = $(this).data("corner");
-            const type = $(this).data("type");
+            const $btn = $(this);
+            const corner = $btn.data("corner");
+            const type = $btn.data("type");
+        
             submitPoint(corner, type);
+        
+            // ✅ Tambahkan efek aktif
+            if (corner === 'blue') {
+                $btn.css({
+                    backgroundColor: "#2E0DB3", // Biru lebih gelap
+                    color: "#FFFFFF",
+                    borderColor: "#FFFFFF"
+                });
+            } else if (corner === 'red') {
+                $btn.css({
+                    backgroundColor: "#B00020", // Merah lebih gelap
+                    color: "#FFFFFF",
+                    borderColor: "#FFFFFF"
+                });
+            }
+        
+            // ✅ Setelah 2 detik, balikin styling normal
+            setTimeout(() => {
+                if (corner === 'blue') {
+                    $btn.css({
+                        backgroundColor: "", // Kembali ke class btn-primary
+                        color: "",
+                        borderColor: ""
+                    });
+                } else if (corner === 'red') {
+                    $btn.css({
+                        backgroundColor: "", // Kembali ke class btn-danger
+                        color: "",
+                        borderColor: ""
+                    });
+                }
+            }, 2000);
         });
+        
     }
 
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
             $("#tournament-name").text(data.tournament_name);
-            $("#match-code").text(data.match_code);
+            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
-            $("#blue-name").text(data.blue.name);
-            $("#red-name").text(data.red.name);
-            $("#blue-score").text(data.blue.score);
-            $("#red-score").text(data.red.score);
+            $("#blue-name").html(`
+                ${data.blue.name}<br>
+                <small>${data.blue.contingent}</small>
+            `);
+            $("#red-name").html(`
+                ${data.red.name}<br>
+                <small>${data.red.contingent}</small>
+            `);
+
+            const roundLabels = {
+                1: "Penyisihan",
+                2: "Perempat Final",
+                3: "Semifinal",
+                4: "Final"
+            };
+
+            $("#stage").text(roundLabels[data.rounds[0].round_number]);    
+            
 
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;
@@ -193,34 +316,97 @@ $(document).ready(function () {
     }
 
     function submitPoint(corner, type) {
-        if (!matchId || !roundId || !judgeNumber || !judgeName) {
+        if (!matchId || !roundId || !judgeNumber) {
             console.warn("❌ Data belum lengkap untuk submit skor");
             return;
         }
+        
     
+        // 🔥 Submit ke server
         $.post(`/api/local-judge-scores`, {
             match_id: matchId,
             round_id: roundId,
             judge_number: judgeNumber,
-            judge_name: judgeName,
+            judge_name: 'Juri ' + judgeNumber,
             corner: corner,
             type: type
-        }).fail(function (xhr) {
+        })
+        .done(function (response) {
+            console.log("✅ Point submitted", response);
+    
+            // 1. Inject langsung ke UI dulu biar user ngerasa responsif
+            const roundNumber = parseInt($("#current-round").text().replace('ROUND', '').trim());
+            const container = response.corner === 'blue'
+                ? $(`.judges-recapitulation:nth-child(${roundNumber}) .blue-recapitulation`)
+                : $(`.judges-recapitulation:nth-child(${roundNumber}) .red-recapitulation`);
+    
+            const value = response.value; // 1 = punch, 2 = kick
+            const colorClass = response.valid ? 'btn-success' : 'btn-secondary';
+    
+            const span = $(`<span class="roboto-bold btn ${colorClass} pop-animate">${value}</span>`);
+            container.append(span);
+    
+            // 2. 🔥 Tetap reload full recap dari server supaya data fix
+            setTimeout(() => {
+                loadJudgeRecap();
+            }, 500); // kasih delay dikit biar smooth
+        })
+        .fail(function (xhr) {
             console.error("❌ Gagal submit point:", xhr.responseJSON?.message || xhr.statusText);
         });
     }
     
-
-    function startMatchChangePolling() {
-        const initialMatchId = matchId;
-
-        setInterval(() => {
-            $.get('/api/judge/current-match', function (res) {
-                const newMatchId = parseInt(res.current_match_id);
-                if (newMatchId && newMatchId !== initialMatchId) {
-                    window.location.href = `/matches/${newMatchId}/judges`;
-                }
+    
+    function loadJudgeRecap() {
+        const matchId = $("#match-id").val();
+    
+        $.get(`/api/local-matches/${matchId}/judge-recap`, function(response) {
+            response.rounds.forEach((round, index) => {
+                const roundNumber = index + 1;
+    
+                // BLUE
+                const blueRecapContainer = $(`.judges-recapitulation:nth-child(${roundNumber}) .blue-recapitulation`);
+                const blueSpans = blueRecapContainer.children();
+                round.blue.forEach((point, idx) => {
+                    const value = point.type === 'kick' ? 2 : 1;
+                    const colorClass = point.valid ? 'btn-success' : 'btn-secondary';
+    
+                    if (blueSpans[idx]) {
+                        // ✅ Update span lama
+                        $(blueSpans[idx])
+                            .removeClass('btn-success btn-secondary')
+                            .addClass(colorClass)
+                            .text(value);
+                    } else {
+                        // ✅ Kalau belum ada, baru append baru
+                        const span = $(`<span class="roboto-bold btn ${colorClass} pop-animate">${value}</span>`);
+                        blueRecapContainer.append(span);
+                    }
+                });
+    
+                // RED
+                const redRecapContainer = $(`.judges-recapitulation:nth-child(${roundNumber}) .red-recapitulation`);
+                const redSpans = redRecapContainer.children();
+                round.red.forEach((point, idx) => {
+                    const value = point.type === 'kick' ? 2 : 1;
+                    const colorClass = point.valid ? 'btn-success' : 'btn-secondary';
+    
+                    if (redSpans[idx]) {
+                        $(redSpans[idx])
+                            .removeClass('btn-success btn-secondary')
+                            .addClass(colorClass)
+                            .text(value);
+                    } else {
+                        const span = $(`<span class="roboto-bold btn ${colorClass} pop-animate">${value}</span>`);
+                        redRecapContainer.append(span);
+                    }
+                });
+    
             });
-        }, 5000);
+        });
     }
+    
+    
+    
+    
 });

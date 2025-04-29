@@ -4,23 +4,20 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Queue\SerializesModels;
 
-class RefereeActionSubmitted implements ShouldBroadcast
+class JudgeActionSubmitted implements ShouldBroadcast
 {
-    use SerializesModels;
-
     public $matchId;
     public $corner;
-    public $action;
-    public $pointChange;
+    public $judgeNumber;
+    public $type; // punch atau kick
 
-    public function __construct($matchId, $corner, $action, $pointChange)
+    public function __construct($matchId, $corner, $judgeNumber, $type)
     {
         $this->matchId = $matchId;
         $this->corner = $corner;
-        $this->action = $action;
-        $this->pointChange = $pointChange;
+        $this->judgeNumber = $judgeNumber;
+        $this->type = $type;
     }
 
     public function broadcastOn()
@@ -30,16 +27,15 @@ class RefereeActionSubmitted implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'referee.action.submitted';
+        return 'judge.action.submitted';
     }
 
     public function broadcastWith()
     {
         return [
             'corner' => $this->corner,
-            'action' => $this->action,
-            'point_change' => $this->pointChange,
+            'judge_number' => $this->judgeNumber,
+            'type' => $this->type,
         ];
     }
 }
-

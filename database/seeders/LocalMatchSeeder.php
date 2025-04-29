@@ -5,36 +5,103 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class LocalMatchSeeder extends Seeder
 {
     public function run(): void
     {
-        $arenas = ['Arena 1', 'Arena 2', 'Arena 3'];
-        $classes = ['Kelas A', 'Kelas B', 'Kelas C', 'Kelas D'];
+        $arena = 'Arena A';
+        $class = 'Kelas A';
+        $pool = 'A';
         $contingents = ['Garuda', 'Rajawali', 'Cendrawasih', 'Elang', 'Harimau'];
-        $athletes = range(1, 100); // Generate array of athlete IDs from 1 to 100
+        $athletes = range(1, 100);
 
-        for ($i = 1; $i <= 30; $i++) {
-            DB::table('local_matches')->insert([
-                'remote_match_id' => rand(1000, 2000),
-                'arena_name' => $arenas[array_rand($arenas)],
-                'class_name' => $classes[array_rand($classes)],
+        $faker = \Faker\Factory::create();
+
+        $matchIdMap = [
+            'r1' => [],
+            'r2' => [],
+        ];
+
+        // Round 1: 4 matches
+        for ($i = 0; $i < 4; $i++) {
+            $matchId = DB::table('local_matches')->insertGetId([
+                'tournament_name' => "Indonesia National Championships 2025",
+                'arena_name' => $arena,
+                'class_name' => $class,
+                'pool_name' => $pool,
                 'match_code' => 'M-' . strtoupper(Str::random(5)),
                 'total_rounds' => 3,
-                'status' => 'not_started', // Set all matches to not_started
+                'round_level' => 1,
+                'match_number' => $i + 1,
+                'status' => 'not_started',
 
-                'red_id' => $athletes[array_rand($athletes)], // Random athlete ID for red
-                'red_name' => 'Atlet Merah ' . $i,
-                'red_contingent' => $contingents[array_rand($contingents)],
+                'red_id' => $faker->numberBetween(1, 100),
+                'red_name' => $faker->name(),
+                'red_contingent' => $faker->randomElement($contingents),
 
-                'blue_id' => $athletes[array_rand($athletes)], // Random athlete ID for blue
-                'blue_name' => 'Atlet Biru ' . $i,
-                'blue_contingent' => $contingents[array_rand($contingents)],
+                'blue_id' => $faker->numberBetween(1, 100),
+                'blue_name' => $faker->name(),
+                'blue_contingent' => $faker->randomElement($contingents),
 
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $matchIdMap['r1'][] = $matchId;
         }
+
+        // Round 2: 2 matches
+        for ($i = 0; $i < 2; $i++) {
+            $matchId = DB::table('local_matches')->insertGetId([
+                'tournament_name' => "Indonesia National Championships 2025",
+                'arena_name' => $arena,
+                'class_name' => $class,
+                'pool_name' => $pool,
+                'match_code' => 'M-' . strtoupper(Str::random(5)),
+                'total_rounds' => 3,
+                'round_level' => 2,
+                'match_number' => $i + 5,
+                'status' => 'not_started',
+
+                'parent_match_red_id' => $matchIdMap['r1'][$i * 2],
+                'parent_match_blue_id' => $matchIdMap['r1'][$i * 2 + 1],
+
+                'red_name' => '',
+                'red_contingent' => '',
+                'blue_name' => '',
+                'blue_contingent' => '',
+
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $matchIdMap['r2'][] = $matchId;
+        }
+
+        // Final: 1 match
+        DB::table('local_matches')->insert([
+            'tournament_name' => "Indonesia National Championships 2025",
+            'arena_name' => $arena,
+            'class_name' => $class,
+            'pool_name' => $pool,
+            'match_code' => 'M-' . strtoupper(Str::random(5)),
+            'total_rounds' => 3,
+            'round_level' => 3,
+            'match_number' => 7,
+            'status' => 'not_started',
+
+            'parent_match_red_id' => $matchIdMap['r2'][0],
+            'parent_match_blue_id' => $matchIdMap['r2'][1],
+
+            'red_name' => '',
+            'red_contingent' => '',
+            'blue_name' => '',
+            'blue_contingent' => '',
+
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

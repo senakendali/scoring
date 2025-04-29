@@ -16,20 +16,25 @@
 </head>
 <body>
     <div id="loader" class="loader-bar"></div>
-
-    <header class="app-header d-flex justify-content-start">
+    @if(request()->segment(2) != 'judges')
+    <header class="app-header d-flex justify-content-start  @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
         <div class="container-fluid d-flex justify-content-between">
-            <div class="logo">
-                <img src="{{ asset('images/logo.png') }}" alt="">
-            </div>
-            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'judges' || request()->segment(2) == 'referees')
-                <div id="timer" class="timer">
-                    03:00
+            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap')
+                <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
+            @else
+                <div class="logo">
+                    <img src="{{ asset('images/logo.png') }}" alt="">
+                </div>
+            @endif
+            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees')
+                <div id="timer" class="timer arena roboto-bold">
+                    00:00
                 </div>
             @endif
         </div>
         
     </header>
+    @endif
 
     <main class="app-content">
         @yield('content')
@@ -42,14 +47,16 @@
     <script src="{{ asset('js/app.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <script>
         window.Pusher = Pusher;
-
+        const host = window.location.hostname;
         window.Echo = new Echo({
             broadcaster: 'pusher',
             key: 'reverb',
-            wsHost: '192.168.1.3',
+            wsHost: host,
             wsPort: 6001,
             forceTLS: false,
             encrypted: false,

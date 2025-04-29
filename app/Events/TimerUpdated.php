@@ -13,10 +13,12 @@ class TimerUpdated implements ShouldBroadcast
     use SerializesModels;
 
     public $round;
+    public $duration;
 
-    public function __construct(LocalMatchRound $round)
+    public function __construct(LocalMatchRound $round, $duration = 180)
     {
         $this->round = $round;
+        $this->duration = $duration;
     }
 
     public function broadcastOn()
@@ -29,7 +31,7 @@ class TimerUpdated implements ShouldBroadcast
         return 'timer.updated';
     }
 
-    public function broadcastWith()
+    public function broadcastWith____()
     {
         $start = $this->round->start_time instanceof Carbon
             ? $this->round->start_time
@@ -53,4 +55,32 @@ class TimerUpdated implements ShouldBroadcast
             'remaining'   => max(0, 180 - $elapsed),
         ];
     }
+
+    public function broadcastWith()
+    {
+        $start = $this->round->start_time instanceof Carbon
+            ? $this->round->start_time
+            : Carbon::parse($this->round->start_time);
+
+        $end = $this->round->end_time
+            ? ($this->round->end_time instanceof Carbon
+                ? $this->round->end_time
+                : Carbon::parse($this->round->end_time))
+            : now();
+
+        $elapsed = ($this->round->status === 'in_progress' || $this->round->status === 'paused')
+            ? $start->diffInRealSeconds($end)
+            : 0;
+
+        return [
+            'round_id'    => $this->round->id,
+            'status'      => $this->round->status,
+            'start_time'  => $start->toIso8601String(),
+            'now'         => now()->toIso8601String(),
+            'duration'    => $this->duration, // ✅ tambahkan durasi
+            'elapsed'     => $elapsed,        // ✅ kirim juga biar aman
+            'remaining'   => max(0, $this->duration - $elapsed),
+        ];
+    }
+
 }

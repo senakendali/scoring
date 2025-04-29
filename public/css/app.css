@@ -17,23 +17,61 @@ body{
 .app-header{
     width:100%;
     height: 100px;
-    position: fixed;
+    border-bottom: 1px solid #FFFFFF;
     background-color: var(--black);
 }
+
+.app-header.light {
+    width: 100%;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+}
+
+.app-header.light img {
+    width: auto;
+    height: calc(100% - 20px); /* Kurangi 20px dari tinggi header */
+    max-height: 25vh;
+    object-fit: contain;
+    padding: 10px 0; /* ❗Padding di gambar */
+    box-sizing: border-box; /* ❗Biar padding dihitung di dalam tinggi */
+    transition: all 0.3s ease;
+}
+
+
+
+
 
 .app-header .logo{
     margin-top:-45px;
 }
 
 .app-header .timer{
-    height: 120px;
-    width: 100px;
+    width: auto;
     border-left: 1px solid #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #FFFFFF;
-    font-size:20px;
+    color: #000000;
+    font-size:60px;
+    padding-left: 20px;
+}
+
+.app-header .timer.arena{
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000000;
+    font-size:60px;
+    padding-left: 20px;
+}
+
+.border-bottom-green{
+    border-bottom: 2px solid #388e3c !important;
 }
 
 .app-header .logo img{
@@ -54,22 +92,96 @@ body{
 
 .match-header .match-info{
     width:100%;
-    height: 50px;
+    min-height: 80px;
+    padding: 10px;
     background-color:var(--black);
     display: flex;
     align-items: center;
     justify-content: center;
     top: 100px;
     left: 0;
-    border-top: 1px solid #FFFFFF;
+    border-top: 1px solid #000000;
    
     text-transform: uppercase;
     color: #FFFFFF;
+}
+
+.fix-match-info {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+    min-height: 80px;
+    min-width: 800px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    padding: 20px;
+
+    /* 🎯 Tambahin shadow di sini */
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+
+
+}
+
+.fix-match-detail {
+    position: fixed;
+    top: 95px;
+    left: 50%;
+    transform: translateX(-50%);
+   
+    min-height: 80px;
+    min-width: 800px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+   gap: 20px;
+
+   
+
+
+}
+
+.fix-match-detail .detail-item{
+    flex: 1;
+    min-height: 50px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+    color: #FFFFFF;
+    text-transform: uppercase;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    border-radius:5px;
+}
+
+
+
+@media (min-width: 1920px) {
+    .match-header .match-info {
+        font-size: 2vw;
+    }
+
+    .fix-match-info {
+        font-size: 2vw;
+    }
 }
 
 .match-header .match-details{
     width:100%;
-    height: 50px;
+    min-height: 80px;
+    padding: 10px;
     background-color:var(--black);
     display: flex;
     align-items: center;
@@ -82,9 +194,16 @@ body{
     color: #FFFFFF;
 }
 
+@media (min-width: 1920px) {
+    .match-header .match-details {
+        font-size: 2vw;
+    }
+}
+
 .match-header .match-details .detail-item{
-    width: 33.33%;
-    height: 50px;
+    flex: 1;
+
+    min-height: 50px;
     color: #FFFFFF;
     text-transform: uppercase;
     align-items: center;
@@ -95,44 +214,50 @@ body{
 
 .match-header .match-item{
     width:100%;
-    height: 50px;
+    min-height: 80px;
     background-color:var(--black);
     display: flex;
     top: 100px;
     left: 0;
-    border-top: 1px solid #FFFFFF;
    
     text-transform: uppercase;
     color: #FFFFFF;
 }
 
+@media (min-width: 1920px) {
+    .match-header .match-item {
+        font-size: 2vw;
+    }
+}
+
 .match-header .blue{
-    color: #4E25FF;
-    border-top: 1px solid #FFFFFF;
-    border-bottom: 1px solid #FFFFFF;
+    background-color: #4E25FF;
+    color: #FFFFFF;
+    border-bottom: 1px solid #4E25FF;
     width:50%;
 }
 
 .match-header .round{
-    background-color: #2a2a2a;
-    border-top: 1px solid #FFFFFF;
-    border-bottom: 1px solid #FFFFFF;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+   padding: 10px;
+    border-bottom: 1px solid #000000;
     width:200px;
     color: #FFFFFF;
+    text-align: center;
     
 }
 
 
 
 .match-header .red{
-    color: #E8003F;
-    border-top: 1px solid #FFFFFF;
-    border-bottom: 1px solid #FFFFFF;
+    background-color: #E8003F;
+    color: #FFFFFF;
+    border-bottom: 1px solid #E8003F;
     width:50%;
 }
 
 .match-header .score{
-    background-color: var(--black);
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
     width: 80px;
 }
 
@@ -229,40 +354,294 @@ body{
     
 }
 
-.arena-container{
+.main-container {
     display: flex;
-    background-color: var(--black);
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .arena-container {
+    display: flex;
+    flex-grow: 1;
+    min-height: 0;
+  }
+
+  .judge-container{
+    display: flex; 
+    flex-grow: 1;
+    min-height: 0;
+    
+  } 
+
+/* Display Arena */
+.arena-main-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+    overflow: hidden;
+}
+
+
+.display-arena-container {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    height: 100%; /* wajib */
+    overflow: hidden; /* wajib */
+}
+
+
+
+
+
+
+
+
+
+.display-arena-container .blue{
+    display: flex;
+    width: 50%;
+    height: auto;
+}
+
+.display-arena-container .blue .additional-score{
+    width: 40%;
+   
+
+}
+
+.display-arena-container .blue .additional-point{
+    width: 50%;
+    border-right: 1px solid #FFFFFF;
+}
+
+.display-arena-container .blue .referee-score{
+    width: 50%;
+    border-right: 1px solid #000000;
+    background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4E25FF;
+    font-size: 150px;
+
+}
+
+.display-arena-container .blue .score{
+    background-color: #FFFFFF;
+    width: 50%;
+    border-bottom: 1px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4E25FF;
+    font-size: 50px;
+}
+
+.display-arena-container .red{
+    display: flex;
+    width: 50%;
+    height: auto;
+}
+
+.display-arena-container .red .additional-score{
+    width: 40%;
+}
+
+.display-arena-container .red .additional-point{
+    width: 50%;
+    border-right: 1px solid #FFFFFF;
+}
+
+.display-arena-container .red .referee-score{
+    background-color: #FFFFFF;
+    width: 50%;
+    border-right: 1px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D32F2F;
+    font-size: 150px;
+
+}
+
+.display-arena-container .red .score{
+    background-color: #FFFFFF;
+    width: 50%;
+    border-bottom: 1px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D32F2F;
+    font-size: 50px;
+}
+
+.display-arena-container .blue .score,
+.display-arena-container .red .score {
+    background-color: #FFFFFF;
+    width: 60%; /* Ini agak aneh kalo di flex */
+
+    flex-grow: 1; /* 🔥 Biar ngisi sisa ruang parent */
+    height: 100%; /* 🔥 Biar setinggi parent */
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    font-size: clamp(40px, 10vw, 200px); /* 🔥 Dinamis */
+    line-height: 1;
+    white-space: nowrap;
+    text-align: center;
+    font-weight: 500;
+}
+
+.display-arena-container .blue .additional-score,
+.display-arena-container .red .additional-score {
+    flex: 1 1 auto; /* ✅ Biar fleksibel sisa ruang */
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 🔥 Biar full tinggi */
+    background-color: #FFFFFF;
+    padding: 10px;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.display-arena-container .item img {
+    width: 100%;
+    height: auto;
+    max-height: 100%; /* 🔥 kalau perlu */
+    object-fit: contain; /* atau object-fit: cover tergantung mau potong atau no */
+}
+
+.display-arena-container .score-items {
+    display: flex; /* ✅ Susun anak-anak item secara horizontal */
+    flex: 1;
+    flex-wrap: nowrap; /* 🔥 Biar ga turun ke bawah */
+    width: 100%;
+    height: 33.33%; /* 3 row, masing-masing 1/3 area */
+}
+
+.display-arena-container .item {
+    flex: 1;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.display-arena-container .item img {
+    max-width: 90%; /* kasih 90% supaya ada sedikit space */
+    max-height: 90%;
+    object-fit: contain; /* gambar tidak pecah, tidak melebar aneh */
+}
+
+
+
+
+
+
+/* End Display Arena */
+
+.judge-container {
+    flex: 0 0 auto; /* ✅ judge-container tetap ambil tinggi aslinya */
+}
+
+  
+
+
+.main-container > * {
+    flex-grow: 1;
+    min-height: 0;
 }
 
 .judge-container{
     display: flex;
-    background-color: var(--black);
+    height: 25%;
+}
+
+.judges-display .blue-score{
+    flex-basis: 40%;
+    color: #4E25FF;
+}
+
+.judges-display .blue-score .score{
+    font-size: 40px;
+}
+
+.judges-display .timer-box{
+    flex-basis: 20%;
+    
+}
+
+.judges-display .timer-box .timer{
+    font-size: 40px;
+}
+
+.judges-display .red-score{
+    flex-basis: 40%;
+    color: #E8003F;
+}
+
+.judges-display .red-score .score{
+    font-size: 40px;
+}
+
+.judges-display .judges-recapitulation{
+    width: 100%;
+    height: 33.3%;
+    border-top: 1px solid #000000;
+    
+}
+
+.judges-display .judges-recapitulation .blue-recapitulation{
+    width: 50%;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.judges-recapitulation .round{
+    width: 200px;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #000000;
+    color: #000000;
+}
+
+.judges-display .judges-recapitulation .red-recapitulation{
+    width: 50%;
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .judge-container .judges {
-    width: 40%; /* Maintain relative width */
-    height: 80px; /* Fixed height */
+    width: 100%; /* Maintain relative width */
+    height:100%; /* Fixed height */
     border-bottom: 1px solid #ffffff; /* Ensure proper casing for hex colors */
     box-sizing: border-box; /* Include padding and border in width/height */
     display: flex;
+    gap: 10px;
 }
 
 .judge-container .judges .judge{
     width: 33.33%; /* Maintain relative width */
-    height: 80px; /* Fixed height */
-    border-right: 1px solid #ffffff; /* Ensure proper casing for hex colors */
+    padding: 20px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
     box-sizing: border-box; /* Include padding and border in width/height */
     color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 8px;
 }
 
 .judge-container .point-type {
     width: 27%; /* Maintain relative width */
-    height: 80px; /* Fixed height */
+    height: 100%; /* Fixed height */
     border-bottom: 1px solid #ffffff; /* Ensure proper casing for hex colors */
-    border-left: 1px solid #ffffff;
+   
     border-right: 1px solid #ffffff;
     box-sizing: border-box; /* Include padding and border in width/height */
     color: #FFFFFF;
@@ -270,6 +649,9 @@ body{
     align-items: center;
     justify-content: center;
 }
+
+
+
 
 .arena-container .blue{
     display: flex;
@@ -279,22 +661,64 @@ body{
 }
 
 .arena-container .blue .additional-score{
-    width: 75%;
-    border-right: 1px solid #FFFFFF;
+    width: 50%;
+    border-right: 1px solid #000000;
+
 }
 
 .arena-container .blue .additional-point{
+    background-color: #FFFFFF;
+    width: 50%;
+   padding-top: 10px;
+   padding-right: 5px;
+   padding-bottom: 10px;
+   padding-left: 5px;
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+}
+
+.arena-container .blue #blue-score{
+    height: 100%;
     width: 100%;
-    border-right: 1px solid #FFFFFF;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.arena-container .red #red-score{
+    height: 100%;
+    width: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+
+.arena-container .blue .referee-score{
+    width: 50%;
+    padding: 10px;
+    background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4E25FF;
+    font-size: 150px;
+
 }
 
 .arena-container .blue .score{
-    width: 25%;
+    background-color: #FFFFFF;
+    width: 50%;
     border-bottom: 1px solid #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #FFFFFF;
+    color: #4E25FF;
     font-size: 50px;
 }
 
@@ -305,46 +729,80 @@ body{
 }
 
 .arena-container .red .additional-score{
-    width: 75%;
+    width: 50%;
     border-left: 1px solid #FFFFFF;
 }
 
 .arena-container .red .additional-point{
-    width: 100%;
+    background-color: #FFFFFF;
+    padding-top: 10px;
+    padding-right: 5px;
+    padding-bottom: 10px;
+    padding-left: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 50%;
     border-right: 1px solid #FFFFFF;
 }
 
+.arena-container .red .referee-score{
+    background-color: #FFFFFF;
+    padding: 10px;
+    width: 50%;
+    border-right: 1px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D32F2F;
+    font-size: 150px;
+
+}
+
 .arena-container .red .score{
-    width: 25%;
+    background-color: #FFFFFF;
+    width: 50%;
     border-bottom: 1px solid #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #FFFFFF;
+    color: #D32F2F;
     font-size: 50px;
 }
 
 .additional-score .score-items{
     display: flex;
-    border-bottom: 1px solid #FFFFFF;
+    gap: 10px;
+    
     width: 100%;
+    height: 25%;
     
 }
 
 .additional-score .score-items .item{
     width: 50%;
     text-align: center;
-    padding: 20px;
+    padding: 10px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+    border-radius: 8px;
 }
 
+
 .additional-score .score-items .item:nth-child(1){
-    border-right: 1px solid #FFFFFF;
+   
+}
+
+.additional-score .score-items .item img {
+    max-width: 70%;
+    max-height: 70%;
+    object-fit: contain; /* supaya gambar tidak keluar div */
 }
 
 .additional-point .score-items{
     display: flex;
-    border-bottom: 1px solid #FFFFFF;
+    gap: 10px;
     width: 100%;
+    height: 20%;
     
 }
 
@@ -353,10 +811,42 @@ body{
     text-align: center;
     padding: 20px;
     cursor: pointer;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.additional-point .score-items .item img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* supaya gambar tidak keluar div */
+}
+
+.additional-point .score-items .drop{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+
+}
+
+@media (min-width: 1920px) {
+    .additional-point .score-items .drop {
+        font-size: 2vw;
+    }
 }
 
 .additional-point .score-items .item:hover{
     width: 50%;
+    text-align: center;
+    padding: 20px;
+    background-color: var(--secondary-color);
+}
+
+.additional-point .score-items .drop:hover{
+    width: 100%;
     text-align: center;
     padding: 20px;
     background-color: var(--secondary-color);
@@ -383,16 +873,26 @@ body{
 }
 
 .item.active {
-    background-color: var(--secondary-color);
+    background: var(--secondary-color) !important;
     color: #FFFFFF;
     
     transition: all 0.3s ease;
 }
 
+.judges-container {
+    height: calc(100vh - 100px); /* kurangi tinggi app-header */
+    display: flex;
+    flex-direction: column;
+}
+
+
+
 .judges-display{
-    background-color: #2A2A2A;
+    background-color: #FFFFFF;
     width: 100%;
     display: flex;
+    overflow-y: auto;
+
 }
 
 .judges-display .blue-point-list{
@@ -425,16 +925,17 @@ body{
 }
 
 .judges-button{
-    position: fixed;
-    bottom: 0;
+    /*position: fixed;
+    bottom: 0;*/
+    padding-top: 10px;
     display: flex;
     width: 100%;
-    background-color: #2A2A2A;
+    background:linear-gradient(to bottom, #2a2a2a, #000000);
+    
 }
 
 .judges-button .blue-button{
-    border-top:3px solid #4E25FF;
-    width: 50%;
+    width: 45%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -444,23 +945,37 @@ body{
 
 }
 
+.judges-button .icon{
+    border-top: 3px solid var(--secondary-color);
+
+    flex-grow: 1;
+}
+
+.judges-button .icon .item{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 100%;
+    border-bottom: 1px solid #FFFFFF;
+}
+
 .judges-button .blue-button .button-item{
     border:none;
-    background-color: #2A2A2A;
     width: 100%;
     height: 80px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
     color: #FFFFFF;
-    border-bottom: 1px solid #FFFFFF;
+    margin-left: 15px;
+    
    
     
 }
 
 .judges-button .red-button{
-    border-top: 3px solid #E8003F;
-    width: 50%;
+    width: 45%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -472,15 +987,13 @@ body{
 
 .judges-button .red-button .button-item{
     border:none;
-    background-color: #2A2A2A;
     width: 100%;
     height: 80px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: end;
     color: #FFFFFF;
-    border-left: 1px solid #FFFFFF;
-    border-bottom: 1px solid #FFFFFF;
+    margin-right: 15px;
 }
 
 .loader-bar {
@@ -523,7 +1036,7 @@ body{
 
 .app-content{
     background-color: var(--black);
-    padding-top: 120px;
+    /*padding-top: 120px;*/
     display:flex;
     flex-direction: column;
 }
@@ -555,6 +1068,14 @@ body{
     text-transform: uppercase;
 }
 
+.table.table-striped thead tr th{
+    background-color: #FFFFFF;
+    color:#FFFFFF;
+    font-family: "Roboto", serif;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
 .table thead tr th.red{
     background-color: #FF2D20;
     
@@ -574,10 +1095,177 @@ th, td {
     font-size: 1.2rem;
 }
 
-.final-row td {
-    background-color: var(--secondary-color) !important; /* atau bisa #111 atau #000 sesuai tema */
-    border: 1px solid var(--secondary-color) !important;
+
+
+.table td,
+.table th {
+    vertical-align: middle;
 }
+
+.table .btn {
+    white-space: nowrap;
+}
+
+.additional-point .item.disabled,
+.additional-point .drop.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.additional-point .item, .additional-point .drop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-transform: uppercase;
+    user-select: none;
+}
+
+/* 🔵 Sudut biru */
+.additional-point .item[data-corner="blue"], .drop[data-corner="blue"] {
+    background-color: #4E25FF;
+}
+
+.additional-point .item[data-corner="blue"]:hover, .drop[data-corner="blue"]:hover {
+    background-color: #3a1ca9; /* Biru hover */
+}
+
+/* 🔴 Sudut merah */
+.additional-point .item[data-corner="red"], .drop[data-corner="red"] {
+    background-color: #E8003F;
+}
+
+.additional-point .item[data-corner="red"]:hover, .drop[data-corner="red"]:hover {
+    background-color: #B71C1C; /* Merah hover lebih tua */
+}
+
+/* 🚫 Disabled state */
+.additional-point .item.disabled, .drop.disabled {
+    background-color: #AAAAAA;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+
+/* 🚫 Disabled state */
+.additional-point .item.disabled, .drop.disabled {
+    background-color: #AAAAAA;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+
+.additional-point .item.disabled, .drop.disabled {
+    background-color: #AAAAAA;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+.button-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 15px 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    user-select: none;
+}
+
+/* 🔵 Tombol sudut biru */
+.button-item[data-corner="blue"] {
+    background-color: #4E25FF;
+    border-radius: 10px;
+}
+
+.button-item[data-corner="blue"]:hover {
+    background-color: #3a1ca9;
+}
+
+/* 🔴 Tombol sudut merah */
+.button-item[data-corner="red"] {
+    background-color: #D32F2F;
+    border-radius: 10px;
+}
+
+.button-item[data-corner="red"]:hover {
+    background-color: #B71C1C;
+}
+
+/* 🚫 Disabled tombol */
+.button-item:disabled {
+    background-color: #AAAAAA;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+#blue-name, #red-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drop-effect-name {
+    height: 100%; /* 🔥 Gede dikit tapi proporsional */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: dropDown 0.6s ease-out;
+    padding: 10px;
+}
+
+.drop-effect-name img{
+    height: 60px;
+}
+
+@keyframes dropDown {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(10px);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.current-score {
+    
+    border-radius: 8px;
+    
+    display: inline-block;
+}
+
+
+
+
 
 
 

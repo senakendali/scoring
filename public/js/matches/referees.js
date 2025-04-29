@@ -13,10 +13,12 @@ $(document).ready(function () {
     });
 
     fetchMatchData();
+    $(".item, .drop").prop("disabled", true).addClass("disabled");
 
-    // ✅ WebSocket via Reverb
+
+    const host = window.location.hostname;
     const pusher = new Pusher('reverb', {
-        wsHost: '192.168.1.3',
+        wsHost: host,
         wsPort: 6001,
         forceTLS: false,
         disableStats: true,
@@ -47,7 +49,7 @@ $(document).ready(function () {
     // ✅ Global Match Change
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/${data.new_match_id}/screen`; // Sesuaikan path kalau perlu
+        window.location.href = `/matches/referees/${data.new_match_id}`; // Sesuaikan path kalau perlu
     });
 
     // ✅ Timer Started
@@ -56,12 +58,13 @@ $(document).ready(function () {
         roundId = data.round_id;
 
         $("#current-round").text(`ROUND ${data.round_number}`);
-        $("#blue-score").text("0");
-        $("#red-score").text("0");
+        //$("#blue-score").text("0");
+        //$("#red-score").text("0");
         startCountdown(new Date(data.start_time).getTime(), data.duration || 180);
+        $(".item, .drop").prop("disabled", false).removeClass("disabled");
     });
 
-    // ✅ Timer Updated (Pause, Resume, Finish)
+    
     channel.bind('timer.updated', function (data) {
         if (parseInt(data.round_id) !== roundId) return;
 
@@ -70,18 +73,23 @@ $(document).ready(function () {
         if (data.status === 'in_progress') {
             const start = new Date(data.start_time).getTime();
             const now = new Date(data.now).getTime();
+
             const elapsed = Math.floor((now - start) / 1000);
-            const remaining = Math.max(0, data.remaining);
-            startCountdown(now - (elapsed * 1000), 180);
+            const remaining = Math.max(0, data.remaining || 0);
+
+            // ✅ Pakai duration dari event
+            startCountdown(now - (elapsed * 1000), data.duration || 180);
         } else if (data.status === 'paused') {
             clearInterval(countdownInterval);
             $(".timer").text("PAUSED");
         } else if (data.status === 'finished') {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
+            resetRefereeActions();
+            $(".item, .drop").prop("disabled", true).addClass("disabled");
         } else if (data.status === 'not_started') {
             clearInterval(countdownInterval);
-            $(".timer").text("03:00");
+            $(".timer").text("00:00");
         }
     });
 
@@ -89,38 +97,200 @@ $(document).ready(function () {
     channel.bind('score.updated', function (data) {
         console.log("🎯 Score updated:", data);
     
-        $("#blue-score").text(data.blueScore).addClass("flash");
+        const blueScore = data.blueScore;
+        const redScore = data.redScore;
+    
+        $("#blue-score").text(blueScore).addClass("flash");
         setTimeout(() => $("#blue-score").removeClass("flash"), 500);
     
-        $("#red-score").text(data.redScore).addClass("flash");
+        $("#red-score").text(redScore).addClass("flash");
         setTimeout(() => $("#red-score").removeClass("flash"), 500);
     
-        // Tambahan poin di sisi masing-masing
-        //$(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
-        //$(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
+        // 🔥 Update score tambahan di sisi masing-masing
+        $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
+        $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
+    
+        // 🔥 Tambahkan logika ganti background sesuai pemenang
+        if (blueScore > redScore) {
+            $("#blue-score").css({
+                backgroundColor: "#4E25FF", // Biru background
+                color: "#FFFFFF",             // Teks putih
+                border: "3px solid #FFFFFF"
+            });
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"              // Teks merah biasa
+            });
+        } else if (redScore > blueScore) {
+            $("#red-score").css({
+                backgroundColor: "#D32F2F",   // Merah background
+                color: "#FFFFFF",              // Teks putih
+                border: "3px solid #FFFFFF"
+            });
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"              // Teks biru biasa
+                
+            });
+        } else {
+            // Kalau imbang
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+        }
     });
 
-    $(".item[data-action]").on("click", function () {
+    let waitingModalInstance = null;
+    let waitingProgressInterval = null;
+    Echo.channel('match.' + matchId)
+        .listen('.verification.requested', (e) => {
+            console.log('Verification Requested (Arena/Dewan):', e);
+
+            // Update teks sesuai jenis verifikasi
+            let description = '';
+            if (e.type === 'jatuhan') {
+                description = 'Menunggu hasil verifikasi Jatuhan...';
+            } else if (e.type === 'hukuman') {
+                description = 'Menunggu hasil verifikasi Hukuman...';
+            } else {
+                description = 'Menunggu hasil verifikasi...';
+            }
+
+            $('#waitingVerificationMessage').html(`<b>${description}</b>`);
+            // Reset Progress
+            $('#waitingVerificationProgress').css('width', '0%');
+
+            // Tampilkan modal
+            waitingModalInstance = new bootstrap.Modal(document.getElementById('waitingVerificationModal'), {
+                backdrop: 'static',   // Tidak bisa klik luar
+                keyboard: false       // Tidak bisa ESC close
+            });
+            waitingModalInstance.show();
+
+            // Jalankan animasi progress bar
+            let progress = 0;
+            waitingProgressInterval = setInterval(() => {
+                progress += 2; // tambah 2% tiap 300ms
+                if (progress > 100) progress = 100;
+                $('#waitingVerificationProgress').css('width', `${progress}%`);
+            }, 300);
+        });
+
+
+    let verificationResultModalInstance = null;
+    let verificationResultTimer = null;
+
+    Echo.channel('match.' + matchId)
+        .listen('.verification.resulted', (e) => {
+            console.log('Verification Resulted:', e);
+
+            // Jika modal menunggu terbuka, tutup
+            if (waitingModalInstance) {
+                waitingModalInstance.hide();
+            }
+
+            // Hitung jumlah masing-masing vote
+            let totalVotes = e.results.length;
+            let blueVotes = e.results.filter(v => v.vote === 'blue').length;
+            let redVotes = e.results.filter(v => v.vote === 'red').length;
+            let invalidVotes = e.results.filter(v => v.vote === 'invalid').length;
+
+            // Hitung persentase
+            let bluePercent = totalVotes ? (blueVotes / totalVotes * 100).toFixed(0) : 0;
+            let redPercent = totalVotes ? (redVotes / totalVotes * 100).toFixed(0) : 0;
+            let invalidPercent = totalVotes ? (invalidVotes / totalVotes * 100).toFixed(0) : 0;
+
+            // Generate HTML progress bar
+            let resultHtml = `
+                <div class="text-start mb-2">Biru (${blueVotes} vote)</div>
+                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: ${bluePercent}%;">${bluePercent}%</div>
+                </div>
+
+                <div class="text-start mb-2">Merah (${redVotes} vote)</div>
+                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress-bar bg-danger" role="progressbar" style="width: ${redPercent}%;">${redPercent}%</div>
+                </div>
+
+                <div class="text-start mb-2">Tidak Sah (${invalidVotes} vote)</div>
+                <div class="progress mb-2" style="height: 20px;">
+                <div class="progress-bar bg-secondary" role="progressbar" style="width: ${invalidPercent}%;">${invalidPercent}%</div>
+                </div>
+            `;
+
+            $('#verificationResultContent').html(resultHtml);
+
+            // Tampilkan Modal
+            verificationResultModalInstance = new bootstrap.Modal(document.getElementById('verificationResultModal'));
+            verificationResultModalInstance.show();
+
+            // Clear timer sebelumnya kalau ada
+            if (verificationResultTimer) {
+                clearTimeout(verificationResultTimer);
+            }
+
+            // Modal auto-close setelah 5 detik
+            verificationResultTimer = setTimeout(() => {
+                verificationResultModalInstance.hide();
+            }, 5000);
+        });
+
+
+    
+    
+
+    $(".item[data-action], .drop[data-action]").on("click", function () {
         const action = $(this).data("action");
         const point = $(this).data("point");
         const corner = $(this).data("corner");
-
+    
         console.log(`🟢 Aksi: ${action}, Corner: ${corner}, Point: ${point}`);
-
-        $.post("/api/local-referee-actions", {
-            local_match_id: matchId,
-            round_id: roundId,
-            action: action,
-            point_change: point,
-            corner: corner,
-        })
-        .done(function (res) {
-            console.log("✅ Referee action sent", res);
-        })
-        .fail(function (xhr) {
-            console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
-        });
+    
+        $(this).addClass("active");
+    
+        if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
+            // 🔥 Kalau butuh verifikasi, panggil API verifikasi
+            $.post("/api/request-verification", {
+                match_id: matchId,
+                round_id: roundId,
+                type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
+                corner: corner,
+            })
+            .done(function (res) {
+                console.log("✅ Verification request sent", res);
+            })
+            .fail(function (xhr) {
+                console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
+            });
+        } else {
+            // ✅ Kalau bukan verifikasi, tetap kirim action biasa
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            })
+            .done(function (res) {
+                console.log("✅ Referee action sent", res);
+            })
+            .fail(function (xhr) {
+                console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
+            });
+        }
     });
+        
+
+    function resetRefereeActions() {
+        $(".item, .drop").removeClass('active');
+        $(".item, .drop").prop("disabled", true).addClass("disabled");
+    }
+    
     
 
     // ✅ Countdown Timer Handler
@@ -153,12 +323,27 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
             $("#tournament-name").text(data.tournament_name);
-            $("#match-code").text(data.match_code);
+            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
-            $("#blue-name").text(data.blue.name);
-            $("#red-name").text(data.red.name);
+            $("#blue-name").html(`
+                ${data.blue.name}<br>
+                <small>${data.blue.contingent}</small>
+            `);
+            $("#red-name").html(`
+                ${data.red.name}<br>
+                <small>${data.red.contingent}</small>
+            `);
             $("#blue-score").text(data.blue.score);
             $("#red-score").text(data.red.score);
+
+            const roundLabels = {
+                1: "Penyisihan",
+                2: "Perempat Final",
+                3: "Semifinal",
+                4: "Final"
+            };
+
+            $("#stage").text(roundLabels[data.rounds[0].round_number]);    
 
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;

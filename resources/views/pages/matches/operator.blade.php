@@ -58,7 +58,7 @@
         <h5 class="modal-title w-100">Pertandingan Dihentikan</h5>
       </div>
       <div class="modal-body">
-        Pertandingan telah dihentikan lebih awal oleh operator.
+        Pertandingan telah dihentikan.
       </div>
       <div class="modal-footer justify-content-center border-0">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -84,6 +84,49 @@
   </div>
 </div>
 
+<!-- Modal Pilih Pemenang -->
+<div class="modal fade" id="selectWinnerModal" tabindex="-1" aria-labelledby="selectWinnerLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header border-0">
+        <h5 class="modal-title w-100 text-center" id="selectWinnerLabel">Konfirmasi Hasil Pertandingan</h5>
+      </div>
+      <div class="modal-body text-start px-4">
+        <div class="mb-3">
+          <label class="form-label">Pemenang:</label>
+          <select id="winner" class="form-select">
+            <option value="">-- Pilih --</option>
+            <option value="red" id="option-red">-</option>
+            <option value="blue" id="option-blue">-</option>
+            <option value="draw">Seri</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Alasan Menang:</label>
+          <select id="win_reason" class="form-select">
+            <option value="">-- Pilih Alasan --</option>
+            <option value="score">Menang Angka</option>
+            <option value="technique">Menang Tehnik</option>
+            <option value="absolute">Menang Mutlak</option>
+            <option value="stop">Menang dengan wasit menghentikan pertandingan</option>
+            <option value="forfeit">Menang undur diri</option>
+            <option value="disqualify">Menang dengan diskualifikasi</option>
+            <option value="other">Lainnya</option>
+          </select>
+        </div>
+        <div class="mb-3 d-none" id="other_reason_box">
+          <label class="form-label">Alasan Lainnya:</label>
+          <input type="text" id="other_reason" class="form-control" placeholder="Masukkan alasan lainnya">
+        </div>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" id="confirm-winner-btn">Simpan Hasil</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -93,19 +136,19 @@
     <div class="match-info" id="tournament-name">-</div>
     <div class="match-details">
         <div class="detail-item" id="match-code">-</div>
-        <div class="detail-item" id="match-stage">-</div>
+        <div class="detail-item" id="stage">-</div>
         <div class="detail-item" id="class-name">-</div>
     </div>
 
     <div class="match-item">
         <div class="blue d-flex">
-            <div class="name d-flex w-100 roboto-bold justify-content-center align-items-center" id="blue-name">-</div>
+            <div class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center" id="blue-name">-</div>
             <div class="score d-flex text-white roboto-bold justify-content-center align-items-center" id="blue-score">-</div>
         </div>
         <div class="round d-flex justify-content-center align-items-center roboto-bold" id="current-round">-</div>
         <div class="red d-flex">
             <div class="score d-flex text-white roboto-bold justify-content-center align-items-center" id="red-score">-</div>
-            <div class="name d-flex w-100 roboto-bold justify-content-center align-items-center" id="red-name">-</div>
+            <div class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center" id="red-name" >-</div>
         </div>
     </div>
 </div>
@@ -115,6 +158,20 @@
         <div class="row justify-content-center">
             <div class="col-6">
                 <div class="match-panel text-center">
+                    <div class="d-flex flex-column gap-2 mb-2 duration">
+                        <label for="round-duration" class="text-white text-center">Durasi Ronde (menit)</label>
+                        <select id="round-duration" class="form-select text-center">
+                            <option value="60">1 Menit</option>
+                            <option value="90">1.5 Menit</option>
+                            <option value="120">2 Menit</option>
+                            <option value="150">2.5 Menit</option>
+                            <option value="180" selected>3 Menit</option>
+                            <option value="210">3.5 Menit</option>
+                            <option value="240">4 Menit</option>
+                            <option value="270">4.5 Menit</option>
+                            <option value="300">5 Menit</option>
+                        </select>
+                    </div>
                     <div class="panel-header">
                         <div class="round d-flex justify-content-center align-items-center active">ROUND 1</div>
                         <div class="round d-flex justify-content-center align-items-center">ROUND 2</div>
@@ -129,6 +186,8 @@
                             <button class="start d-flex justify-content-center align-items-center text-white roboto-bold border-0">START</button>
                             <button class="reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
                         </div>
+                        
+
                         <div class="d-flex mt-2">
                             <button class="end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">END MATCH</button>
                         </div>

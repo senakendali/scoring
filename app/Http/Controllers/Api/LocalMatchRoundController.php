@@ -59,17 +59,28 @@ class LocalMatchRoundController extends Controller
         ]);
     }
 
-    public function start($id)
+    public function start($id, Request $request)
     {
+        $request->validate([
+            'duration' => 'required|integer|min:60|max:600'
+        ]);
+
         $round = LocalMatchRound::findOrFail($id);
+        $match = LocalMatch::findOrFail($round->local_match_id);
 
         if ($round->status !== 'not_started' && $round->status !== 'paused') {
             return response()->json(['message' => 'Ronde sudah berjalan atau selesai.'], 400);
         }
 
+        // ✅ Ambil durasi dari request (default 180 detik jika tidak dikirim)
+        $duration = intval($request->input('duration', 180));
+
         $round->start_time = now();
         $round->status = 'in_progress';
         $round->save();
+
+        $match->round_duration = $duration;
+        $match->save();
 
         // Set match aktif
         \App\Models\LocalMatch::where('is_active', true)->update(['is_active' => false]);
@@ -83,29 +94,23 @@ class LocalMatchRoundController extends Controller
         \Log::info('🔔 Mengirim event timer.started', [
             'channel' => 'match.' . $match->id,
             'start_time' => $round->start_time,
-            'duration' => 180,
+            'duration' => $duration,
         ]);
-        
-       /* broadcast(new \App\Events\TimerStarted($match->id, [
-            'start_time' => $round->start_time->toIso8601String(),
-            'duration' => 180
-        ]));*/
 
         broadcast(new \App\Events\TimerStarted($match->id, [
             'start_time' => $round->start_time->toIso8601String(),
-            'duration' => 180,
+            'duration' => $duration,
             'round_id' => $round->id,
             'round_number' => $round->round_number,
         ]));
-        
-        
-        
 
         return response()->json([
             'message' => 'Ronde dimulai.',
-            'start_time' => $round->start_time
+            'start_time' => $round->start_time,
+            'duration' => $duration
         ]);
     }
+
 
     public function changeToNextMatch($currentId)
     {
@@ -155,7 +160,7 @@ class LocalMatchRoundController extends Controller
         return response()->json(['message' => 'Ronde dipause.', 'end_time' => $round->end_time]);
     }
 
-    public function resume($id)
+    public function resume__($id)
     {
         $round = LocalMatchRound::findOrFail($id);
 
@@ -180,6 +185,39 @@ class LocalMatchRoundController extends Controller
             'now' => now(),
         ]);
     }
+
+    public function resume($id)
+    {
+         
+        $round = LocalMatchRound::findOrFail($id);
+
+        if ($round->status !== 'paused') {
+            return response()->json(['message' => 'Ronde tidak dalam keadaan pause.'], 400);
+        }
+
+        $start = $round->start_time instanceof Carbon ? $round->start_time : Carbon::parse($round->start_time);
+        $end = $round->end_time instanceof Carbon ? $round->end_time : Carbon::parse($round->end_time);
+        $elapsed = $start->diffInSeconds($end);
+
+        $round->start_time = now()->subSeconds($elapsed);
+        $round->end_time = null;
+        $round->status = 'in_progress';
+        $round->save();
+
+        // Ambil durasi dari request atau fallback ke 180
+        $duration = request()->input('duration', 180);
+
+        broadcast(new \App\Events\TimerUpdated($round, $duration))->toOthers();
+
+        return response()->json([
+            'message' => 'Ronde dilanjutkan',
+            'start_time' => $round->start_time,
+            'now' => now(),
+            'duration' => $duration,
+            'elapsed' => $elapsed,
+        ]);
+    }
+
 
 
 

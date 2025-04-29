@@ -3,7 +3,8 @@ $(document).ready(function () {
     const matchId = window.location.pathname.split("/").pop();
     const timerEl = $("#timer");
     
-    const duration = 180;
+    let duration = 180;
+    
     let interval = null;
     let roundId = null;
     let currentRoundNumber = 1;
@@ -20,9 +21,9 @@ $(document).ready(function () {
 
     // Setup Pusher
     Pusher.logToConsole = true;
-
+    const host = window.location.hostname;
     const pusher = new Pusher('reverb', {
-        wsHost: '192.168.1.3',
+        wsHost: host,
         wsPort: 6001,
         forceTLS: false,
         encrypted: false,
@@ -47,12 +48,6 @@ $(document).ready(function () {
         setTimeout(() => $("#red-score").removeClass("flash"), 500);
     });
 
-    channel.bind('score.updated', function (data) {
-        console.log('Score updated via WebSocket:', data);
-        $("#blue-score").text(data.blue_score);
-        $("#red-score").text(data.red_score);
-    });
-
 
     function setButtonLoading(button, isLoading) {
         if (isLoading) {
@@ -69,14 +64,29 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $.get(`${url}/api/local-matches/${matchId}`, function (data) {
             $("#tournament-name").text(data.tournament_name);
-            $("#match-code").text(data.match_code);
+            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#match-stage").text("-");
 
-            $("#blue-name").text(data.blue.name);
-            $("#blue-score").text(data.blue.score);
-            $("#red-name").text(data.red.name);
-            $("#red-score").text(data.red.score);
+            $("#blue-name").html(`
+                ${data.blue.name}<br>
+                <small>${data.blue.contingent}</small>
+            `);
+            //$("#blue-score").text(data.blue.score);
+            $("#red-name").html(`
+                ${data.red.name}<br>
+                <small>${data.red.contingent}</small>
+            `);
+           // $("#red-score").text(data.red.score);
+
+           const roundLabels = {
+                1: "Penyisihan",
+                2: "Perempat Final",
+                3: "Semifinal",
+                4: "Final"
+            };
+
+            $("#stage").text(roundLabels[data.rounds[0].round_number]);    
 
             allRounds = data.rounds;
             totalRounds = data.total_rounds;
@@ -91,6 +101,9 @@ $(document).ready(function () {
                 $(".panel-header .round").eq(currentRoundNumber - 1).addClass("active");
                 fetchAndStartTimer();
             }
+
+            setWinnerOptions(data); 
+            
             $(".loader-bar").hide();
         });
     }
@@ -124,24 +137,26 @@ $(document).ready(function () {
                 clearInterval(interval);
 
                 $.post(`${url}/api/local-match-rounds/${roundId}/finish`, function () {
+
                     if (currentRoundNumber < totalRounds) {
-                        // Show modal for next round
+                        // 🔥 Masih ada ronde berikutnya, tampilkan modal Next Round
                         $("#modal-round-number").text(currentRoundNumber);
                         const modal = new bootstrap.Modal(document.getElementById('nextRoundModal'));
                         modal.show();
-
+                    
                         $("#confirm-next-round").off("click").on("click", function () {
                             modal.hide();
                             moveToNextRound();
                         });
-
+                    
                     } else {
-                        const endModal = new bootstrap.Modal(document.getElementById('matchEndModal'));
-                        endModal.show();
-
+                        // 🔥 Ini ronde terakhir bro, langsung tampilkan PILIH PEMENANG
+                        const winnerModal = new bootstrap.Modal(document.getElementById('selectWinnerModal'));
+                        winnerModal.show();
                         $(".end-match").addClass("d-none");
                         $(".next-match").removeClass("d-none");
                     }
+                    
                 });
             }
 
@@ -161,7 +176,9 @@ $(document).ready(function () {
             $("#current-round").text(`ROUND ${currentRoundNumber}`);
             $(".panel-header .round").removeClass("active");
             $(".panel-header .round").eq(currentRoundNumber - 1).addClass("active");
-            timerEl.text("03:00");
+            //timerEl.text("03:00");
+            timerEl.text(formatTime(duration));
+
         }
     }
 
@@ -175,23 +192,48 @@ $(document).ready(function () {
         return `${min}:${sec}`;
     }
 
+    function setWinnerOptions(data) {
+        $("#option-red").text(`Sudut Merah - ${data.red.name} (${data.red.contingent})`);
+        $("#option-blue").text(`Sudut Biru - ${data.blue.name} (${data.blue.contingent})`);
+    }
+    
+
+    $("#round-duration").on("change", function () {
+        duration = parseInt($(this).val() || 180); // update variabel global
+        timerEl.text(formatTime(duration)); // update tampilan timer
+    });
+
     $(".start").on("click", function () {
         if (!roundId) return;
         const btn = $(this);
+    
+        // ✅ Ambil durasi dari dropdown
+        duration = parseInt($('#round-duration').val() || 180);
+
+        
+    
         setButtonLoading(btn, true);
-        $.post(`${url}/api/local-match-rounds/${roundId}/start`, function () {
+        $.post(`${url}/api/local-match-rounds/${roundId}/start`, {
+            duration: duration 
+        }, function () {
             setTimeout(fetchAndStartTimer, 500);
         }).always(() => setButtonLoading(btn, false));
     });
+    
+
+    
 
     $(".pause").on("click", function () {
         const btn = $(this);
         setButtonLoading(btn, true);
         if (isPaused) {
-            $.post(`${url}/api/local-match-rounds/${roundId}/resume`, function (res) {
+            $.post(`${url}/api/local-match-rounds/${roundId}/resume`, {
+                duration: duration
+            }, function (res) {
                 isPaused = false;
                 const startTime = new Date(res.start_time).getTime();
                 const serverNow = new Date(res.now).getTime();
+    
                 elapsed = Math.max(0, Math.floor((serverNow - startTime) / 1000));
                 runTimer();
             }).always(() => {
@@ -208,6 +250,7 @@ $(document).ready(function () {
             });
         }
     });
+    
 
     $(".reset").on("click", function () {
         const modal = new bootstrap.Modal(document.getElementById('confirmResetModal'));
@@ -220,33 +263,136 @@ $(document).ready(function () {
     
             $.post(`${url}/api/local-match-rounds/${roundId}/reset`, function () {
                 stopTimer();
-                timerEl.text("03:00");
+                //timerEl.text("03:00");
+                timerEl.text(formatTime(duration));
             }).always(() => setButtonLoading(btn, false));
         });
     });
-    
+
     
 
-    $(".end-match").on("click", function () {
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmEndModal'));
+    $(".end-match").off("click").on("click", function () {
+        const confirmModalEl = document.getElementById('confirmEndModal');
+        const winnerModalEl = document.getElementById('selectWinnerModal');
+    
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        const winnerModal = new bootstrap.Modal(winnerModalEl);
+    
         confirmModal.show();
     
         $("#confirm-end-btn").off("click").on("click", function () {
-            const btn = $(".end-match");
-            setButtonLoading(btn, true);
-            confirmModal.hide();
+            const instance = bootstrap.Modal.getInstance(confirmModalEl);
+            if (instance) instance.hide();
     
-            $.post(`${url}/api/local-matches/${matchId}/end-match`, function () {
-                stopTimer();
-    
-                const endedModal = new bootstrap.Modal(document.getElementById('endedMatchModal'));
-                endedModal.show();
-    
-                $(".end-match").addClass("d-none");
-                $(".next-match").removeClass("d-none");
-            }).always(() => setButtonLoading(btn, false));
+            // Perbaiki urutan
+            $(confirmModalEl).off("hidden.bs.modal").on('hidden.bs.modal', function () {
+                winnerModal.show(); // 👉 TAMPILKAN DULU
+                setTimeout(() => {
+                    cleanupModals(); // 👉 HAPUS backdrop SETELAH modal pemenang muncul
+                }, 300);
+            });
         });
     });
+    
+    
+    
+    
+    
+    // Handle alasan lainnya
+    $("#win_reason").on("change", function () {
+        if ($(this).val() === "other") {
+            $("#other_reason_box").removeClass("d-none");
+        } else {
+            $("#other_reason_box").addClass("d-none");
+        }
+    });
+    
+    // Submit hasil akhir pertandingan
+    $("#confirm-winner-btn").on("click", function () {
+        const btn = $(this);
+        setButtonLoading(btn, true);
+    
+        const winner = $("#winner").val();
+        const reason = $("#win_reason").val();
+        const otherReason = $("#other_reason").val();
+        const finalReason = reason === "other" ? otherReason : reason;
+    
+        if (!winner || !finalReason) {
+            alert("Pilih pemenang dan alasan kemenangan.");
+            setButtonLoading(btn, false);
+            return;
+        }
+    
+        $.post(`${url}/api/local-matches/${matchId}/end-match`, {
+            winner: winner,
+            reason: finalReason
+        }, function () {
+            stopTimer();
+    
+            // PATCH: Hapus semua modal/overlay dulu
+            cleanupModals();
+    
+            // Baru tampilkan modal hasil
+            const endedModal = new bootstrap.Modal(document.getElementById('endedMatchModal'));
+            endedModal.show();
+
+            // PATCH: kalau modal endedMatchModal di close, bersihin semua overlay
+            endedModal._element.addEventListener('hidden.bs.modal', function () {
+                cleanupModals();
+            });
+
+    
+            $(".end-match").addClass("d-none");
+            $(".next-match").removeClass("d-none");
+        }).always(() => setButtonLoading(btn, false));
+    });
+    
+    
+    
+    
+    // Toggle field alasan lainnya
+    $("#win_reason").on("change", function () {
+        if ($(this).val() === "other") {
+            $("#other_reason_box").removeClass("d-none");
+        } else {
+            $("#other_reason_box").addClass("d-none");
+        }
+    });
+    
+    // Submit hasil pertandingan
+    $("#confirm-winner-btn").on("click", function () {
+        const btn = $(this);
+        setButtonLoading(btn, true);
+    
+        const winner = $("#winner").val();
+        const reason = $("#win_reason").val();
+        const otherReason = $("#other_reason").val();
+    
+        if (!winner || !reason) {
+            alert("Pilih pemenang dan alasan kemenangan.");
+            setButtonLoading(btn, false);
+            return;
+        }
+    
+        const finalReason = reason === "other" ? otherReason : reason;
+    
+        $.post(`${url}/api/local-matches/${matchId}/end-match`, {
+            winner: winner,
+            reason: finalReason
+        }, function () {
+            stopTimer();
+    
+            const winnerModal = bootstrap.Modal.getInstance(document.getElementById('selectWinnerModal'));
+            winnerModal.hide();
+    
+            const endedModal = new bootstrap.Modal(document.getElementById('endedMatchModal'));
+            endedModal.show();
+    
+            $(".end-match").addClass("d-none");
+            $(".next-match").removeClass("d-none");
+        }).always(() => setButtonLoading(btn, false));
+    });
+    
     
 
     $(".next-match").on("click", function () {
@@ -265,25 +411,21 @@ $(document).ready(function () {
     let lastBlue = 0;
     let lastRed = 0;
 
-    function startLiveScorePolling() {
-        setInterval(() => {
-            $.get(`${url}/api/local-matches/${matchId}/live-score`, function (data) {
-                // Blue
-                if (data.blue_score !== lastBlue) {
-                    $("#blue-score").text(data.blue_score).addClass("flash");
-                    setTimeout(() => $("#blue-score").removeClass("flash"), 500);
-                    lastBlue = data.blue_score;
-                }
-
-                // Red
-                if (data.red_score !== lastRed) {
-                    $("#red-score").text(data.red_score).addClass("flash");
-                    setTimeout(() => $("#red-score").removeClass("flash"), 500);
-                    lastRed = data.red_score;
-                }
-            });
-        }, 1500); // bisa disesuaikan intervalnya
+    function cleanupModals() {
+        $(".modal-backdrop").remove();
+        $("body").removeClass("modal-open").removeAttr("style");
+    
+        // Tutup semua modal yang mungkin masih terbuka
+        $(".modal.show").each(function () {
+            const modalInstance = bootstrap.Modal.getInstance(this);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
     }
+    
+    
+    
 
     
 

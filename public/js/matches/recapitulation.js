@@ -7,17 +7,47 @@ $(document).ready(function () {
     fetchMatchData();
     loadRekapitulasi(matchId);
 
+    setInterval(function () {
+        loadRekapitulasi(matchId);
+    }, 2000);
+
+    // 🔥 Handle hide/show info saat scroll
+    let lastScrollTop = 0;
+    $(window).on("scroll", function () {
+        const st = $(this).scrollTop();
+        const matchInfo = $(".fix-match-info");
+        const matchDetail = $(".fix-match-detail");
+
+        if (st > 50) { 
+            matchInfo.fadeOut(200);
+            matchDetail.fadeOut(200);
+        } else {
+            matchInfo.fadeIn(200);
+            matchDetail.fadeIn(200);
+        }
+        lastScrollTop = st;
+    });
+
 
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
             $("#tournament-name").text(data.tournament_name);
-            $("#match-code").text(data.match_code);
+            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#blue-name").text(data.blue.name);
             $("#red-name").text(data.red.name);
             $("#blue-score").text(data.blue.score);
             $("#red-score").text(data.red.score);
+
+            const roundLabels = {
+                1: "Penyisihan",
+                2: "Perempat Final",
+                3: "Semifinal",
+                4: "Final"
+            };
+
+            $("#stage").text(roundLabels[data.rounds[0].round_number]);    
 
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;
@@ -31,84 +61,98 @@ $(document).ready(function () {
             $('#match-tables').html('');
             data.forEach((round, index) => {
                 let html = `
-                    <table class="table table-dark mb-5">
+                    <table class="table table-striped mb-5">
                         <colgroup>
-                            <col style="width: 10%;">  <!-- Juri -->
-                            <col style="width: 22.5%;"> <!-- Nilai Biru -->
-                            <col style="width: 12.5%;"> <!-- Total Biru -->
-                            <col style="width: 22.5%;"> <!-- Nilai Merah -->
-                            <col style="width: 12.5%;"> <!-- Total Merah -->
+                            <col style="width: 22.5%;">
+                            <col style="width: 12.5%;">
+                            <col style="width: 30%;">
+                            <col style="width: 12.5%;">
+                            <col style="width: 22.5%;">
                         </colgroup>
-
                         <thead>
-                            <tr><th colspan="5" class="table-title">Rekapitulasi Ronde ${round.round_number}</th></tr>
+                            <tr><th colspan="5" class="table-title text-dark">Rekapitulasi Ronde ${round.round_number}</th></tr>
                             <tr>
-                                <th>Juri</th>
-                                <th class="blue">Nilai</th>
-                                <th class="blue">Total</th>
-                                <th class="red">Nilai</th>
-                                <th class="red">Total</th>
+                                <th class="blue text-center">Nilai</th>
+                                <th class="blue text-center">Total</th>
+                                <th class="text-center bg-secondary">Juri</th>
+                                <th class="red text-center">Total</th>
+                                <th class="red text-center">Nilai</th>
                             </tr>
                         </thead>
                         <tbody>`;
     
-                // ⛳ Baris Juri
+                // Baris Juri
                 for (let i = 1; i <= 3; i++) {
                     const blue = round.judges.find(j => j.judge === `Juri ${i}` && j.corner === 'blue');
                     const red = round.judges.find(j => j.judge === `Juri ${i}` && j.corner === 'red');
     
                     html += `<tr>
-                        <td>Juri ${i}</td>
-                        <td class="blue">${blue?.points.join(', ') || '-'}</td>
-                        <td class="blue">${blue?.total || 0}</td>
-                        <td class="red">${red?.points.join(', ') || '-'}</td>
-                        <td class="red">${red?.total || 0}</td>
+                        <td class="blue text-center">${renderPoints(blue?.points)}</td>
+                        <td class="blue text-center">${blue?.total || 0}</td>
+                        <td class="text-center">Juri ${i}</td>
+                        <td class="red text-center">${red?.total || 0}</td>
+                        <td class="red text-center">${renderPoints(red?.points)}</td>
                     </tr>`;
                 }
     
-                // ⛳ Nilai Sah
+                // Baris Nilai Sah
                 html += `<tr>
-                    <td>Nilai Sah</td>
-                    <td class="blue">${round.valid_scores.blue.points.join(', ')}</td>
-                    <td class="blue">${round.valid_scores.blue.total}</td>
-                    <td class="red">${round.valid_scores.red.points.join(', ')}</td>
-                    <td class="red">${round.valid_scores.red.total}</td>
+                    <td class="blue text-center">${renderPoints(round.valid_scores.blue.points, true)}</td>
+                    <td class="blue text-center">${round.valid_scores.blue.total}</td>
+                    <td class="text-center">Nilai Sah</td>
+                    <td class="red text-center">${round.valid_scores.red.total}</td>
+                    <td class="red text-center">${renderPoints(round.valid_scores.red.points, true)}</td>
                 </tr>`;
     
-                // ⛳ Jatuhan
+                // Baris Jatuhan
                 html += `<tr>
-                    <td>Jatuhan</td>
-                    <td class="blue">${round.jatuhan.blue}</td>
-                    <td class="blue">${round.jatuhan.blue}</td>
-                    <td class="red">${round.jatuhan.red}</td>
-                    <td class="red">${round.jatuhan.red}</td>
+                    <td class="blue text-center">${round.jatuhan.blue}</td>
+                    <td class="blue text-center">${round.jatuhan.blue}</td>
+                    <td class="text-center">Jatuhan</td>
+                    <td class="red text-center">${round.jatuhan.red}</td>
+                    <td class="red text-center">${round.jatuhan.red}</td>
                 </tr>`;
     
-                // ⛳ Hukuman
+                // Baris Hukuman
                 html += `<tr>
-                    <td>Hukuman</td>
-                    <td class="blue">${round.hukuman.blue}</td>
-                    <td class="blue">${round.hukuman.blue}</td>
-                    <td class="red">${round.hukuman.red}</td>
-                     <td class="red">${round.hukuman.red}</td>
+                    <td class="blue text-center">${round.hukuman.blue}</td>
+                    <td class="blue text-center">${round.hukuman.blue}</td>
+                    <td class="text-center">Hukuman</td>
+                    <td class="red text-center">${round.hukuman.red}</td>
+                    <td class="red text-center">${round.hukuman.red}</td>
                 </tr>`;
     
-                // ⛳ Nilai Final
+                // Baris Nilai Final
                 html += `<tr class="final-row">
-                    <td colspan="2">Nilai Final</td>
-                   
-                    <td class="blue">${round.final.blue}</td>
-                    <td class="red"></td>
-                    <td class="red">${round.final.red}</td>
+                    <td class="blue text-center">${round.final.blue}</td>
+                    <td class="blue text-center">${round.final.blue}</td>
+                    <td class="text-center">Nilai Final</td>
+                    <td class="red text-center">${round.final.red}</td>
+                    <td class="red text-center">${round.final.red}</td>
                 </tr>`;
     
                 html += `</tbody></table>`;
                 $('#match-tables').append(html);
             });
+            $(".loader-bar").hide();
         });
-
-        $(".loader-bar").hide();
     }
+    
+    
+
+    function renderPoints(points, isValid = false) {
+        if (!points || points.length === 0) return '-';
+        return points.map(p => {
+            if (isValid) {
+                return `<span class="badge bg-success me-1">${p}</span>`;
+            } else {
+                return `<span class="badge bg-secondary me-1">${p}</span>`;
+            }
+        }).join('');
+    }
+    
+    
+    
     
 
 });

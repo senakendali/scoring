@@ -112,7 +112,5 @@ class MatchController extends Controller
 
     
     
-    // Contoh penggunaan:
-    
     
 }

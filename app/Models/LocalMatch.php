@@ -26,4 +26,15 @@ class LocalMatch extends Model
         return $this->hasMany(LocalMatchLog::class);
     }
 
+    public function parentMatchRed()
+    {
+        return $this->belongsTo(LocalMatch::class, 'parent_match_red_id');
+    }
+
+    public function parentMatchBlue()
+    {
+        return $this->belongsTo(LocalMatch::class, 'parent_match_blue_id');
+    }
+
+
 }
