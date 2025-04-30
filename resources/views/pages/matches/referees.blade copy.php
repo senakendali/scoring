@@ -86,7 +86,7 @@
         
         <div class="arena-container">
             <div class="blue">
-            <div class="additional-point">
+                <div class="additional-point">
                     <div class="score-items">
                         <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="blue">
                             <img src="{{ asset('images/binaan-1.png') }}">
@@ -115,29 +115,34 @@
                     <div class="score-items">
                         <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="blue">Jatuhan</div>
                     </div>
-                   
-                </div>
-            </div>
-            <div class="score-container">
-                <div class="display-score">
-                    <div class="referee-score blue">
-                        <div id="blue-score" class="d-flex justify-content-center align-items-center roboto-bold">-</div>
-                    </div>
-                    <div class="referee-score red">
-                        <div id="red-score" class="d-flex justify-content-center align-items-center roboto-bold">-</div>
-                    </div>
-                </div>
-                <div class="verification">
-                     <div class="score-items">
-                        <div class="drop text-white black" data-action="verifikasi_jatuhan" data-point="3" data-corner="blue">Verifikasi Jatuhan</div>
-                    </div>
                     <div class="score-items">
-                        <div class="drop text-white black" data-action="verifikasi_hukuman" data-point="3" data-corner="red">Verifikasi Hukuman</div>
+                        <div class="drop text-white" data-action="verifikasi_jatuhan" data-point="3" data-corner="blue">Verifikasi Jatuhan</div>
                     </div>
                 </div>
+                <div class="referee-score">
+                    <div id="blue-score" class="d-flex justify-content-center align-items-center roboto-bold">-</div>
+                </div>
             </div>
+
+            <!--div class="judges-display d-flex justify-content-between align-items-stretch px-3 gap-3" style="flex-grow: 1;">
+                <div class="blue-score d-flex flex-column h-100" style="width: 30%;">
+                    <div id="blue-score" class="score flex-grow-1 overflow-auto d-flex justify-content-center align-items-center text-white roboto-bold fs-2">-</div>
+                </div>
+
+                <div class="timer-box d-flex justify-content-center align-items-center h-100 roboto-bold" style="width: 40%;">
+                    <div id="timer" class="timer roboto-bold text-white fs-1">00:00</div>
+                </div>
+
+                <div class="red-score d-flex flex-column h-100" style="width: 30%;">
+                    <div id="red-score" class="score flex-grow-1 overflow-auto d-flex justify-content-center align-items-center text-white roboto-bold fs-2">-</div>
+                </div>
+            </div-->
+
             <div class="red">
-            <div class="additional-point">
+                <div class="referee-score">
+                    <div id="red-score" class="d-flex justify-content-center align-items-center roboto-bold">-</div>
+                </div>
+                <div class="additional-point">
                     <div class="score-items">
                         <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="red">
                             <img src="{{ asset('images/binaan-1.png') }}">
@@ -166,13 +171,11 @@
                     <div class="score-items">
                         <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="red">Jatuhan</div>
                     </div>
-                    
+                    <div class="score-items">
+                        <div class="drop text-white" data-action="verifikasi_hukuman" data-point="3" data-corner="red">Verifikasi Hukuman</div>
+                    </div>
                 </div>
             </div>
-
-            
-
-            
             
         </div>
         <!--div class="additional-point d-flex flex-column">

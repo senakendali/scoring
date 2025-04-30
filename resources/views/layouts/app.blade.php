@@ -16,9 +16,9 @@
 </head>
 <body>
     <div id="loader" class="loader-bar"></div>
-    @if(request()->segment(2) != 'judges')
-    <header class="app-header d-flex justify-content-start  @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
-        <div class="container-fluid d-flex justify-content-between">
+    
+    <header class="app-header d-flex justify-content-start @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
             @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap')
                 <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
             @else
@@ -26,15 +26,45 @@
                     <img src="{{ asset('images/logo.png') }}" alt="">
                 </div>
             @endif
+
             @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees')
                 <div id="timer" class="timer arena roboto-bold">
                     00:00
                 </div>
             @endif
+
+            
+            @if(request()->segment(2) != 'display-arena' && request()->segment(2) != 'referees' && request()->segment(3) != 'recap')
+            <div class="dropdown ms-auto">
+                @php
+                    $roleLabel = session('juri_number') 
+                        ? 'Juri ' . session('juri_number') 
+                        : ucfirst(session('role') ?? 'Guest');
+                @endphp
+                <button class="btn btn-outline-light dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ $roleLabel }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userInfoDropdown">
+                    @if(session('arena_name'))
+                        <li><span class="dropdown-item-text"><strong>Arena:</strong> {{ session('arena_name') }}</span></li>
+                    @endif
+                    
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form action="/logout" method="POST" class="px-3 m-0">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-danger w-100">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+            @endif
         </div>
-        
     </header>
-    @endif
+
+
+
+   
 
     <main class="app-content">
         @yield('content')
@@ -47,7 +77,11 @@
     <script src="{{ asset('js/app.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Jquery Bracket -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.js"></script>
+
+
 
 
     <script>

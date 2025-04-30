@@ -684,7 +684,7 @@ body{
 
 .arena-container .blue{
     display: flex;
-    width: 33.3%;
+    width: 50%;
     border-right: 1px solid #FFFFFF;
     height: auto;
 }
@@ -697,7 +697,7 @@ body{
 
 .arena-container .blue .additional-point{
     background-color: #FFFFFF;
-    width: 100%;
+    width: 50%;
    padding-top: 10px;
    padding-right: 5px;
    padding-bottom: 10px;
@@ -717,40 +717,6 @@ body{
 
 }
 
-.arena-container .score-container{
-    display: flex;
-    flex-direction: column;
-    width: 33.3%;
-    border-right: 1px solid #FFFFFF;
-    height: auto;
-}
-
-.arena-container .score-container .display-score{
-    height: 50%;
-    width: 100%;
-    display: flex;
-}
-
-.arena-container .score-container .verification{
-    height: 50%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 20px;
-    padding-right: 10px;
-    padding-bottom: 10px;
-    padding-left: 10px;
-
-}
-
-.arena-container .red{
-    display: flex;
-    width: 33.3%;
-    border-right: 1px solid #FFFFFF;
-    height: auto;
-}
-
 .arena-container .red #red-score{
     height: 100%;
     width: 100%;
@@ -762,7 +728,7 @@ body{
 }
 
 
-.arena-container .score-container .referee-score.blue{
+.arena-container .blue .referee-score{
     width: 50%;
     padding: 10px;
     background-color: #FFFFFF;
@@ -787,7 +753,7 @@ body{
 
 .arena-container .red{
     display: flex;
-    width: 33.3%;
+    width: 50%;
     height: auto;
 }
 
@@ -805,11 +771,11 @@ body{
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 100%;
-   
+    width: 50%;
+    border-right: 1px solid #FFFFFF;
 }
 
-.arena-container .score-container .referee-score.red{
+.arena-container .red .referee-score{
     background-color: #FFFFFF;
     padding: 10px;
     width: 50%;
@@ -842,36 +808,6 @@ body{
     
 }
 
-.verification .score-items{
-    display: flex;
-    
-    
-    width: 100%;
-    height: 50%;
-    
-}
-
-.verification .score-items .drop{
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    border-radius: 8px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    text-transform: uppercase;
-    user-select: none;
-
-}
-
-.verification .score-items .drop.black{
-    background: linear-gradient(to bottom, #2a2a2a, #000000) !important;
-}
-
 .additional-score .score-items .item{
     width: 50%;
     text-align: center;
@@ -895,7 +831,7 @@ body{
     display: flex;
     gap: 10px;
     width: 100%;
-    height: 25%;
+    height: 20%;
     
 }
 

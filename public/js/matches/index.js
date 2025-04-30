@@ -44,22 +44,7 @@ $(document).ready(function () {
         roleLabel += ` ${juriNumber}`;
     }
 
-    const infoHtml = `
-        <div class="d-flex justify-content-between align-items-center alert alert-info text-dark">
-            <div>
-                <strong>Arena:</strong> ${arenaName} <br>
-                <strong>Peran:</strong> ${roleLabel}
-            </div>
-            <div>
-                <form action="/logout" method="POST">
-                    <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
-                    <button type="submit" class="btn btn-sm btn-danger">Logout</button>
-                </form>
-            </div>
-        </div>
-    `;
-
-    $("#match-tables").before(infoHtml);
+    
 
     $.get(url + "/api/local-matches", function (data) {
         $(".loader-bar").show();
@@ -89,6 +74,15 @@ $(document).ready(function () {
     
                 let tableHtml = `
                 <div class="mb-4">
+                <div class="d-flex justify-content-end align-items-center mb-2">
+                    
+                    <button class="btn btn-success btn-view-bracket" 
+                           data-arena="${arenaName}"
+                            data-pool="${poolName}"
+                            data-class="${matches[0].class_name}">
+                            View Bagan Pertandingan
+                    </button>
+                </div>
                 <table class="table table-dark">
                     <thead>
                         <tr>
@@ -130,28 +124,30 @@ $(document).ready(function () {
                     }
     
                     tableHtml += `
-                        <tr>
-                           
-                            <td>${match.match_number}</td>
-                            <td class="text-primary fw-bold">
-                                ${match.blue_name}<br><small>${match.blue_contingent}</small>
-                            </td>
-                            <td class="text-danger fw-bold">
-                                ${match.red_name}<br><small>${match.red_contingent}</small>
-                            </td>
-                            <td>${match.winner_name ?? '-'}</td>
-                            <td>${match.status}</td>
-                            ${isOperator ? `
-                                <td class="text-nowrap">
-                                    <div class="d-flex gap-1">
-                                        <a href="#" class="btn btn-outline-success btn-enter-match"
-                                            data-id="${match.id}" data-arena="${match.arena_name}" data-tournament="${match.tournament_name}">
-                                            Masuk
-                                        </a>
+                    <tr>
+                        <td>${match.match_number}</td>
+                        <td class="text-primary fw-bold">
+                            ${match.blue_name}<br><small>${match.blue_contingent}</small>
+                        </td>
+                        <td class="text-danger fw-bold">
+                            ${match.red_name}<br><small>${match.red_contingent}</small>
+                        </td>
+                        <td>${match.winner_name ?? '-'}</td>
+                        <td>${match.status}</td>
+                        ${isOperator ? `
+                            <td class="text-nowrap">
+                                <div class="d-flex gap-1">
+                                    <a href="#" class="btn btn-outline-success btn-enter-match"
+                                        data-id="${match.id}" data-arena="${match.arena_name}" data-tournament="${match.tournament_name}">
+                                        Masuk
+                                    </a>
+                                    ${match.status === 'finished' && match.winner_name ? `
                                         <a href="/matches/${match.id}/recap" class="btn btn-outline-warning btn-sm btn-recap-match">Rekap</a>
-                                    </div>
-                                </td>` : ''}
-                        </tr>`;
+                                    ` : ''}
+                                </div>
+                            </td>` : ''}
+                    </tr>`;
+                
                 });
     
                 tableHtml += `</tbody></table></div>`;
@@ -188,6 +184,95 @@ $(document).ready(function () {
             })
         });
     });
+
+    // === Handler untuk tombol View Bracket ===
+    $(document).on("click", ".btn-view-bracket", function () {
+        const pool = $(this).data("pool");
+        const className = $(this).data("class");
+        const arena = $(this).data("arena");
+        const tournament = $("#session-tournament").val();
+    
+        const apiUrl = `/api/bracket?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}&pool=${encodeURIComponent(pool)}`;
+    
+        fetch(apiUrl)
+            .then(res => res.json())
+            .then(data => {
+                const matchData = data.sort((a, b) => a.match_number - b.match_number);
+    
+                const rounds = {};
+                let maxRound = 1;
+    
+                for (const match of matchData) {
+                    const level = match.round_level;
+                    if (!rounds[level]) rounds[level] = [];
+                    rounds[level].push(match);
+                    if (level > maxRound) maxRound = level;
+                }
+    
+                renderManualBracket(rounds);
+    
+                $('#bracketModalLabel').text(`Pool ${pool} – ${className}`);
+                $('#bracketModal').modal('show');
+            })
+            .catch(err => {
+                console.error("Gagal ambil data bracket:", err);
+                alert("Gagal memuat bagan pertandingan.");
+            });
+    });
+    
+    function renderManualBracket(rounds) {
+        const $container = $('#bracket-container');
+        $container.empty().addClass('bracket');
+    
+        const maxRound = Math.max(...Object.keys(rounds));
+    
+        for (let i = 1; i <= maxRound; i++) {
+            const $round = $('<div class="round"></div>');
+            const matches = rounds[i] || [];
+    
+            for (let j = 0; j < matches.length; j++) {
+                const match = matches[j];
+                const blue = match.blue_name || 'TBD';
+                const red = match.red_name || 'TBD';
+                const winner = match.winner_id === match.blue_id ? 'blue' : match.winner_id === match.red_id ? 'red' : null;
+    
+                const $match = $(`
+                    <div class="match-wrapper">
+                      <div class="match">
+                          <div class="team ${winner === 'blue' ? 'winner' : ''} team-blue">${blue}</div>
+                          <div class="team ${winner === 'red' ? 'winner' : ''} team-red">${red}</div>
+                      </div>
+                    </div>
+                `);
+    
+                // Untuk round ke-2 dan seterusnya, kasih margin-top buat align ke tengah
+                if (i > 1) {
+                    const gap = 80 * Math.pow(2, i - 2); // makin tinggi round, makin besar gap
+                    $match.css('margin-top', `${gap}px`);
+                }
+    
+                $round.append($match);
+            }
+    
+            $container.append($round);
+        }
+    }
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
 
 });

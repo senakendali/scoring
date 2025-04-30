@@ -44,6 +44,22 @@ class LocalMatchController extends Controller
         return response()->json($grouped);
     }
 
+    public function getBracket(Request $request)
+    {
+        $tournament = $request->query('tournament');
+        $arena = $request->query('arena');
+        $pool = $request->query('pool');
+
+        $matches = LocalMatch::where('tournament_name', $tournament)
+            ->where('arena_name', $arena)
+            ->where('pool_name', $pool)
+            ->orderBy('round_level')
+            ->orderBy('match_number')
+            ->get();
+
+        return response()->json($matches);
+    }
+
 
 
 

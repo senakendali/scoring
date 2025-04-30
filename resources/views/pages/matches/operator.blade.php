@@ -129,11 +129,11 @@
 </div>
 
 
-
+<div class="fix-match-info light roboto-bold" id="tournament-name">-</div>
 <div class="match-header">
     <input type="hidden" id="round-id">
 
-    <div class="match-info" id="tournament-name">-</div>
+    
     <div class="match-details">
         <div class="detail-item" id="match-code">-</div>
         <div class="detail-item" id="stage">-</div>
@@ -158,7 +158,7 @@
         <div class="row justify-content-center">
             <div class="col-6">
                 <div class="match-panel text-center">
-                    <div class="d-flex flex-column gap-2 mb-2 duration">
+                    <div class="d-flex flex-column gap-2 mb-2 duration d-none">
                         <label for="round-duration" class="text-white text-center">Durasi Ronde (menit)</label>
                         <select id="round-duration" class="form-select text-center">
                             <option value="60">1 Menit</option>

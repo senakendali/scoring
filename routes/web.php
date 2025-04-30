@@ -28,6 +28,9 @@ Route::prefix('matches')->group(function () {
 
 // API Routes (should typically be in api.php)
 Route::prefix('api')->group(function () {
+
+    Route::get('/bracket', [LocalMatchController::class, 'getBracket']);
+
     Route::get('/local-matches', [LocalMatchController::class, 'index']);
     Route::get('/local-matches/tournaments', [LocalMatchController::class, 'getTournaments']);
     Route::get('/local-matches/arenas', [LocalMatchController::class, 'getArenas']);
