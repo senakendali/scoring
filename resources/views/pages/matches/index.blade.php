@@ -9,7 +9,12 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-4">
-        <div id="bracket-container" class="w-100 h-100 overflow-auto"></div>
+      
+        <div id="bracket-container" class="bracket w-100 h-100 overflow-auto">
+            <svg id="bracket-svg-layer" width="100%" height="100%" style="position:absolute; top:0; left:0; z-index:0; pointer-events:none;"></svg>
+        </div>
+       
+
       </div>
     </div>
   </div>

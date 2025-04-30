@@ -463,14 +463,11 @@ $(document).ready(function () {
                 <small>${data.red.contingent}</small>
             `);
 
-            const roundLabels = {
-                1: "Penyisihan",
-                2: "Perempat Final",
-                3: "Semifinal",
-                4: "Final"
-            };
+            const maxRound = Math.max(...data.rounds.map(r => r.round_number));
+            const roundLabels = getRoundLabels(maxRound);
 
-            $("#stage").text(roundLabels[data.rounds[0].round_number]);    
+            $("#stage").text(roundLabels[data.rounds[0].round_number] || `Babak ${data.rounds[0].round_number}`);
+    
            
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;

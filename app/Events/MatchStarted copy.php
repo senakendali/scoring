@@ -9,8 +9,6 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Str;
-
 
 class MatchStarted implements ShouldBroadcast
 {
@@ -29,10 +27,7 @@ class MatchStarted implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        $slugTournament = Str::slug($this->tournament_name); // "kejurnas-jakarta"
-        $slugArena = Str::slug($this->arena_name);           // "arena-a"
-
-        return new Channel("match-start.{$slugTournament}.{$slugArena}");
+        return new Channel('match-start');
     }
 
     public function broadcastAs()

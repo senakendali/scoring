@@ -13,7 +13,13 @@ $(document).ready(function () {
 
    
 
-    window.Echo.channel('match-start')
+    
+    const tournamentSlug = slugify(tournament); // pastikan disamakan
+    const arenaSlug = slugify(arena);
+
+
+    
+    window.Echo.channel(`match-start.${tournamentSlug}.${arenaSlug}`)
     .listen('.MatchStarted', (e) => {
         const role = $("#session-role").val().toLowerCase(); // 🔥 ini penting bro
         const arena = $("#session-arena").val();
@@ -71,6 +77,9 @@ $(document).ready(function () {
                     }
                     return a.round_level - b.round_level;
                 });
+
+                const maxRound = Math.max(...matches.map(m => m.round_level));
+                const roundLabels = getRoundLabels(maxRound);
     
                 let tableHtml = `
                 <div class="mb-4">
@@ -219,12 +228,27 @@ $(document).ready(function () {
                 alert("Gagal memuat bagan pertandingan.");
             });
     });
+
+    function slugify(text) {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')           // Ganti spasi jadi -
+            .replace(/[^\w\-]+/g, '')       // Hapus karakter non-word
+            .replace(/\-\-+/g, '-')         // Ganti -- jadi -
+            .replace(/^-+/, '')             // Hapus - di awal
+            .replace(/-+$/, '');            // Hapus - di akhir
+    }
+    
     
     function renderManualBracket(rounds) {
+        const svgId = 'bracket-svg-layer';
         const $container = $('#bracket-container');
-        $container.empty().addClass('bracket');
+        $container.empty().addClass('bracket').css('position', 'relative');
     
-        const maxRound = Math.max(...Object.keys(rounds));
+        const $svg = $(`<svg id="${svgId}" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></svg>`);
+        $container.append($svg);
+    
+        const maxRound = Math.max(...Object.keys(rounds).map(Number));
+        const matchRefs = {};
     
         for (let i = 1; i <= maxRound; i++) {
             const $round = $('<div class="round"></div>');
@@ -234,29 +258,93 @@ $(document).ready(function () {
                 const match = matches[j];
                 const blue = match.blue_name || 'TBD';
                 const red = match.red_name || 'TBD';
-                const winner = match.winner_id === match.blue_id ? 'blue' : match.winner_id === match.red_id ? 'red' : null;
+                const isTBD = (blue === 'TBD' && red === 'TBD');
+    
+                const winner = !isTBD
+                    ? (match.winner_id === match.blue_id ? 'blue' :
+                       match.winner_id === match.red_id ? 'red' : null)
+                    : null;
     
                 const $match = $(`
-                    <div class="match-wrapper">
-                      <div class="match">
-                          <div class="team ${winner === 'blue' ? 'winner' : ''} team-blue">${blue}</div>
-                          <div class="team ${winner === 'red' ? 'winner' : ''} team-red">${red}</div>
-                      </div>
+                    <div class="match-wrapper" data-match-id="${match.id}" style="position: relative;">
+                        <div class="match">
+                            <div class="team ${winner === 'blue' ? 'winner' : ''} team-blue">${blue}</div>
+                            <div class="team ${winner === 'red' ? 'winner' : ''} team-red">${red}</div>
+                        </div>
                     </div>
                 `);
     
-                // Untuk round ke-2 dan seterusnya, kasih margin-top buat align ke tengah
                 if (i > 1) {
-                    const gap = 80 * Math.pow(2, i - 2); // makin tinggi round, makin besar gap
+                    const gap = 80 * Math.pow(2, i - 2);
                     $match.css('margin-top', `${gap}px`);
                 }
     
+                matchRefs[match.id] = $match;
                 $round.append($match);
             }
     
             $container.append($round);
         }
+    
+        // PANGGIL konektor setelah semua DOM render
+        // Tunggu 2 frame supaya layout bener-bener siap
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            renderSvgConnectors(rounds, matchRefs, svgId);
+        });
+    });
+
     }
+
+    function renderSvgConnectors(rounds, matchRefs, svgId) {
+        const svg = document.getElementById(svgId);
+        svg.innerHTML = ''; // clear old
+    
+        const maxRound = Math.max(...Object.keys(rounds).map(Number));
+    
+        for (let i = 2; i <= maxRound; i++) {
+            const matches = rounds[i] || [];
+    
+            for (const match of matches) {
+                const child = matchRefs[match.id]?.find('.match');
+                if (!child.length) continue;
+    
+                const childOffset = child.offset();
+                const childX = childOffset.left;
+                const childY = childOffset.top + child.outerHeight() / 2;
+    
+                const parentRed = matchRefs[match.parent_match_red_id]?.find('.match');
+                const parentBlue = matchRefs[match.parent_match_blue_id]?.find('.match');
+    
+                if (!parentRed?.length || !parentBlue?.length) continue;
+    
+                const pRedOffset = parentRed.offset();
+                const pBlueOffset = parentBlue.offset();
+    
+                const pRedX = pRedOffset.left + parentRed.outerWidth();
+                const pRedY = pRedOffset.top + parentRed.outerHeight() / 2;
+                const pBlueY = pBlueOffset.top + parentBlue.outerHeight() / 2;
+    
+                const centerY = (pRedY + pBlueY) / 2;
+    
+                console.log(`Garis dari ${pRedX},${pRedY} ke ${childX},${centerY}`);
+    
+                svg.innerHTML += `
+                    <line x1="${pRedX}" y1="${pRedY}" x2="${pRedX}" y2="${pBlueY}" stroke="#fff" stroke-width="2"/>
+                    <line x1="${pRedX}" y1="${centerY}" x2="${childX}" y2="${centerY}" stroke="#fff" stroke-width="2"/>
+                `;
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     
 

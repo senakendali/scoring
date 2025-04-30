@@ -79,14 +79,11 @@ $(document).ready(function () {
             `);
            // $("#red-score").text(data.red.score);
 
-           const roundLabels = {
-                1: "Penyisihan",
-                2: "Perempat Final",
-                3: "Semifinal",
-                4: "Final"
-            };
+           const maxRound = Math.max(...data.rounds.map(r => r.round_number));
+            const roundLabels = getRoundLabels(maxRound);
 
-            $("#stage").text(roundLabels[data.rounds[0].round_number]);    
+            $("#stage").text(roundLabels[data.rounds[0].round_number] || `Babak ${data.rounds[0].round_number}`);
+   
 
             allRounds = data.rounds;
             totalRounds = data.total_rounds;
