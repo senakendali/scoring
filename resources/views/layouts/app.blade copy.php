@@ -75,50 +75,30 @@
     <script src="{{ asset('bootstrap/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
-   
-    
-
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js"></script>
     <!-- Jquery Bracket -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.js"></script>
 
 
 
-   <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
 
-    <script type="module">
-        import Echo from 'https://cdn.skypack.dev/laravel-echo';
-
+    <script>
         window.Pusher = Pusher;
-
+        const host = window.location.hostname;
         window.Echo = new Echo({
             broadcaster: 'pusher',
             key: 'reverb',
-            wsHost: window.location.hostname,
+            wsHost: host,
             wsPort: 6001,
             forceTLS: false,
             encrypted: false,
             disableStats: true,
             cluster: 'mt1',
-            wsPath: '',
+            wsPath: '', // penting buat Reverb
         });
-
-        console.log('✅ Echo initialized as module:', window.Echo);
     </script>
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
 
 
     

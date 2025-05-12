@@ -131,8 +131,16 @@ $(document).ready(function () {
                 console.log("✅ Active Juri saved", data);
                 showAlert("Data berhasil disimpan, redirect ke interface sesuai role & arena.", "Informasi");
                 setTimeout(() => {
-                    window.location.href = '/matches';
-                }, 2000);
+                    const matchType = formData.match_type;
+                    const redirectBase = '/matches';
+
+                    if (matchType === 'seni') {
+                        window.location.href = `${redirectBase}/seni`;
+                    } else {
+                        window.location.href = `${redirectBase}/tanding`;
+                    }
+                }, 1000);
+
             })
             .catch(async err => {
                 $(".loader-bar").hide();

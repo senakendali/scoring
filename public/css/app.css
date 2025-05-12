@@ -249,6 +249,23 @@ body{
     color: #FFFFFF;
 }
 
+.match-header .match-item .seni-participant-detail{
+    width: 100%;
+    display: flex;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.match-header .match-item .seni-participant-detail .item{
+    flex: 1;
+    min-height: 50px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+    color: #FFFFFF;
+    text-transform: uppercase;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+}
+
 @media (min-width: 1920px) {
     .match-header .match-item {
         font-size: 2vw;
@@ -1481,12 +1498,77 @@ th, td {
     color: #fff;
   }
 
+  .judges-seni-score{
+    padding-left:.5rem!important;
+    padding-top: .5rem!important;
+    padding-bottom: .5rem!important;
+  }
+
+  .judges-seni-button{
+    padding-right:.5rem!important;
+    padding-top: .5rem!important;
+    padding-bottom: .5rem!important;
+  }
+
   
+  
+  .wrong-move {
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+        font-size: 24px;
+        background-color: #D32F2F;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .wrong-move:hover {
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    }
+
+    .wrong-move:active {
+    transform: scale(0.95);
+    }
+
+    .wrong-move:disabled {
+        background-color: #444;
+        color: #999;
+        cursor: not-allowed;
+        opacity: 1;
+    }
+
   
   
   
 
   
+
+    .starting-score,
+    .deduction {
+        font-size: 48px;
+        font-weight: bold;
+        text-align: center;
+        padding: 20px;
+        border: 2px solid #333;
+        border-radius: 12px;
+        background-color: #f8f8f8;
+        min-width: 200px; /* ✅ Sama dengan max-width button */
+    }
+
+    .starting-score {
+        color: #0c7c0c; /* Hijau */
+        height: 50%;
+    }
+
+    .deduction {
+        color: #b30000; /* Merah tua */
+        height: 50%;
+    }
+
   
   
     

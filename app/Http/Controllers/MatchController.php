@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LocalMatch;
 use App\Models\LocalMatchRound;
+use App\Models\LocalSeniMatch;
 use Illuminate\Http\Request;
 
 class MatchController extends Controller
@@ -13,6 +14,13 @@ class MatchController extends Controller
             'js' => 'matches/index.js'
         ]);
     }
+
+    public function seni(){
+        return view('pages.matches.seni.index', [
+            'js' => 'matches/seni/index.js'
+        ]);
+    }
+
 
     public function show($match_id)
     {
@@ -39,6 +47,13 @@ class MatchController extends Controller
         ]);
     }
 
+    public function showSeni($match_id)
+    {
+        return view('pages.matches.seni.operator', [
+            'js' => 'matches/seni/operator.js'
+        ]);
+    }
+
     public function displayJudge($match_id)
     {
         $match = LocalMatch::with('rounds')->findOrFail($match_id);
@@ -57,6 +72,18 @@ class MatchController extends Controller
         return view('pages.matches.judges', [
             'match_id' => $match->id,
             'js' => 'matches/judges.js'
+        ]);
+    }
+
+    public function displaySeniJudge($match_id)
+    {
+        $match = LocalSeniMatch::findOrFail($match_id);
+
+        
+
+        return view('pages.matches.seni.judges', [
+            'match_id' => $match->id,
+            'js' => 'matches/seni/judges.js'
         ]);
     }
 

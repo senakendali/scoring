@@ -11,9 +11,7 @@
       <div class="modal-body" id="alertModalBody">
         Pesan akan ditampilkan di sini.
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-      </div>
+      
     </div>
   </div>
 </div>
