@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\LocalSeniMatch;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -13,30 +14,25 @@ class SeniTimerStarted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $match_id;
-    public $arena_name;
-    public $tournament_name;
-    public $duration;
+    public $match;
 
-    public function __construct($match_id, $arena_name, $tournament_name, $duration = 180)
+    public function __construct(LocalSeniMatch $match)
     {
-        \Log::info('📢 Event SeniTimerStarted DIKIRIM', [
-            'match_id' => $match_id,
-            'arena_name' => $arena_name,
-            'tournament_name' => $tournament_name,
-            'duration' => $duration
-        ]);
+        $this->match = $match;
 
-        $this->match_id = $match_id;
-        $this->arena_name = $arena_name;
-        $this->tournament_name = $tournament_name;
-        $this->duration = $duration;
+        \Log::info('📢 Event SeniTimerStarted DIKIRIM', [
+            'match_id' => $match->id,
+            'arena_name' => $match->arena_name,
+            'tournament_name' => $match->tournament_name,
+            'start_time' => $match->start_time,
+        ]);
     }
 
     public function broadcastOn()
     {
-        $arenaSlug = Str::slug($this->arena_name);
-        $tournamentSlug = Str::slug($this->tournament_name);
+        $arenaSlug = Str::slug($this->match->arena_name);
+        $tournamentSlug = Str::slug($this->match->tournament_name);
+
         return new Channel("seni-timer.{$tournamentSlug}.{$arenaSlug}");
     }
 
@@ -47,11 +43,16 @@ class SeniTimerStarted implements ShouldBroadcast
 
     public function broadcastWith()
     {
+        \Log::info("📡 broadcastWith SENI TIMER", [
+            'start_time' => $this->match->start_time,
+        ]);
+
         return [
-            'match_id' => $this->match_id,
-            'arena_name' => $this->arena_name,
-            'tournament_name' => $this->tournament_name,
-            'duration' => $this->duration,
+            'match_id' => $this->match->id,
+            'arena_name' => $this->match->arena_name,
+            'tournament_name' => $this->match->tournament_name,
+            'duration' => $this->match->duration ?? 180,
+            'start_time' => optional($this->match->start_time)->toIso8601String(), // ✅ INI PENTING
         ];
     }
 }

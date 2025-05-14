@@ -1,10 +1,18 @@
 $(document).ready(function () {
+    const url = window.location.origin;
     let matchId = parseInt($("#match-id").val());
 
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
     let roundId = null;
     let countdownInterval = null;
+
+    const arena = $("#session-arena").val();
+    const tournament = $("#session-tournament").val();
+
+    const tournamentSlug = slugify(tournament);
+    const arenaSlug = slugify(arena);
+    
 
     $.ajaxSetup({
         headers: {
@@ -13,432 +21,174 @@ $(document).ready(function () {
     });
 
     fetchMatchData();
+    fetchJuriCount(tournament, arena);
+    //pollSeniJudgeScores(matchId, tournament, arena);
+    initSeniJudgeRealtime(matchId, tournament, arena);
+
 
     const host = window.location.hostname;
     const pusher = new Pusher('reverb', {
         wsHost: host,
         wsPort: 6001,
         forceTLS: false,
-        disableStats: true,
+        encrypted: false,
         enabledTransports: ['ws'],
+        disableStats: true,
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    const globalChannel = pusher.subscribe('global.match');
-
-    /*channel.bind('referee.action', function (data) {
-        console.log("📣 Referee Action Received:", data);
+    const globalChannel = pusher.subscribe('global.seni.match');
     
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"]`;
-    
-        const $item = $(selector);
-        $item.addClass("active");
-    
-        // Kasih efek sebentar (misalnya 2 detik)
-        setTimeout(() => {
-            $item.removeClass("active");
-        }, 1000);
-    });*/
-
-    // Referee Action dari Dewan
-    // Backup score sebelumnya
-    // Siapkan backup score global
-    let backupScores = {
-        blue: null,
-        red: null
-    };
-    
-    let lockScore = {
-        blue: false,
-        red: false
-    };
-    
-
-    channel.bind('referee.action.submitted', function (data) {
-        console.log("🧩 Referee Action Submitted:", data);
-    
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
-        const $el = $(selector);
-        $el.addClass('active');
-    
-        if (data.action === 'jatuhan') {
-            console.log('💧 Detected Jatuhan');
-    
-            const dropIcon = $(`
-                <div class="drop-effect-name"><img src="/images/drop-icon.png" alt="Jatuhan"></div>
-            `);
-    
-            if (data.corner === 'blue') {
-                // 🔵 Kalau blue, append setelah #blue-name
-                $("#blue-name").after(dropIcon);
-            } else if (data.corner === 'red') {
-                // 🔴 Kalau red, prepend sebelum #red-name
-                $("#red-name").before(dropIcon);
-            }
-    
-            // 🔥 Hapus icon setelah 5 detik
-            setTimeout(() => {
-                dropIcon.remove();
-            }, 5000);
-        }
-    });
-    
-    
-    
-
-
-    
-    
-
-    
-
-    // 🔥 Saat juri tekan tombol
-    channel.bind('judge.point.submitted', function (data) {
-        console.log("👊 Judge point submitted:", data);
-
-        const { judge_number, corner, type } = data;
-
-        // Target elemen juri berdasarkan corner, type, dan judge_number
-        const selector = `.judges-${type}.${corner} .judge[data-judge="${judge_number}"]`;
-
-        const $el = $(selector);
-
-        $el.addClass("active");
-
-        setTimeout(() => {
-            $el.removeClass("active");
-        }, 1000);
-    });
 
     // ✅ Global Match Change
-    globalChannel.bind('match.changed', function (data) {
+    globalChannel.bind('seni.match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/display-arena/${data.new_match_id}`; // Sesuaikan path kalau perlu
+        window.location.href = `/matches/seni/display-arena/${data.new_match_id}`; // Sesuaikan path kalau perlu
     });
 
-    // ✅ Timer Started
-    channel.bind('timer.started', function (data) {
-        console.log("🔥 Timer started:", data);
-        roundId = data.round_id;
-
-        $("#current-round").text(`ROUND ${data.round_number}`);
-        //$("#blue-score").text("0");
-        //$("#red-score").text("0");
-
-        startCountdown(new Date(data.start_time).getTime(), data.duration || 180);
-    });
-
-    
-    channel.bind('timer.updated', function (data) {
-        if (parseInt(data.round_id) !== roundId) return;
-
-        console.log("🕒 Timer updated:", data);
-
-        if (data.status === 'in_progress') {
-            const start = new Date(data.start_time).getTime();
-            const now = new Date(data.now).getTime();
-
-            const elapsed = Math.floor((now - start) / 1000);
-            const remaining = Math.max(0, data.remaining || 0);
-
-            // ✅ Pakai duration dari event
-            startCountdown(now - (elapsed * 1000), data.duration || 180);
-        } else if (data.status === 'paused') {
-            clearInterval(countdownInterval);
-            $(".timer").text("PAUSED");
-        } else if (data.status === 'finished') {
-            clearInterval(countdownInterval);
-            $(".timer").text("00:00");
-            resetRefereeActions();
-            //resetScoreBackground();
-        } else if (data.status === 'not_started') {
-            clearInterval(countdownInterval);
-            $(".timer").text("00:00");
-        }
-    });
-
-    // ✅ Score Updated
-    channel.bind('score.updated', function (data) {
-        console.log("🎯 Score updated:", data);
-    
-        const blueScore = parseInt(data.blueScore) || 0;
-        const redScore = parseInt(data.redScore) || 0;
-    
-        // 🔥 Update Blue Score kalau tidak lock
-        if (!lockScore.blue) {
-            $("#blue-score")
-                .text(blueScore)
-                .addClass("bounce");
-    
-            setTimeout(() => {
-                $("#blue-score").removeClass("bounce");
-            }, 600);
-        }
-    
-        // 🔥 Update Red Score kalau tidak lock
-        if (!lockScore.red) {
-            $("#red-score")
-                .text(redScore)
-                .addClass("bounce");
-    
-            setTimeout(() => {
-                $("#red-score").removeClass("bounce");
-            }, 600);
-        }
-    
-        // 🔥 Tetap update penyesuaian
-        $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
-        $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
-    
-        // 🔥 Tetap update background pemenang
-        if (blueScore > redScore) {
-            $("#blue-score").css({
-                backgroundColor: "#4E25FF",
-                color: "#FFFFFF",
-            });
-            $(".blue .additional-score").css({
-                backgroundColor: "#4E25FF",
-                color: "#FFFFFF",
-            });
-
-            $("#red-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-
-            $(".red .additional-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-        } else if (redScore > blueScore) {
-            $("#red-score").css({
-                backgroundColor: "#E8003F",
-                color: "#FFFFFF",
-            });
-            $(".red .additional-score").css({
-                backgroundColor: "#E8003F",
-                color: "#FFFFFF",
-            });
-
-            $("#blue-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-
-            $(".blue .additional-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-        } else {
-            $("#blue-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-
-            $(".blue .additional-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-
-            
-            $("#red-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-
-            $(".red .additional-score").css({
-               backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-        }
-    });
-    
-    
-    
-    
-
-    channel.bind('judge.action.submitted', function (data) {
-        console.log("🎯 Judge Action Submitted:", data);
-    
-        const { corner, judge_number, type } = data;
-        console.log(`⏩ Update Judge Icon: corner=${corner}, judge=${judge_number}, type=${type}`);
-    
-        updateJudgeIcon(corner, judge_number, type);
-    });
-
-    let waitingModalInstance = null;
-    let waitingProgressInterval = null;
-    Echo.channel('match.' + matchId)
-        .listen('.verification.requested', (e) => {
-            console.log('Verification Requested (Arena/Dewan):', e);
-
-            // Update teks sesuai jenis verifikasi
-            let description = '';
-            if (e.type === 'jatuhan') {
-                description = 'Menunggu hasil verifikasi Jatuhan...';
-            } else if (e.type === 'hukuman') {
-                description = 'Menunggu hasil verifikasi Hukuman...';
-            } else {
-                description = 'Menunggu hasil verifikasi...';
-            }
-
-            $('#waitingVerificationMessage').html(`<b>${description}</b>`);
-
-            // Reset Progress
-            $('#waitingVerificationProgress').css('width', '0%');
-
-            // Tampilkan modal
-            waitingModalInstance = new bootstrap.Modal(document.getElementById('waitingVerificationModal'), {
-                backdrop: 'static',   // Tidak bisa klik luar
-                keyboard: false       // Tidak bisa ESC close
-            });
-            waitingModalInstance.show();
-            // Jalankan animasi progress bar
-            let progress = 0;
-            waitingProgressInterval = setInterval(() => {
-                progress += 2; // tambah 2% tiap 300ms
-                if (progress > 100) progress = 100;
-                $('#waitingVerificationProgress').css('width', `${progress}%`);
-            }, 300);
-        });
-
-    let verificationResultModalInstance = null;
-    let verificationResultTimer = null;
-
-    Echo.channel('match.' + matchId)
-        .listen('.verification.resulted', (e) => {
-            console.log('Verification Resulted:', e);
-
-            // Jika modal menunggu terbuka, tutup
-            if (waitingModalInstance) {
-                waitingModalInstance.hide();
-            }
-
-            // Hitung jumlah masing-masing vote
-            let totalVotes = e.results.length;
-            let blueVotes = e.results.filter(v => v.vote === 'blue').length;
-            let redVotes = e.results.filter(v => v.vote === 'red').length;
-            let invalidVotes = e.results.filter(v => v.vote === 'invalid').length;
-
-            // Hitung persentase
-            let bluePercent = totalVotes ? (blueVotes / totalVotes * 100).toFixed(0) : 0;
-            let redPercent = totalVotes ? (redVotes / totalVotes * 100).toFixed(0) : 0;
-            let invalidPercent = totalVotes ? (invalidVotes / totalVotes * 100).toFixed(0) : 0;
-
-            // Generate HTML progress bar
-            let resultHtml = `
-                <div class="text-start mb-2">Biru (${blueVotes} vote)</div>
-                <div class="progress mb-3" style="height: 20px;">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: ${bluePercent}%;">${bluePercent}%</div>
-                </div>
-
-                <div class="text-start mb-2">Merah (${redVotes} vote)</div>
-                <div class="progress mb-3" style="height: 20px;">
-                <div class="progress-bar bg-danger" role="progressbar" style="width: ${redPercent}%;">${redPercent}%</div>
-                </div>
-
-                <div class="text-start mb-2">Tidak Sah (${invalidVotes} vote)</div>
-                <div class="progress mb-2" style="height: 20px;">
-                <div class="progress-bar bg-secondary" role="progressbar" style="width: ${invalidPercent}%;">${invalidPercent}%</div>
-                </div>
-            `;
-
-            $('#verificationResultContent').html(resultHtml);
-
-            // Tampilkan Modal
-            verificationResultModalInstance = new bootstrap.Modal(document.getElementById('verificationResultModal'));
-            verificationResultModalInstance.show();
-
-            // Clear timer sebelumnya kalau ada
-            if (verificationResultTimer) {
-                clearTimeout(verificationResultTimer);
-            }
-
-            // Modal auto-close setelah 5 detik
-            verificationResultTimer = setTimeout(() => {
-                verificationResultModalInstance.hide();
-            }, 5000);
-        });
-
-
-    
-    function resetScoreBackground() {
-        $("#blue-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#4E25FF"
-        });
-        $(".blue .additional-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#4E25FF"
-        });
-    
-        $("#red-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#D32F2F"
-        });
-        $(".red .additional-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#D32F2F"
-        });
+    function slugify(text) {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')      // Ganti spasi jadi -
+            .replace(/[^\w\-]+/g, '')  // Hapus karakter non-word
+            .replace(/\-\-+/g, '-')    // Ganti -- jadi -
+            .replace(/^-+/, '')        // Hapus - di awal
+            .replace(/-+$/, '');       // Hapus - di akhir
     }
-        
-        
-    
-    function resetRefereeActions() {
-        $(".item, .drop").removeClass('active');
-    }
-    
 
-    function updateJudgeIcon(corner, judgeNumber, type) {
-        const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
-    
-        console.log(`🛠️ Try update #judge-${corner}-${judgeNumber}`);
-    
-        if (!judgeEl.length) {
-            console.warn("❌ Element tidak ditemukan:", `#judge-${corner}-${judgeNumber}`);
+   
+   window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
+    .listen('.SeniTimerStarted', (e) => {
+        console.log("🔥 Timer started raw:", e);
+        console.log("⏱️ e.start_time:", e.start_time);
+
+        const startTimestamp = new Date(e.start_time).getTime();
+
+        if (isNaN(startTimestamp)) {
+            console.error("❌ Invalid start_time:", e.start_time);
             return;
         }
 
-        // Tambah class active
-        judgeEl.addClass("active");
+        startCountUp(startTimestamp, e.duration || 180);
+    });
+
     
-        const originalText = `J${judgeNumber}`;
+    window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
+        .listen('.SeniTimerUpdated', (data) => {
+            console.log("🕒 Event SeniTimerUpdated diterima:", data);
+
+            if (data.status === 'ongoing') {
+                clearInterval(countdownInterval); // biar gak dobel interval
+                $(".wrong-move").prop("disabled", false);
+
+                const startTimestamp = Date.parse(data.start_time);
+                if (!isNaN(startTimestamp)) {
+                    console.log("▶️ Melanjutkan timer dari:", data.start_time);
+                    startCountUp(startTimestamp, data.duration || 180);
+                } else {
+                    console.warn("❌ start_time tidak valid saat resume:", data.start_time);
+                }
+            }
+
+            else if (data.status === 'paused') {
+                clearInterval(countdownInterval);
+                $(".wrong-move").prop("disabled", true);
+                console.log("⏸️ Timer dipause");
+            }
+
+            else if (data.status === 'finished') {
+                clearInterval(countdownInterval);
+                $(".wrong-move").prop("disabled", true);
+                $("#timer").text("SELESAI");
+                console.log("🏁 Timer selesai");
+            }
+
+            else if (data.status === 'not_started') {
+                clearInterval(countdownInterval);
+                $(".wrong-move").prop("disabled", true);
+                $("#timer").text("00:00");
+
+                totalDeduction = 0;
+                currentScore = 9.75;
+                $("#starting-score").text("9.75");
+                $("#deduction").text("-0.00");
+
+                console.log("🔁 Timer direset");
+            }
+        });
+
+
+
+     window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
+        .listen('.SeniTimerFinished', function (data) {
+            console.log("🏁 Match selesai:", data);
+
+            $(".wrong-move").prop("disabled", true);
+
+            let modalInstance = null;
+
+            if (data.status === 'finished' && data.disqualified === true) {
+                const disqualifiedModalEl = document.getElementById('disqualifiedModal');
+                if (disqualifiedModalEl) {
+                    modalInstance = new bootstrap.Modal(disqualifiedModalEl);
+                    modalInstance.show();
+                }
+            } else {
+                const finishedModalEl = document.getElementById('finishedModal');
+                if (finishedModalEl) {
+                    modalInstance = new bootstrap.Modal(finishedModalEl);
+                    modalInstance.show();
+                }
+            }
+
+            // ✅ Tutup semua modal setelah 2 detik
+            if (modalInstance) {
+                setTimeout(() => {
+                    modalInstance.hide();
+                }, 2000);
+            }
+        });
+
+
     
-        if (type === 'kick') {
-            judgeEl.html('<img src="/images/kick-icon.png" style="height:40px;">');
-        } else if (type === 'punch') {
-            judgeEl.html('<img src="/images/punch-icon.png" style="height:40px;">');
-        } else {
-            console.warn("❌ Unknown type:", type);
-        }
     
-        setTimeout(() => {
-            judgeEl.text(originalText);
-            judgeEl.removeClass("active");
-        }, 2000);
-    }
+    
+    
+
+   
+
+
+    
+    
+        
+        
+
+
+   
     
     
     
     
 
     // ✅ Countdown Timer Handler
-    function startCountdown(startTime, duration = 180) {
+    function startCountUp(startTime, maxDuration = 180) {
         clearInterval(countdownInterval);
 
         countdownInterval = setInterval(() => {
             const now = Date.now();
             const elapsed = Math.floor((now - startTime) / 1000);
-            const remaining = duration - elapsed;
 
-            if (remaining <= 0) {
+            if (elapsed >= maxDuration) {
                 clearInterval(countdownInterval);
-                $(".timer").text("00:00");
+                $("#timer").text(formatTime(maxDuration));
             } else {
-                $(".timer").text(formatTime(remaining));
+                $("#timer").text(formatTime(elapsed));
             }
+
+            console.log("⏱️ Updating:", formatTime(elapsed));
+            console.log("⛳ Element found:", $("#timer").length);
         }, 1000);
     }
+
 
     // ✅ Format Time Helper
     function formatTime(seconds) {
@@ -450,31 +200,188 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
-        $.get(`/api/local-matches/${matchId}`, function (data) {
+         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
             $("#tournament-name").text(data.tournament_name);
-            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
-            $("#class-name").text(data.class_name);
-            $("#blue-name").html(`
-                ${data.blue.name}<br>
-                <small>${data.blue.contingent}</small>
-            `);
-            $("#red-name").html(`
-                ${data.red.name}<br>
-                <small>${data.red.contingent}</small>
-            `);
+          
+            $("#match-code").text(data.arena_name + " Partai " + data.match_order);
+            $("#class-name").text(data.category);
+            $("#age-category").text(data.age_category);
+            $("#gender").text(data.category + "  " + (data.gender === 'male' ? 'PUTRA' : 'PUTRI'));
 
-            const maxRound = Math.max(...data.rounds.map(r => r.round_number));
-            const roundLabels = getRoundLabels(maxRound);
+            $("#contingent-name").text(data.contingent);
 
-            $("#stage").text(roundLabels[data.rounds[0].round_number] || `Babak ${data.rounds[0].round_number}`);
-    
-           
-            const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
-            roundId = activeRound?.id || null;
-            $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`);
+
+
+            // 🔥 Reset semua dulu
+            $("#participant-1").text('-').hide();
+            $("#participant-2").text('-').hide();
+            $("#participant-3").text('-').hide();
+
+            // ✅ Tampilkan peserta sesuai match_type
+            if (data.match_type === 'seni_tunggal') {
+                $("#participant-1").text(data.team_members[0] || '-').show();
+            } else if (data.match_type === 'seni_ganda') {
+                $("#participant-1").text(data.team_members[0] || '-').show();
+                $("#participant-2").text(data.team_members[1] || '-').show();
+            } else if (data.match_type === 'seni_regu') {
+                $("#participant-1").text(data.team_members[0] || '-').show();
+                $("#participant-2").text(data.team_members[1] || '-').show();
+                $("#participant-3").text(data.team_members[2] || '-').show();
+            }
             $(".loader-bar").hide();
         });
     }
+
+    function renderSeniJudges(juriCount) {
+        const $container = $("#judges-preview");
+        const default_score = 9.75;
+        $container.empty(); // Kosongkan dulu
+
+        for (let i = 1; i <= juriCount; i++) {
+            const judgeHtml = `
+                <div class="flex-fill judge-score-detail">
+                    <div class="judge-title fw-bold">J${i}</div>
+                    <div class="judge-score fw-bold" id="judge-score-${i}">${default_score.toFixed(2)}</div></div>
+                </div>
+            `;
+            $container.append(judgeHtml);
+        }
+    }
+
+
+    function fetchJuriCount(tournament, arena) {
+        $.get(`${url}/api/seni/juri-count?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}`, function (data) {
+            renderSeniJudges(data.count);
+        }).fail(function () {
+            console.error("❌ Gagal fetch jumlah juri");
+            $(".seni-judges").html('<div class="text-danger">Gagal memuat juri</div>');
+        });
+    }
+
+    function pollSeniJudgeScores(matchId, tournament, arena) {
+        setInterval(() => {
+            $.get(`${url}/api/seni/judges-score?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}&match_id=${matchId}`, function (data) {
+                const judges = data.judges || [];
+                const totalPenalty = parseFloat(data.penalty ?? 0);
+                const $container = $("#judges-preview");
+
+                // Urutkan berdasarkan skor kecil ke besar
+                judges.sort((a, b) => a.score - b.score);
+                const scores = [];
+
+                $container.empty();
+
+                judges.forEach(j => {
+                    scores.push(j.score);
+
+                    const html = `
+                        <div class="flex-fill judge-score-detail">
+                            <div class="judge-title fw-bold">J${j.juri_number}</div>
+                            <div class="judge-score fw-bold">${j.score.toFixed(2)}</div>
+                        </div>
+                    `;
+                    $container.append(html);
+                });
+
+                const $allCards = $container.find(".judge-score-detail");
+                let median = 0;
+
+                if (scores.length > 0) {
+                    if (scores.length % 2 === 0) {
+                        // Genap → rata-rata 2 tengah
+                        const mid1 = (scores.length / 2) - 1;
+                        const mid2 = (scores.length / 2);
+                        $allCards.eq(mid1).addClass("median");
+                        $allCards.eq(mid2).addClass("median");
+                        median = (scores[mid1] + scores[mid2]) / 2;
+                    } else {
+                        // Ganjil → ambil tengah
+                        const mid = Math.floor(scores.length / 2);
+                        $allCards.eq(mid).addClass("median");
+                        median = scores[mid];
+                    }
+                }
+
+                $("#median-score").text(median.toFixed(2));
+                $("#penalty").text("-" + totalPenalty.toFixed(2));
+
+                const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const variance = scores.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / scores.length;
+                const stddev = Math.sqrt(variance);
+                $("#standar-deviasi").text(stddev.toFixed(2));
+
+                const totalScore = mean - totalPenalty;
+                $("#total-score").text(totalScore.toFixed(2));
+            });
+        }, 1500);
+    }
+
+    function initSeniJudgeRealtime(matchId, tournament, arena) {
+        const tournamentSlug = slugify(tournament);
+        const arenaSlug = slugify(arena);
+
+        window.Echo.channel(`seni-score.${tournamentSlug}.${arenaSlug}`)
+            .listen('.SeniScoreUpdated', function (data) {
+                console.log("🎯 Arena UI received update:", data);
+
+                const judges = data.judges || [];
+                const totalPenalty = parseFloat(data.penalty ?? 0);
+                const $container = $("#judges-preview");
+
+                judges.sort((a, b) => a.score - b.score);
+                const scores = [];
+
+                $container.empty();
+
+                judges.forEach(j => {
+                    scores.push(j.score);
+                    const html = `
+                        <div class="flex-fill judge-score-detail">
+                            <div class="judge-title fw-bold">J${j.juri_number}</div>
+                            <div class="judge-score fw-bold">${j.score.toFixed(2)}</div>
+                        </div>
+                    `;
+                    $container.append(html);
+                });
+
+                const $allCards = $container.find(".judge-score-detail");
+                let median = 0;
+
+                if (scores.length > 0) {
+                    if (scores.length % 2 === 0) {
+                        const mid1 = (scores.length / 2) - 1;
+                        const mid2 = (scores.length / 2);
+                        $allCards.eq(mid1).addClass("median");
+                        $allCards.eq(mid2).addClass("median");
+                        median = (scores[mid1] + scores[mid2]) / 2;
+                    } else {
+                        const mid = Math.floor(scores.length / 2);
+                        $allCards.eq(mid).addClass("median");
+                        median = scores[mid];
+                    }
+                }
+
+                $("#median-score").text(median.toFixed(2));
+                $("#penalty").text("-" + totalPenalty.toFixed(2));
+
+                const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const variance = scores.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / scores.length;
+                const stddev = Math.sqrt(variance);
+
+                $("#standar-deviasi").text(stddev.toFixed(2));
+                const totalScore = mean - totalPenalty;
+                $("#total-score").text(totalScore.toFixed(2));
+            });
+    }
+
+
+
+
+
+
+
+
+    
 
     
 });

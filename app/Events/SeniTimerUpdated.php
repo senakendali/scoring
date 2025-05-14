@@ -19,6 +19,7 @@ class SeniTimerUpdated implements ShouldBroadcast
     public $tournament_name;
     public $status;
     public $elapsed;
+    public $start_time;
 
     public function __construct(LocalSeniMatch $match)
     {
@@ -27,16 +28,17 @@ class SeniTimerUpdated implements ShouldBroadcast
         $this->tournament_name = $match->tournament_name;
         $this->status = $match->status;
 
-        // Hitung elapsed time dari start ke pause/now
         $start = $match->start_time ? Carbon::parse($match->start_time) : null;
         $pauseOrNow = $match->pause_time ? Carbon::parse($match->pause_time) : now();
 
         $this->elapsed = $start ? $start->diffInSeconds($pauseOrNow) : 0;
+        $this->start_time = $match->start_time;
 
         \Log::info('📡 Event SeniTimerUpdated DIKIRIM', [
             'match_id' => $this->match_id,
             'status' => $this->status,
             'elapsed' => $this->elapsed,
+            'start_time' => $this->start_time,
         ]);
     }
 
@@ -60,6 +62,7 @@ class SeniTimerUpdated implements ShouldBroadcast
             'tournament_name' => $this->tournament_name,
             'status' => $this->status,
             'elapsed' => $this->elapsed,
+            'start_time' => optional($this->start_time)->toIso8601String(), // ✅ penting
         ];
     }
 }

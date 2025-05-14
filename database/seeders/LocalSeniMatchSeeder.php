@@ -32,7 +32,7 @@ class LocalSeniMatchSeeder extends Seeder
                     'remote_team_member_2' => null,
                     'remote_team_member_3' => null,
 
-                    'tournament_name' => 'Kejuaraan Pencak Silat Nasional 2025',
+                    'tournament_name' => 'Indonesia National Championships 2025',
                     'arena_name' => 'Arena 1',
                     'match_date' => $this->getRandomDate(),
                     'match_time' => sprintf('09:%02d:00', rand(0, 59)),
@@ -68,7 +68,7 @@ class LocalSeniMatchSeeder extends Seeder
                     'remote_team_member_2' => 201 + $order,
                     'remote_team_member_3' => null,
 
-                    'tournament_name' => 'Kejuaraan Pencak Silat Nasional 2025',
+                    'tournament_name' => 'Indonesia National Championships 2025',
                     'arena_name' => 'Arena 2',
                     'match_date' => $this->getRandomDate(),
                     'match_time' => sprintf('11:%02d:00', rand(0, 59)),
@@ -104,7 +104,7 @@ class LocalSeniMatchSeeder extends Seeder
                     'remote_team_member_2' => 301 + $order,
                     'remote_team_member_3' => 302 + $order,
 
-                    'tournament_name' => 'Kejuaraan Pencak Silat Nasional 2025',
+                    'tournament_name' => 'Indonesia National Championships 2025',
                     'arena_name' => 'Arena 3',
                     'match_date' => $this->getRandomDate(),
                     'match_time' => sprintf('13:%02d:00', rand(0, 59)),

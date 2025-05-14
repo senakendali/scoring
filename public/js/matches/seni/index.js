@@ -80,7 +80,7 @@ $(document).ready(function () {
                                     <th>Match</th>
                                     <th>Kontingen</th>
                                     <th colspan="3">Peserta</th>
-                                    ${isOperator ? '<th>Action</th>' : ''}
+                                    ${isOperator ? '<th>Action</th>' : '<th></th>'}
                                 </tr>
 
                             </thead>

@@ -32,7 +32,11 @@ Route::prefix('matches')->group(function () {
     Route::get('/seni', [MatchController::class, 'seni']);
     Route::get('/seni/{match_id}', [MatchController::class, 'showSeni']);
     Route::get('/seni/judges/{match_id}', [MatchController::class, 'displaySeniJudge']);
-    Route::get('/seni/display-arena/{match_id}', [MatchController::class, 'displaySeniJudge']);
+    Route::get('/seni/display-arena/{match_id}', [MatchController::class, 'displaySeniArena']);
+    Route::get('/seni/referees/{match_id}', [MatchController::class, 'displaySeniReferee']);
+    Route::get('/seni/{match_id}/recap', [MatchController::class, 'displaySeniRecapitulation']);
+   
+
 
     // Tanding
     Route::get('/tanding', [MatchController::class, 'index']);
@@ -53,6 +57,9 @@ Route::prefix('api')->group(function () {
     Route::patch('/local-seni-matches/{id}/finish', [SeniMatchSetupController::class, 'finish']);
 
     //Route::get('/local-match-rounds/{id}', [LocalMatchSeniController::class, 'show']);
+    Route::get('/seni/juri-count', [SeniMatchSetupController::class, 'getJuriCount']);
+    Route::get('/seni/judges-score', [SeniMatchSetupController::class, 'getJudgeScores']);
+
     Route::post('/matches/seni/{id}/start', [SeniMatchSetupController::class, 'startPerformance']);
     Route::post('/matches/seni/{id}/pause', [SeniMatchSetupController::class, 'pause']);
     Route::post('/matches/seni/{id}/resume', [SeniMatchSetupController::class, 'resume']);
@@ -60,6 +67,9 @@ Route::prefix('api')->group(function () {
     Route::post('/local-seni-matches/{id}/next', [SeniMatchSetupController::class, 'changeToNextMatch']);
 
     Route::post('/seni-scores', [LocalSeniScoreController::class, 'store']);
+    // routes/api.php
+    Route::post('/seni-penalties', [LocalSeniScoreController::class, 'storePenalties']);
+
     
 
     Route::get('/bracket', [LocalMatchController::class, 'getBracket']);

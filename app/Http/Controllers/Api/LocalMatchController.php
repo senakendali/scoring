@@ -834,18 +834,34 @@ class LocalMatchController extends Controller
     }
 
     // Route: GET /api/local-matches/arenas?tournament=Kejuaraan Nasional 2024
-    public function getArenas(Request $request)
+   public function getArenas(Request $request)
     {
         $tournament = $request->query('tournament');
+        $type = $request->query('type'); // 'tanding' atau 'seni'
 
-        $arenas = \DB::table('local_matches')
-            ->where('tournament_name', $tournament)
-            ->select('arena_name')
-            ->distinct()
-            ->pluck('arena_name');
+        if (!$tournament || !$type) {
+            return response()->json([], 400);
+        }
+
+        if ($type === 'tanding') {
+            $arenas = \DB::table('local_matches')
+                ->where('tournament_name', $tournament)
+                ->select('arena_name')
+                ->distinct()
+                ->pluck('arena_name');
+        } elseif ($type === 'seni') {
+            $arenas = \DB::table('local_seni_matches')
+                ->where('tournament_name', $tournament)
+                ->select('arena_name')
+                ->distinct()
+                ->pluck('arena_name');
+        } else {
+            return response()->json([], 400);
+        }
 
         return response()->json($arenas);
     }
+
 
     public function requestVerification(Request $request)
     {

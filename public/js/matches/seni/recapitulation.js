@@ -1,15 +1,106 @@
 $(document).ready(function () {
     var url = window.location.origin;
     var matchId = $("#match-id").val();
+    
+    const arena = $("#session-arena").val();
+    const tournament = $("#session-tournament").val();
+
+    const tournamentSlug = slugify(tournament);
+    const arenaSlug = slugify(arena);
 
     console.log("🟢 Recapitulation JS Ready, Match ID:", matchId);  
 
     fetchMatchData();
-    loadRekapitulasi(matchId);
+    //loadRekapitulasi(matchId);
+    updateRekapitulasiTable(matchId, tournament, arena);
+    /*setInterval(() => {
+        updateRekapitulasiTable(matchId, tournament, arena);
+    }, 1500);*/
 
-    setInterval(function () {
-        loadRekapitulasi(matchId);
-    }, 2000);
+    function slugify(text) {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')      // Ganti spasi jadi -
+            .replace(/[^\w\-]+/g, '')  // Hapus karakter non-word
+            .replace(/\-\-+/g, '-')    // Ganti -- jadi -
+            .replace(/^-+/, '')        // Hapus - di awal
+            .replace(/-+$/, '');       // Hapus - di akhir
+    }
+
+    const host = window.location.hostname;
+    const pusher = new Pusher('reverb', {
+        wsHost: host,
+        wsPort: 6001,
+        forceTLS: false,
+        encrypted: false,
+        enabledTransports: ['ws'],
+        disableStats: true,
+    });
+
+    const channel = pusher.subscribe(`match.${matchId}`);
+    const globalChannel = pusher.subscribe('global.seni.match');
+
+    // ✅ Global Match Change
+    globalChannel.bind('seni.match.changed', function (data) {
+        console.log("🎯 Match changed:", data);
+        window.location.href = `/matches/seni/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu
+    });
+
+    window.Echo.channel(`seni-score.${tournamentSlug}.${arenaSlug}`)
+    .listen('.SeniScoreUpdated', function (data) {
+        console.log("🔥 Real-time score updated:", data);
+
+        // Langsung pakai data dari event
+        updateRekapitulasiTableFromData(data);
+    });
+
+    function updateRekapitulasiTableFromData(data) {
+        const judges = data.judges || [];
+        const totalPenalty = parseFloat(data.penalty ?? 0);
+        const penalties = data.penalties || [];
+
+        updatePenaltyRecapTable(penalties);
+
+        judges.sort((a, b) => a.score - b.score);
+        const scores = judges.map(j => j.score);
+
+        const $jurisHeader = $(".mytable thead tr").eq(1).find("th");
+        const $jurisRow = $(".mytable tbody tr").first().find("td");
+
+        $jurisHeader.removeClass("median-cell");
+        $jurisRow.removeClass("median-cell");
+
+        judges.forEach((j, index) => {
+            $jurisHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
+            $jurisRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
+        });
+
+        let median = 0;
+        if (scores.length % 2 === 0) {
+            const mid1 = (scores.length / 2) - 1;
+            const mid2 = (scores.length / 2);
+            $jurisRow.eq(mid1).addClass("median-cell");
+            $jurisRow.eq(mid2).addClass("median-cell");
+            $jurisHeader.eq(mid1).addClass("median-cell");
+            $jurisHeader.eq(mid2).addClass("median-cell");
+            median = (scores[mid1] + scores[mid2]) / 2;
+        } else {
+            const mid = Math.floor(scores.length / 2);
+            $jurisRow.eq(mid).addClass("median-cell");
+            $jurisHeader.eq(mid).addClass("median-cell");
+            median = scores[mid];
+        }
+
+        const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
+        const stddev = Math.sqrt(variance);
+
+        $("#median").text(median.toFixed(2)).addClass("text-center");
+        $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
+        $("#standar-deviasi").text(stddev.toFixed(2)).addClass("text-center");
+        $("#final-score").text((mean - totalPenalty).toFixed(2)).addClass("text-center");
+    }
+
+
 
     // 🔥 Handle hide/show info saat scroll
     let lastScrollTop = 0;
@@ -31,122 +122,132 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
-        $.get(`/api/local-matches/${matchId}`, function (data) {
+         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
             $("#tournament-name").text(data.tournament_name);
-            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
-            $("#class-name").text(data.class_name);
-            $("#blue-name").text(data.blue.name);
-            $("#red-name").text(data.red.name);
-            $("#blue-score").text(data.blue.score);
-            $("#red-score").text(data.red.score);
+          
+            $("#match-code").text(data.arena_name + " Partai " + data.match_order);
+            $("#class-name").text(data.category);
+            $("#age-category").text(data.age_category);
+            $("#gender").text(data.category + "  " + (data.gender === 'male' ? 'PUTRA' : 'PUTRI'));
 
-            const maxRound = Math.max(...data.rounds.map(r => r.round_number));
-            const roundLabels = getRoundLabels(maxRound);
+            $("#contingent-name").text(data.contingent);
 
-            $("#stage").text(roundLabels[data.rounds[0].round_number] || `Babak ${data.rounds[0].round_number}`);
-    
 
-            const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
-            roundId = activeRound?.id || null;
-           
-           
-        });
-    }
 
-    function loadRekapitulasi(matchId) {
-        $.get(`/api/local-matches/${matchId}/recap`, function (data) {
-            $('#match-tables').html('');
-            data.forEach((round, index) => {
-                let html = `
-                    <table class="table table-striped mb-5">
-                        <colgroup>
-                            <col style="width: 22.5%;">
-                            <col style="width: 12.5%;">
-                            <col style="width: 30%;">
-                            <col style="width: 12.5%;">
-                            <col style="width: 22.5%;">
-                        </colgroup>
-                        <thead>
-                            <tr><th colspan="5" class="table-title text-dark">Rekapitulasi Ronde ${round.round_number}</th></tr>
-                            <tr>
-                                <th class="blue text-center">Nilai</th>
-                                <th class="blue text-center">Total</th>
-                                <th class="text-center bg-secondary">Juri</th>
-                                <th class="red text-center">Total</th>
-                                <th class="red text-center">Nilai</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-    
-                // Baris Juri
-                for (let i = 1; i <= 3; i++) {
-                    const blue = round.judges.find(j => j.judge === `Juri ${i}` && j.corner === 'blue');
-                    const red = round.judges.find(j => j.judge === `Juri ${i}` && j.corner === 'red');
-    
-                    html += `<tr>
-                        <td class="blue text-center">${renderPoints(blue?.points)}</td>
-                        <td class="blue text-center">${blue?.total || 0}</td>
-                        <td class="text-center">Juri ${i}</td>
-                        <td class="red text-center">${red?.total || 0}</td>
-                        <td class="red text-center">${renderPoints(red?.points)}</td>
-                    </tr>`;
-                }
-    
-                // Baris Nilai Sah
-                html += `<tr>
-                    <td class="blue text-center">${renderPoints(round.valid_scores.blue.points, true)}</td>
-                    <td class="blue text-center">${round.valid_scores.blue.total}</td>
-                    <td class="text-center">Nilai Sah</td>
-                    <td class="red text-center">${round.valid_scores.red.total}</td>
-                    <td class="red text-center">${renderPoints(round.valid_scores.red.points, true)}</td>
-                </tr>`;
-    
-                // Baris Jatuhan
-                html += `<tr>
-                    <td class="blue text-center">${round.jatuhan.blue}</td>
-                    <td class="blue text-center">${round.jatuhan.blue}</td>
-                    <td class="text-center">Jatuhan</td>
-                    <td class="red text-center">${round.jatuhan.red}</td>
-                    <td class="red text-center">${round.jatuhan.red}</td>
-                </tr>`;
-    
-                // Baris Hukuman
-                html += `<tr>
-                    <td class="blue text-center">${round.hukuman.blue}</td>
-                    <td class="blue text-center">${round.hukuman.blue}</td>
-                    <td class="text-center">Hukuman</td>
-                    <td class="red text-center">${round.hukuman.red}</td>
-                    <td class="red text-center">${round.hukuman.red}</td>
-                </tr>`;
-    
-                // Baris Nilai Final
-                html += `<tr class="final-row">
-                    <td class="blue text-center">${round.final.blue}</td>
-                    <td class="blue text-center">${round.final.blue}</td>
-                    <td class="text-center">Nilai Final</td>
-                    <td class="red text-center">${round.final.red}</td>
-                    <td class="red text-center">${round.final.red}</td>
-                </tr>`;
-    
-                html += `</tbody></table>`;
-                $('#match-tables').append(html);
-            });
+            // 🔥 Reset semua dulu
+            $("#participant-1").text('-').hide();
+            $("#participant-2").text('-').hide();
+            $("#participant-3").text('-').hide();
+
+            // ✅ Tampilkan peserta sesuai match_type
+            if (data.match_type === 'seni_tunggal') {
+                $("#participant-1").text(data.team_members[0] || '-').show();
+            } else if (data.match_type === 'seni_ganda') {
+                $("#participant-1").text(data.team_members[0] || '-').show();
+                $("#participant-2").text(data.team_members[1] || '-').show();
+            } else if (data.match_type === 'seni_regu') {
+                $("#participant-1").text(data.team_members[0] || '-').show();
+                $("#participant-2").text(data.team_members[1] || '-').show();
+                $("#participant-3").text(data.team_members[2] || '-').show();
+            }
             $(".loader-bar").hide();
         });
     }
+
+    function updatePenaltyRecapTable(penalties) {
+        $("table tbody tr").each(function () {
+            const row = $(this);
+            const reason = row.find("td").eq(0).text().trim();
+
+            // Cari apakah reason ini ada di data penalties
+            const matched = penalties.find(p => p.reason === reason);
+
+            // Update kolom kedua
+            if (matched) {
+                row.find("td").eq(1).text(parseFloat(matched.penalty_value).toFixed(2));
+
+            } else {
+                row.find("td").eq(1).text("-");
+            }
+        });
+    }
+
+
+    
     
     
 
-    function renderPoints(points, isValid = false) {
-        if (!points || points.length === 0) return '-';
-        return points.map(p => {
-            if (isValid) {
-                return `<span class="badge bg-success me-1">${p}</span>`;
+    
+    function updateRekapitulasiTable(matchId, tournament, arena) {
+        
+    
+        $.get(`${url}/api/seni/judges-score?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}&match_id=${matchId}`, function (data) {
+            const judges = data.judges || [];
+            const totalPenalty = parseFloat(data.penalty ?? 0);
+
+            console.log("🧠 Judges:", data.judges);
+
+            const penalties = data.penalties || [];
+            updatePenaltyRecapTable(penalties);
+
+            // Urutkan berdasarkan skor kecil → besar
+            judges.sort((a, b) => a.score - b.score);
+            const scores = judges.map(j => j.score);
+
+            // Ambil elemen header dan isi baris
+            const $jurisHeader = $(".mytable thead tr").eq(1).find("th");
+            const $jurisRow = $(".mytable tbody tr").first().find("td");
+
+            // Reset tampilan lama
+            $jurisHeader.removeClass("median-cell");
+            $jurisRow.removeClass("median-cell");
+
+            // Render nomor juri (header) & skor (isi)
+            judges.forEach((j, index) => {
+                $jurisHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
+                $jurisRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
+            });
+
+            // Hitung median
+            let median = 0;
+            if (scores.length % 2 === 0) {
+                const mid1 = (scores.length / 2) - 1;
+                const mid2 = (scores.length / 2);
+                $jurisRow.eq(mid1).addClass("median-cell");
+                $jurisRow.eq(mid2).addClass("median-cell");
+                $jurisHeader.eq(mid1).addClass("median-cell");
+                $jurisHeader.eq(mid2).addClass("median-cell");
+                median = (scores[mid1] + scores[mid2]) / 2;
             } else {
-                return `<span class="badge bg-secondary me-1">${p}</span>`;
+                const mid = Math.floor(scores.length / 2);
+                $jurisRow.eq(mid).addClass("median-cell");
+                $jurisHeader.eq(mid).addClass("median-cell");
+                median = scores[mid];
             }
-        }).join('');
+
+            // Hitung standar deviasi
+            const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
+            const stddev = Math.sqrt(variance);
+
+            // Update ke ringkasan bawah
+            $("#median").text(median.toFixed(2)).addClass("text-center");
+            $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
+            $("#standar-deviasi").text(stddev.toFixed(2)).addClass("text-center");
+
+
+            $("#final-score").text((mean - totalPenalty).toFixed(2)).addClass("text-center");
+
+            const start = new Date(data.start_time);
+            const end = new Date(data.end_time);
+            const durasiDetik = (end - start) / 1000;
+
+
+            $("#time").text(durasiDetik).addClass("text-center");
+        });
     }
+
+
     
     
     

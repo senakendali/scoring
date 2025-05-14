@@ -58,10 +58,10 @@
 
         <div class="match-item">
             <div class="seni-participant-detail">
-                <div id="contingent-name" class="contingent-name item">AA</div>
-                <div id="participant-1" class="participant-1 item">AAAA</div>
-                <div id="participant-2" class="participant-2 item">BBBB</div>
-                <div id="participant-3" class="participant-3 item">CCCC</div>
+                <div id="contingent-name" class="contingent-name item">-</div>
+                <div id="participant-1" class="participant-1 item">-</div>
+                <div id="participant-2" class="participant-2 item">-</div>
+                <div id="participant-3" class="participant-3 item">-</div>
                 
             </div>
         </div>

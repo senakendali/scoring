@@ -1,38 +1,28 @@
-@extends('layouts.app')
+@extends('layouts.seni')
 @section('content')
-<!-- Modal Hasil Verifikasi -->
-<div class="modal fade" id="verificationResultModal" tabindex="-1" aria-labelledby="verificationResultModalLabel" aria-hidden="true">
+<div class="modal fade" id="disqualifiedModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
+    <div class="modal-content bg-danger text-white text-center">
       <div class="modal-header border-0">
-        <h5 class="modal-title" id="verificationResultModalLabel">Hasil Verifikasi</h5>
+        <h5 class="modal-title w-100">Diskualifikasi</h5>
       </div>
-      <div class="modal-body text-center">
-        <div id="verificationResultContent">
-          <!-- Progress bar voting akan muncul di sini -->
-        </div>
+      <div class="modal-body">
+        Peserta telah didiskualifikasi oleh juri. Pertandingan dihentikan.
       </div>
+      
     </div>
   </div>
 </div>
-
-<!-- Modal Menunggu Verifikasi -->
-<div class="modal fade" id="waitingVerificationModal" tabindex="-1" aria-labelledby="waitingVerificationModalLabel" aria-hidden="true">
+<div class="modal fade" id="finishedModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
+    <div class="modal-content bg-success text-white text-center">
       <div class="modal-header border-0">
-        <h5 class="modal-title" id="waitingVerificationModalLabel">Informasi</h5>
+        <h5 class="modal-title w-100">Waktu Habis</h5>
       </div>
-        <div class="modal-body text-center">
-            <p id="waitingVerificationMessage" class="mb-0">
-            Menunggu hasil verifikasi...
-            </p>
-        </div>
-       <!-- Progress Bar Animasi -->
-       <div class="progress" style="height: 10px;">
-          <div id="waitingVerificationProgress" class="progress-bar bg-info progress-bar-striped progress-bar-animated" 
-               role="progressbar" style="width: 0%"></div>
-        </div>
+      <div class="modal-body">
+        Penampilan telah selesai.
+      </div>
+      
     </div>
   </div>
 </div>
@@ -41,126 +31,70 @@
  <div class="fix-match-info" id="tournament-name">-</div>
  <div class="fix-match-detail">
     <div class="detail-item" id="match-code">-</div>
-    <div class="detail-item" id="stage">-</div>
-    <div class="detail-item" id="class-name">-</div>
+    <div class="detail-item" id="age-category">-</div>
+    <div class="detail-item" id="gender">-</div>
 </div>
 <div class="d-flex flex-column" style="height:calc(100vh - 180px);">
     <input type="hidden" id="match-id" value="{{ $match_id }}">
-    <div class="match-header">
-       
-        <!--div class="match-details">
-            <div class="detail-item" id="match-code">-</div>
-            <div class="detail-item" id="stage">-</div>
-            <div class="detail-item" id="class-name">-</div>
-        </div-->
+
+    <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
+    <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
+    <input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">
+    <input type="hidden" id="session-role" value="{{ session('role') }}">
+    <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
+
+     <div class="match-header">
         <div class="match-item">
-            <div class="blue d-flex">
-                <div id="blue-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
-                    -
-                </div>
-                
-            </div>
-            <div id="current-round" class="round d-flex justify-content-center align-items-center roboto-bold">
-                -
-            </div>
-            <div class="red d-flex">
-               
-                <div id="red-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
-                    - 
-                </div>
-            
+            <div class="seni-participant-detail">
+                <div id="contingent-name" class="contingent-name item">-</div>
+                <div id="participant-1" class="participant-1 item">-</div>
+                <div id="participant-2" class="participant-2 item">-</div>
+                <div id="participant-3" class="participant-3 item">-</div>   
             </div>
         </div>
-        
     </div>
 
-    <div class="arena-main-container flex-grow-1 overflow-auto">
+    <div class="arena-main-container d-flex flex-column overflow-auto bg-dark ">
    
-        <div class="display-arena-container">
-            <div class="blue">
-                <div class="additional-score">
-                    <div class="score-items">
-                        <div class="item text-white" data-action="binaan_1" data-corner="blue">
-                            <img src="{{ asset('images/binaan-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="binaan_2" data-corner="blue">
-                            <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="teguran_1" data-corner="blue">
-                            <img src="{{ asset('images/teguran-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="teguran_2" data-corner="blue">
-                            <img src="{{ asset('images/teguran-2.png') }}">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white"  data-action="peringatan_1" data-corner="blue">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                        <div class="item text-white"  data-action="peringatan_2" data-corner="blue">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                    </div>
-                    <div class="judge-container">
-                        <div class="judges blue">
-                            <div id="judge-blue-1" class="judge" data-type="kick" data-corner="blue" data-judge="1">J1</div>
-                            <div id="judge-blue-2" class="judge" data-type="kick" data-corner="blue" data-judge="2">J2</div>
-                            <div id="judge-blue-3" class="judge" data-type="kick" data-corner="blue" data-judge="3">J3</div>
-                        </div>
-
-                       
-                    </div>
+        <div id="judges-preview" class="d-flex seni-judges">
+            
+        </div>
+        <div class="d-flex bg-success seni-judges">
+            <div class="flex-fill judge-score-detail">
+                <div class="judge-title fw-bold">
+                    MEDIAN
                 </div>
-                
-                <div id="blue-score" class="score">
-                    -
+                <div id="median-score" class="judge-score fw-bold">
+                    8.20
                 </div>
             </div>
-            <div class="red">
-                <div id="red-score" class="score">
-                    -
-                </div>  
-                <div class="additional-score">
-                    <div class="score-items">
-                        <div class="item text-white" data-action="binaan_1" data-corner="red">
-                            <img src="{{ asset('images/binaan-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="binaan_2" data-corner="red">
-                            <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="teguran_1" data-corner="red">
-                            <img src="{{ asset('images/teguran-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="teguran_2" data-corner="red">
-                            <img src="{{ asset('images/teguran-2.png') }}">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="peringatan_1" data-corner="red">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="peringatan_2" data-corner="red">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                    </div>
-                    <div class="judge-container">
-                       
-                        <!--div class="point-type">PUKULAN</div-->
-                        <div class="judges red">
-                            <div id="judge-red-1" class="judge" data-type="punch" data-corner="red" data-judge="1">J1</div>
-                            <div id="judge-red-2" class="judge" data-type="punch" data-corner="red" data-judge="2">J2</div>
-                            <div id="judge-red-3" class="judge" data-type="punch" data-corner="red" data-judge="3">J3</div>
-                        </div>
-
-                    </div>
+             <div class="flex-fill judge-score-detail">
+                <div class="judge-title fw-bold">
+                    HUKUMAN
+                </div>
+                <div id="penalty" class="judge-score fw-bold">
+                    0
                 </div>
             </div>
+             <div class="flex-fill judge-score-detail">
+                <div class="judge-title fw-bold">
+                    STANDAR DEVIASI
+                </div>
+                <div id="standar-deviasi" class="judge-score fw-bold">
+                    0
+                </div>
+            </div>  
+        </div>
+        <div class="d-flex bg-dark seni-judges">
+            <div id="total-score" class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
+                8.2000
+            </div>
+            <div class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
+                <div id="timer" class="timer">
+                    00:00
+                </div>
+            </div>
+            
         </div>
         
     </div>

@@ -90,15 +90,15 @@
     <!-- Tombol Scoring -->
     <div class="judges-button d-flex justify-content-between align-items-center">
         <div class="blue-button text-center" style="width: 250px;">
-            <button class="button-item" data-corner="blue" data-type="punch"><img src="{{ asset('images/punch.png') }}" alt="Punch Icon" width="80">PUNCH</button>
-            <button class="button-item" data-corner="blue" data-type="kick"><img src="{{ asset('images/kick.png') }}" alt="Kick Icon" width="80">KICK</button>  
+            <button class="button-item" data-corner="blue" data-type="punch">PUNCH</button>
+            <button class="button-item" data-corner="blue" data-type="kick">KICK</button>  
         </div>
 
        
 
         <div class="red-button text-center" style="width: 250px;">
-            <button class="button-item" data-corner="red" data-type="punch">PUNCH <img src="{{ asset('images/punch.png') }}" alt="Punch Icon" width="80"></button>
-            <button class="button-item" data-corner="red" data-type="kick">KICK <img src="{{ asset('images/kick.png') }}" alt="Kick Icon" width="80"></button>
+            <button class="button-item" data-corner="red" data-type="punch">PUNCH </button>
+            <button class="button-item" data-corner="red" data-type="kick">KICK </button>
         </div>
     </div>
 

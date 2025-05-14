@@ -1,9 +1,8 @@
 $(document).ready(function () {
     const url = window.location.origin;
-    let currentRoundNumber = 1;
 
-    let startingScore = 9.75;
-    const deduction = 0.50;
+    let startingScore = 9.90;
+    const deduction = 0.01;
 
     let matchId = parseInt($("#match-id").val());
     let roundId = null;
@@ -11,8 +10,7 @@ $(document).ready(function () {
 
     let totalDeduction = 0;
 
-    const arena = $("#session-arena").val();
-    const tournament = $("#session-tournament").val();
+    
 
 
     $.ajaxSetup({
@@ -66,8 +64,11 @@ $(document).ready(function () {
             .replace(/-+$/, '');       // Hapus - di akhir
     }
 
-    const tournamentSlug = slugify("Kejuaraan Pencak Silat Nasional 2025");
-    const arenaSlug = slugify("Arena 1");
+    const arena = $("#session-arena").val();
+    const tournament = $("#session-tournament").val();
+
+    const tournamentSlug = slugify(tournament);
+    const arenaSlug = slugify(arena);
 
     console.log("🔍 Subscribing to:", `seni-timer.${tournamentSlug}.${arenaSlug}`);
 
@@ -104,7 +105,7 @@ $(document).ready(function () {
                 currentScore = 9.75;
 
                 // ✅ Update UI
-                $("#starting-score").text("9.75");
+                $("#starting-score").text("9.90");
                 $("#deduction").text("-0.00");
                 
                 $(".wrong-move").prop("disabled", true); // matikan tombol wrong move
@@ -214,7 +215,7 @@ $(document).ready(function () {
            $("#gender").text(data.category + "  " + (data.gender === 'male' ? 'PUTRA' : 'PUTRI'));
 
             $("#contingent-name").text(data.contingent);
-
+            
            
 
             // 🔥 Reset semua dulu

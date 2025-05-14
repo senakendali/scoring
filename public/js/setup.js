@@ -46,14 +46,19 @@ $(document).ready(function () {
         });
 
     // Ambil arena berdasarkan tournament
-    $("#tournament_name").on("change", function () {
-        const tournament = $(this).val();
+    $("#tournament_name, #match_type").on("change", function () {
+        const tournament = $("#tournament_name").val();
+        const matchType = $("#match_type").val(); // 'tanding' atau 'seni'
 
-        fetch(`/api/local-matches/arenas?tournament=${encodeURIComponent(tournament)}`)
+        // Jangan fetch kalau belum pilih keduanya
+        if (!tournament || !matchType) return;
+
+        fetch(`/api/local-matches/arenas?tournament=${encodeURIComponent(tournament)}&type=${matchType}`)
             .then(res => res.json())
             .then(arenas => {
                 const arenaSelect = document.getElementById("arena_name");
                 arenaSelect.innerHTML = '<option value="">-- Pilih Arena --</option>';
+
                 arenas.forEach(arena => {
                     const opt = document.createElement("option");
                     opt.value = arena;
@@ -62,6 +67,7 @@ $(document).ready(function () {
                 });
             });
     });
+
 
     function shouldFetchJuri() {
         return $("#role").val() === "juri"

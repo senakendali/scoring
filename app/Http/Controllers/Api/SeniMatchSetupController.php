@@ -12,6 +12,7 @@ use App\Events\SeniActiveMatchChanged;
 use App\Models\LocalSeniMatch;
 use App\Models\LocalSeniScore;
 use App\Models\LocalSeniPenalties;
+use App\Models\MatchPersonnelAssignment;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -71,13 +72,19 @@ class SeniMatchSetupController extends Controller
         $match->status = 'ongoing';
         $match->duration = $duration;
         $match->save();
+        
+        // ✅ PAKSA AMBIL ULANG agar $match->start_time ke-load dengan benar
+        $fresh = \App\Models\LocalSeniMatch::find($match->id);
 
-        broadcast(new SeniTimerStarted(
-            $match->id,
-            $match->arena_name,
-            $match->tournament_name,
-            $duration
-        ));
+        // ✅ LOG DEBUG
+        \Log::info("📦 FRESH MATCH BEFORE BROADCAST", [
+            'id' => $fresh->id,
+            'start_time' => $fresh->start_time,
+            'class' => get_class($fresh->start_time),
+        ]);
+
+        broadcast(new \App\Events\SeniTimerStarted($fresh));
+
 
         return response()->json([
             'message' => 'Penampilan dimulai.',
@@ -106,34 +113,37 @@ class SeniMatchSetupController extends Controller
 
    
 
-public function resume($id)
-{
-    $match = LocalSeniMatch::findOrFail($id);
+    public function resume($id)
+    {
+        $match = LocalSeniMatch::findOrFail($id);
 
-    if ($match->status !== 'paused') {
-        return response()->json(['message' => 'Pertandingan tidak dalam keadaan pause.'], 400);
+        if ($match->status !== 'paused') {
+            return response()->json(['message' => 'Pertandingan tidak dalam keadaan pause.'], 400);
+        }
+
+        // ✅ Convert start_time dan pause_time ke Carbon
+        $start = $match->start_time ? Carbon::parse($match->start_time) : null;
+        $pause = $match->pause_time ? Carbon::parse($match->pause_time) : null;
+
+        $elapsed = $start && $pause ? $start->diffInSeconds($pause) : 0;
+
+        // ⏱️ Hitung ulang start_time berdasarkan waktu sekarang
+        $match->start_time = now()->subSeconds($elapsed);
+        $match->pause_time = null;
+        $match->status = 'ongoing';
+        $match->save();
+
+        $match->refresh(); // ⛳ Refresh model untuk pastikan data terupdate
+
+        broadcast(new SeniTimerUpdated($match))->toOthers(); // ✅ kirim yang fresh
+
+        return response()->json([
+            'message' => 'Pertandingan dilanjutkan.',
+            'start_time' => $match->start_time->toIso8601String(), // ✅ kirim dalam format ISO
+            'elapsed' => $elapsed,
+            'now' => now()->toIso8601String(),
+        ]);
     }
-
-    // ✅ Convert start_time dan pause_time ke Carbon
-    $start = $match->start_time ? Carbon::parse($match->start_time) : null;
-    $pause = $match->pause_time ? Carbon::parse($match->pause_time) : null;
-
-    $elapsed = $start && $pause ? $start->diffInSeconds($pause) : 0;
-
-    $match->start_time = now()->subSeconds($elapsed); // hitung ulang start baru
-    $match->pause_time = null;
-    $match->status = 'ongoing';
-    $match->save();
-
-    broadcast(new SeniTimerUpdated($match));
-
-    return response()->json([
-        'message' => 'Pertandingan dilanjutkan.',
-        'start_time' => $match->start_time,
-        'elapsed' => $elapsed,
-        'now' => now(),
-    ]);
-}
 
 
     public function reset($id)
@@ -164,7 +174,7 @@ public function resume($id)
         ]);
     }
 
-   public function finish($id)
+   public function finish_($id)
     {
         $match = \App\Models\LocalSeniMatch::findOrFail($id);
 
@@ -206,6 +216,53 @@ public function resume($id)
         ]);
     }
 
+    public function finish($id)
+    {
+        $match = \App\Models\LocalSeniMatch::findOrFail($id);
+
+        if ($match->status === 'finished') {
+            return response()->json(['message' => 'Pertandingan sudah selesai.'], 400);
+        }
+
+        $match->status = 'finished';
+        $match->end_time = now();
+
+        $startingScore = 9.75;
+
+        // Ambil semua skor juri untuk match ini
+        $deductions = \App\Models\LocalSeniScore::where('local_match_id', $match->id)->get();
+
+        // Hitung final score per juri: 9.75 - total_deduction (tanpa round)
+        $finalScores = $deductions
+            ->groupBy('judge_number')
+            ->map(function ($items) use ($startingScore) {
+                $totalDeduction = $items->sum('deduction');
+                return $startingScore - $totalDeduction;
+            })
+            ->values(); // buang key supaya .avg() konsisten
+
+        if ($finalScores->count() > 0) {
+            // Ambil total penalty umum
+            $totalPenalty = \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
+
+            // Hitung rata-rata nilai juri lalu kurangi penalty
+            $rawAverage = $finalScores->avg();
+            $match->final_score = round($rawAverage - $totalPenalty, 2);
+        }
+
+        $match->save();
+
+        // Broadcast event selesai
+        broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();
+
+        return response()->json([
+            'message' => 'Pertandingan selesai.',
+            'final_score' => $match->final_score,
+        ]);
+    }
+
+
+
 
     public function changeToNextMatch($currentId)
     {
@@ -240,6 +297,73 @@ public function resume($id)
             'message' => 'No next match available'
         ], 404);
     }
+
+    // app/Http/Controllers/Api/SeniMatchController.php
+    public function getJuriCount(Request $request)
+    {
+        $request->validate([
+            'tournament' => 'required|string',
+            'arena' => 'required|string',
+        ]);
+
+        $count = MatchPersonnelAssignment::where('tournament_name', $request->tournament)
+            ->where('arena_name', $request->arena)
+            ->where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    public function getJudgeScores(Request $request)
+    {
+        $request->validate([
+            'match_id' => 'required|integer',
+        ]);
+
+        $matchId = $request->match_id;
+
+        $juris = MatchPersonnelAssignment::where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->where('arena_name', $request->arena)
+            ->where('tournament_name', $request->tournament)
+            ->get();
+
+        $results = [];
+
+        foreach ($juris as $juri) {
+            $deduction = LocalSeniScore::where('local_match_id', $matchId)
+                ->where('judge_number', $juri->juri_number)
+                ->sum('deduction');
+
+            $score = 9.90 - $deduction;
+
+            $results[] = [
+                'juri_number' => $juri->juri_number,
+                'score' => round($score, 2),
+                'deduction' => round($deduction, 2)
+            ];
+        }
+
+        $penalty = LocalSeniPenalties::where('local_match_id', $matchId)->sum('penalty_value');
+
+        $penalties = LocalSeniPenalties::where('local_match_id', $matchId)
+            ->select('reason', 'penalty_value')
+            ->get();
+
+        // Ambil match
+        $match = \App\Models\LocalSeniMatch::find($matchId);
+
+        return response()->json([
+            'judges' => $results,
+            'penalty' => round($penalty, 2),
+            'penalties' => $penalties,
+            'start_time' => optional($match->start_time)->toDateTimeString(),
+            'end_time' => optional($match->end_time)->toDateTimeString(),
+        ]);
+    }
+
+
 
 
 }

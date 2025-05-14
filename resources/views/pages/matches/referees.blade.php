@@ -105,11 +105,11 @@
                     </div>
                     <div class="score-items">
                         <div class="item text-white" data-action="peringatan_1" data-point="-5" data-corner="blue">
-                            <img src="{{ asset('images/peringatan.png') }}">
+                            <img src="{{ asset('images/peringatan-1.png') }}">
                         </div>
                         <div class="item text-white" data-action="peringatan_2" data-point="-10" data-corner="blue">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                            <img src="{{ asset('images/peringatan.png') }}">
+                            <img src="{{ asset('images/peringatan-2.png') }}">
+                           
                         </div>
                     </div>
                     <div class="score-items">
@@ -156,11 +156,11 @@
                     </div>
                     <div class="score-items">
                         <div class="item text-white" data-action="peringatan_1" data-point="-5" data-corner="red">
-                            <img src="{{ asset('images/peringatan.png') }}">
+                            <img src="{{ asset('images/peringatan-1.png') }}">
                         </div>
                         <div class="item text-white" data-action="peringatan_2" data-point="-10" data-corner="red">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                            <img src="{{ asset('images/peringatan.png') }}">
+                            <img src="{{ asset('images/peringatan-2.png') }}">
+                           
                         </div>
                     </div>
                     <div class="score-items">

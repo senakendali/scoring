@@ -1,262 +1,176 @@
-@extends('layouts.app')
+@extends('layouts.seni')
 @section('content')
+<input type="hidden" id="match-id" value="{{ $match_id }}">
+
+<input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
+<input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
+<input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">
+<input type="hidden" id="session-role" value="{{ session('role') }}">
+<input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
+
 <div class="fix-match-info" id="tournament-name">-</div>
  <div class="fix-match-detail">
     <div class="detail-item" id="match-code">-</div>
-    <div class="detail-item" id="stage">-</div>
-    <div class="detail-item" id="class-name">-</div>
+    <div class="detail-item" id="age-category">-</div>
+    <div class="detail-item" id="gender">-</div>
 </div>
 <input type="hidden" id="match-id" value="{{ $match_id }}">
 <div class="match-header">
-    <!--div class="match-info" id="tournament-name">-</div>
-    <div class="match-details">
-        <div class="detail-item" id="match-code">-</div>
-        <div class="detail-item" id="stage">-</div>
-        <div class="detail-item" id="class-name">-</div>
-    </div-->
-    <div class="match-item">
-        <div class="blue d-flex">
-            <div id="blue-name" class="name d-flex w-100 roboto-bold justify-content-center align-items-center">
-                -
+        <div class="match-item">
+            <div class="seni-participant-detail">
+                <div id="contingent-name" class="contingent-name item">-</div>
+                <div id="participant-1" class="participant-1 item">-</div>
+                <div id="participant-2" class="participant-2 item">-</div>
+                <div id="participant-3" class="participant-3 item">-</div>   
             </div>
-            <div id="blue-score" class="score d-flex text-white roboto-bold justify-content-center align-items-center">
-                -
-            </div>
-        </div>
-        
-        <div class="red d-flex">
-            <div id="red-score" class="score d-flex text-white roboto-bold justify-content-center align-items-center">
-                -
-            </div>
-            <div id="red-name" class="name d-flex w-100 roboto-bold justify-content-center align-items-center">
-                - 
-            </div>
-        
         </div>
     </div>
-    
-</div>
 
-<div class="container-fluid" style="background-color:#FFF !important; padding:20px; ">
-    <div class="row">
-        <div class="col-12">
-        
-      
-            <div id="match-tables">
-                <table class="table table-striped mb-5">
-                    <thead>
-                        <tr>
-                            <th colspan="9" class="table-title">Rekapitulasi Ronde 1</th>
-                        </tr>
-                        <tr>
-                           
-                            <th scope="col" class="blue">Nilai</th>
-                            <th scope="col" class="blue">Total</th>
-                            <th scope="col" class="bg-secondary">Juri</th>
-                            <th scope="col" class="red">Total</th>
-                            <th scope="col" class="red">Nilai</th>
-                           
+    <div class="container-fluid bg-dark" style="padding:20px; ">
+        <div class="row">
+            <div class="col-12">
             
-                        </tr>
-                        
-                    </thead>
-                    <tbody>
-                        <tr>
-                          
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 1</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                           
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 2</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 3</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                           
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Nilai Sah</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Jatuhan</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Hukuman</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Nilai Final</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <table class="table table-dark mb-5">
-                    <thead>
-                        <tr>
-                            <th colspan="9" class="table-title">Rekapitulasi Ronde 2</th>
-                        </tr>
-                        <tr>
-                            <th scope="col" class="blue">Nilai</th>
-                            <th scope="col" class="blue">Total</th>
-                            <th scope="col" class="bg-secondary">Juri</th>
-                            <th scope="col" class="red">Total</th>
-                            <th scope="col" class="red">Nilai</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 1</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 2</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 3</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Nilai Sah</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Jatuhan</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Hukuman</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Nilai Final</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-
-                <table class="table table-dark mb-5">
-                    <thead>
-                        <tr>
-                            <th colspan="9" class="table-title">Rekapitulasi Ronde 3</th>
-                        </tr>
-                        <tr>
-                            <th scope="col" class="blue">Nilai</th>
-                            <th scope="col" class="blue">Total</th>
-                            <th scope="col" class="bg-secondary">Juri</th>
-                            <th scope="col" class="red">Total</th>
-                            <th scope="col" class="red">Nilai</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 1</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 2</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Juri 3</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Nilai Sah</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Jatuhan</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Hukuman</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                        <tr>
-                            <td class="blue">-</td>
-                            <td class="blue">-</td>
-                            <td>Nilai Final</td>
-                            <td class="red">-</td>
-                            <td class="red">-</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-            </div>
         
+                <div id="match-tables">
+                    <table class="mytable table">
+                        <thead>
+                            <tr>
+                                <th colspan="5" class="table-title bg-dark-gradient">JURI</th>
+                            </tr>
+                            <tr>
+                                <th scope="col" class="bg-secondary text-center">1</th>
+                                <th scope="col" class="bg-secondary text-center">2</th>
+                                <th scope="col" class="bg-secondary text-center">3</th>
+                                <th scope="col" class="bg-secondary text-center">4</th>
+                                <th scope="col" class="bg-secondary text-center">5</th>
+                            </tr>
+                            
+                        </thead>
+                        <tbody>
+                            <tr>
+                            
+                                <td class="blue">-</td>
+                                <td class="blue">-</td>
+                                <td class="blue">-</td>
+                                <td class="red">-</td>
+                                <td class="red">-</td>
+                            </tr>
+                
+                        </tbody>
+                    </table>
+
+                    
+
+
+                    
+
+                </div>
+            
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="equal-height-box gap-2">
+                    <div class="w-50 d-flex flex-column">
+                        <table class="mytable table h-100">
+                            <thead>
+                                <tr>
+                                
+                                    <th scope="col" class="bg-dark-gradient text-center">MEDIAN</th>
+                                    <th scope="col" class="bg-dark-gradient text-center">HUKUMAN</th>
+                                    <th scope="col" class="bg-dark-gradient text-center">NILAI AKHIR</th>
+                            
+                                
+                    
+                                </tr>
+                                
+                            </thead>
+                            <tbody>
+                                <tr>
+                                
+                                    <td class="blue" id="median">-</td>
+                                    <td class="blue" id="punishment">-</td>
+                                    <td class="blue" id="final-score">-</td>
+                                    
+                                </tr>
+                    
+                            </tbody>
+                        </table> 
+                        <table class="mytable table h-100">
+                            <thead>
+                                <tr>
+                                
+                                    <th scope="col" class="bg-dark-gradient text-center">STANDAR DEVIASI</th>
+                                    <th scope="col" class="bg-dark-gradient text-center">WAKTU</th>
+                                   
+                            
+                                
+                    
+                                </tr>
+                                
+                            </thead>
+                            <tbody>
+                                <tr>
+                                
+                                    <td class="blue" id="standar-deviasi">-</td>
+                                    <td class="blue" id="time">-</td>
+                                  
+                                    
+                                </tr>
+                    
+                            </tbody>
+                        </table> 
+                    </div>
+                    <div class="w-50">
+                        <table class="mytable table h-100">
+                            <thead>
+                                <tr>
+                                
+                                    <th scope="col" class="bg-dark-gradient text-start" style="width:80%;">HUKUMAN</th>
+                                    <th scope="col" class="bg-dark-gradient text-start">POTONGAN</th>
+                            
+                                
+                    
+                                </tr>
+                                
+                            </thead>
+                            <tbody>
+                                <tr>
+                                
+                                    <td class="blue">Performa Melebihi Arena 10m x 10m</td>
+                                    <td class="blue">-</td>
+                                  
+                                    
+                                </tr>
+                                 <tr>
+                                
+                                    <td class="blue">Menjatuhkan senjata, menyentuh lantai</td>
+                                    <td class="blue">-</td>
+                                  
+                                    
+                                </tr>
+                                 <tr>
+                                
+                                    <td class="blue">Pakaian tidak sesuai dengan aturan (Tanjak atau samping terlepas)</td>
+                                    <td class="blue">-</td>
+                                  
+                                    
+                                </tr>
+                                 <tr>
+                                
+                                    <td class="blue">Atlet bertahan pada satu gerakan selama lebih dari 5 detik</td>
+                                    <td class="blue">-</td>
+                                  
+                                    
+                                </tr>
+                    
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
     
     
 @endsection

@@ -87,6 +87,33 @@ class MatchController extends Controller
         ]);
     }
 
+     public function displaySeniArena($match_id){
+        $match = LocalSeniMatch::findOrFail($match_id);
+
+       
+        return view('pages.matches.seni.arena', [
+            'match_id' => $match->id,
+            'js' => 'matches/seni/arena.js'
+        ]); 
+    }
+
+    public function displaySeniReferee($match_id)
+    {
+        $match = LocalSeniMatch::findOrFail($match_id);
+        return view('pages.matches.seni.referees', [
+            'match_id' => $match->id,
+            'js' => 'matches/seni/referees.js'
+        ]);
+    }
+
+    public function displaySeniRecapitulation($match_id)
+    {
+        return view('pages.matches.seni.recapitulation', [
+            'match_id' => $match_id,
+            'js' => 'matches/seni/recapitulation.js'
+        ]);
+    }
+
     public function displayReferee($match_id)
     {
         $match = LocalMatch::with('rounds')->findOrFail($match_id);
@@ -136,6 +163,8 @@ class MatchController extends Controller
             'js' => 'matches/arena.js'
         ]); 
     }
+
+   
 
     
     

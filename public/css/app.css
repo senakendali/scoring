@@ -31,12 +31,11 @@ body{
 }
 
 .app-header.light img {
+    max-height: 180px;
+    height: auto;
     width: auto;
-    height: calc(100% - 20px); /* Kurangi 20px dari tinggi header */
-    max-height: 25vh;
     object-fit: contain;
-    padding: 10px 0; /* ❗Padding di gambar */
-    box-sizing: border-box; /* ❗Biar padding dihitung di dalam tinggi */
+    display: block;
     transition: all 0.3s ease;
 }
 
@@ -65,7 +64,7 @@ body{
     align-items: center;
     justify-content: center;
     color: #000000;
-    font-size:60px;
+    font-size:100px;
     padding-left: 20px;
 }
 
@@ -139,7 +138,7 @@ body{
     background: none !important;
     background-color: #FFFFFF !important;
     min-height: 70px;
-    min-width: 800px;
+    min-width: 600px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -532,7 +531,7 @@ body{
     align-items: center;
     justify-content: center;
 
-    font-size: clamp(40px, 10vw, 200px); /* 🔥 Dinamis */
+    font-size: clamp(40px, 20vw, 200px); /* 🔥 Dinamis */
     line-height: 1;
     white-space: nowrap;
     text-align: center;
@@ -982,7 +981,7 @@ body{
 }
 
 .item.active {
-    background: var(--secondary-color) !important;
+    background: #ffc107 !important;
     color: #FFFFFF;
     
     transition: all 0.3s ease;
@@ -1036,6 +1035,7 @@ body{
 .judges-button{
     /*position: fixed;
     bottom: 0;*/
+    height: 130px;
     padding-top: 10px;
     display: flex;
     width: 100%;
@@ -1050,6 +1050,7 @@ body{
     align-items: center;
     justify-content: center;
     color: #FFFFFF;
+    height: 100%;
     
 
 }
@@ -1064,7 +1065,7 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 80px;
+    height: 50px;
     width: 100%;
     border-bottom: 1px solid #FFFFFF;
 }
@@ -1072,7 +1073,7 @@ body{
 .judges-button .blue-button .button-item{
     border:none;
     width: 100%;
-    height: 80px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: start;
@@ -1097,7 +1098,7 @@ body{
 .judges-button .red-button .button-item{
     border:none;
     width: 100%;
-    height: 80px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: end;
@@ -1568,6 +1569,164 @@ th, td {
         color: #b30000; /* Merah tua */
         height: 50%;
     }
+
+    .seni-judges{
+        height: 33.3%;
+        display: flex;
+        width: 100%;
+    }
+
+    .seni-referees{
+        height: 25%;
+        display: flex;
+        width: 100%;
+    }
+
+    .judge-title{
+        background: linear-gradient(to bottom, #6884AF, #51678E, #3B4C6F);
+
+        width: 100%;
+       height: 40%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        font-size: 20px;
+    }
+
+    .judge-score{
+        background-color: #FFF;
+        width: 100%;
+        height: 60%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+    }
+
+    .penalty-point{
+        background-color: #FFF;
+        width: 100%;
+        height: 60%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+
+    .seni-footer{
+        font-size: 50px;
+    }
+
+    .referee-score-detail .judge-title{
+        background: linear-gradient(to bottom, #6884AF, #51678E, #3B4C6F);
+
+        width: 100%;
+       height: 40%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        font-size: 15px;
+    }
+
+    .seni-judges > .referee-score-detail {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 33.33%;
+    }
+
+    .penalty-point {
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+    }
+
+    .penalty-point input.form-control {
+        max-width: 100px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    button.poin-deduction {
+        width: 80px;
+    }
+
+    
+
+.table-responsive {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.mytable {
+  border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.mytable thead tr,
+.mytable tbody tr,
+.mytable tfoot tr {
+  height: calc((100vh - 260px) / 6);
+}
+
+
+.mytable th, .table td {
+  vertical-align: middle !important;
+}
+
+.mytable input.form-control {
+  max-width: 100px;
+  font-weight: bold;
+}
+
+.table-responsive {
+  height: 100%;
+  overflow: hidden; /* scroll jangan muncul */
+}
+
+.mytable {
+  height: 100%;
+  table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
+}
+
+.bg-dark-gradient{
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+}
+
+.equal-height-box {
+  display: flex;
+}
+
+.equal-height-box > .w-50 {
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+}
+
+.equal-height-box > .w-50 > * {
+  flex: 1 1 auto;
+}
+
+.judge-score-detail.median .judge-score{
+    background-color: #fdd835;
+   
+}
+
+.median-cell {
+    background-color: #fdd835 !important;
+   
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+   
+
+
+
 
   
   

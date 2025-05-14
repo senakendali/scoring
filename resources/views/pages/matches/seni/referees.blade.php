@@ -1,189 +1,140 @@
-@extends('layouts.app')
+@extends('layouts.seni')
 @section('content')
-<!-- Modal Result Verifikasi -->
-<div class="modal fade" id="verificationResultModal" tabindex="-1" aria-labelledby="verificationResultModalLabel" aria-hidden="true">
+<div class="modal fade" id="disqualifiedModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
+    <div class="modal-content bg-danger text-white text-center">
       <div class="modal-header border-0">
-        <h5 class="modal-title" id="verificationResultModalLabel">Hasil Verifikasi</h5>
+        <h5 class="modal-title w-100">Diskualifikasi</h5>
       </div>
-      <div class="modal-body text-center">
-        <div id="verificationResultContent">
-          <!-- Progress bar voting akan muncul di sini -->
-        </div>
+      <div class="modal-body">
+        Peserta telah didiskualifikasi oleh juri. Pertandingan dihentikan.
+      </div>
+      <div class="modal-footer justify-content-center border-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="finishedModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-success text-white text-center">
+      <div class="modal-header border-0">
+        <h5 class="modal-title w-100">Waktu Habis</h5>
+      </div>
+      <div class="modal-body">
+        Penampilan telah selesai.
+      </div>
+      <div class="modal-footer justify-content-center border-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Menunggu Verifikasi -->
-<div class="modal fade" id="waitingVerificationModal" tabindex="-1" aria-labelledby="waitingVerificationModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="waitingVerificationModalLabel">Informasi</h5>
-      </div>
-        <div class="modal-body text-center">
-            <p id="waitingVerificationMessage" class="mb-0">
-            Menunggu hasil verifikasi...
-            </p>
-        </div>
-        <!-- Progress Bar Animasi -->
-        <div class="progress" style="height: 10px;">
-            <div id="waitingVerificationProgress" class="progress-bar bg-info progress-bar-striped progress-bar-animated" 
-                role="progressbar" style="width: 0%"></div>
-        </div>
-    </div>
-  </div>
-</div>
 
-
-
-<div class="fix-match-info" id="tournament-name">-</div>
+ <div class="fix-match-info" id="tournament-name">-</div>
  <div class="fix-match-detail">
     <div class="detail-item" id="match-code">-</div>
-    <div class="detail-item" id="stage">-</div>
-    <div class="detail-item" id="class-name">-</div>
+    <div class="detail-item" id="age-category">-</div>
+    <div class="detail-item" id="gender">-</div>
 </div>
-<div class="judges-container d-flex flex-column" style="height:calc(100vh - 180px);">
+<div class="d-flex flex-column" style="height:calc(100vh - 180px);">
     <input type="hidden" id="match-id" value="{{ $match_id }}">
-    <input type="hidden" id="round-id" value="{{ $round_id }}">
 
-    <div class="match-header">
-        <!--div class="match-info" id="tournament-name">-</div>
-        <div class="match-details">
-            <div class="detail-item" id="match-code">-</div>
-            <div class="detail-item" id="stage">-</div>
-            <div class="detail-item" id="class-name">-</div>
-            <div id="timer" class="detail-item arena roboto-bold">
-                03:00
-            </div>
-        </div-->
+    <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
+    <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
+    <input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">
+    <input type="hidden" id="session-role" value="{{ session('role') }}">
+    <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
+
+     <div class="match-header">
         <div class="match-item">
-            <div class="blue d-flex">
-                <div id="blue-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
-                    -
-                </div>
-               
-            </div>
-            <div id="current-round" class="round d-flex justify-content-center align-items-center roboto-bold">
-                -
-            </div>
-            <div class="red d-flex">
-                <div id="red-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
-                    - 
-                </div>
-            
+            <div class="seni-participant-detail">
+                <div id="contingent-name" class="contingent-name item">-</div>
+                <div id="participant-1" class="participant-1 item">-</div>
+                <div id="participant-2" class="participant-2 item">-</div>
+                <div id="participant-3" class="participant-3 item">-</div>   
             </div>
         </div>
-        
     </div>
-    <div class="main-container flex-grow-1 overflow-auto">
 
-        <!-- Display Score dan Timer -->
-        
+   <div class="arena-main-container d-flex flex-column bg-dark" style="height: 100vh; overflow: hidden;">
 
-        
-        <div class="arena-container">
-            <div class="blue">
-            <div class="additional-point">
-                    <div class="score-items">
-                        <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="blue">
-                            <img src="{{ asset('images/binaan-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="binaan_2" data-point="0" data-corner="blue">
-                            <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="teguran_1" data-point="-1" data-corner="blue">
-                            <img src="{{ asset('images/teguran-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="teguran_2" data-point="-2" data-corner="blue">
-                            <img src="{{ asset('images/teguran-2.png') }}">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="peringatan_1" data-point="-5" data-corner="blue">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="peringatan_2" data-point="-10" data-corner="blue">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="blue">Jatuhan</div>
-                    </div>
-                   
-                </div>
-            </div>
-            <div class="score-container">
-                <div class="display-score">
-                    <div class="referee-score blue">
-                        <div id="blue-score" class="d-flex justify-content-center align-items-center roboto-bold">-</div>
-                    </div>
-                    <div class="referee-score red">
-                        <div id="red-score" class="d-flex justify-content-center align-items-center roboto-bold">-</div>
-                    </div>
-                </div>
-                <div class="verification">
-                     <div class="score-items">
-                        <div class="drop text-white black" data-action="verifikasi_jatuhan" data-point="3" data-corner="blue">Verifikasi Jatuhan</div>
-                    </div>
-                    <div class="score-items">
-                        <div class="drop text-white black" data-action="verifikasi_hukuman" data-point="3" data-corner="red">Verifikasi Hukuman</div>
-                    </div>
-                </div>
-            </div>
-            <div class="red">
-            <div class="additional-point">
-                    <div class="score-items">
-                        <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="red">
-                            <img src="{{ asset('images/binaan-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="binaan_2" data-point="0" data-corner="red">
-                            <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="teguran_1" data-point="-1" data-corner="red">
-                            <img src="{{ asset('images/teguran-1.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="teguran_2" data-point="-2" data-corner="red">
-                            <img src="{{ asset('images/teguran-2.png') }}">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="item text-white" data-action="peringatan_1" data-point="-5" data-corner="red">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                        <div class="item text-white" data-action="peringatan_2" data-point="-10" data-corner="red">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                            <img src="{{ asset('images/peringatan.png') }}">
-                        </div>
-                    </div>
-                    <div class="score-items">
-                        <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="red">Jatuhan</div>
-                    </div>
-                    
-                </div>
-            </div>
-
-            
-
-            
-            
+        <div class="table-responsive w-100 h-100">
+            <table class="mytable table table-dark w-100 h-100 mb-0">
+                <thead>
+                    <tr>
+                    <th style="width: 50%">PENALTY</th>
+                    <th style="width: 25%">PENGURANGAN SCORE</th>
+                    <th style="width: 25%">TOTAL PENGURANGAN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    <td>Performa Melebihi Arena 10m x 10m</td>
+                    <td>
+                        <button class="btn btn-success btn-sm reset-deduction">CLEAR</button>
+                        <button class="btn btn-danger btn-sm poin-deduction">-0.50</button>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" readonly value="0.00">
+                    </td>
+                    </tr>
+                    <tr>
+                    <td>Menjatuhkan senjata, menyentuh lantai</td>
+                    <td>
+                        <button class="btn btn-success btn-sm reset-deduction">CLEAR</button>
+                        <button class="btn btn-danger btn-sm poin-deduction">-0.50</button>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" readonly value="0.00">
+                    </td>
+                    </tr>
+                    <tr>
+                    <td>Pakaian tidak sesuai dengan aturan (Tanjak atau samping terlepas)</td>
+                    <td>
+                        <button class="btn btn-success btn-sm reset-deduction">CLEAR</button>
+                        <button class="btn btn-danger btn-sm poin-deduction">-0.50</button>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" readonly value="0.00">
+                    </td>
+                    </tr>
+                    <tr>
+                    <td>Atlet bertahan pada satu gerakan selama lebih dari 5 detik</td>
+                    <td>
+                        <button class="btn btn-success btn-sm reset-deduction">CLEAR</button>
+                        <button class="btn btn-danger btn-sm poin-deduction">-0.50</button>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" readonly value="0.00">
+                    </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <td colspan="2" class="text-start">Total Pengurangan</td>
+                    <td id="penalty-total">
+                        <input type="text" class="form-control text-center" readonly value="0.00">
+                    </td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
-        <!--div class="additional-point d-flex flex-column">
-            <div class="score-items">
-                <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="blue">Verifikasi Jatuhan</div>
-            </div>
-            
-            <div class="score-items">
-                <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="red">Verifikasi Hukuman</div>
-            </div>
-        </div-->
+
+        
+        
+        
+       
+        
     </div>
-</div>    
+
+    
+
+    
+    
+
+    
+    
+</div>   
 @endsection
