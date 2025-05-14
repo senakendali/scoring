@@ -54,6 +54,8 @@ class LocalMatchSeniController extends Controller
                             'contingent' => [
                                 'name' => $match->contingent_name
                             ],
+                            'final_score' => $match->final_score,
+                            'status' => $match->status,
                             'team_member1' => ['name' => $match->participant_1],
                             'team_member2' => ['name' => $match->participant_2],
                             'team_member3' => ['name' => $match->participant_3],

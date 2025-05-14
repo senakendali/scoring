@@ -4,10 +4,20 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class LocalSeniMatchSeeder extends Seeder
 {
+    private array $randomNames = [
+        'Kiki Anggraini', 'Ahmad Saputra', 'Putri Nurhaliza', 'Indah Nurhaliza', 'Dewi Putra',
+        'Eko Maulana', 'Citra Susanti', 'Fajar Wulandari', 'Ahmad Nurhaliza', 'Citra Utami',
+        'Indah Maulana', 'Dewi Putra', 'Santi Maulana', 'Nina Anggraini', 'Budi Ardiansyah',
+        'Budi Maulana', 'Citra Wijaya', 'Dewi Nurhaliza', 'Rizky Putra', 'Made Gunawan',
+        'Made Rahmawati', 'Indah Wulandari', 'Rizky Utami', 'Joko Hartono', 'Gita Putra',
+        'Fajar Hidayat', 'Citra Gunawan', 'Ahmad Syahputra', 'Rizky Maulana', 'Umi Putra',
+        'Fajar Maulana', 'Umi Rahmawati', 'Umi Anggraini', 'Rizky Nurhaliza', 'Lina Nurhaliza',
+        'Budi Anjani', 'Citra Hartono', 'Eko Hartono', 'Santi Pratama', 'Fajar Kurniawan'
+    ];
+
     private function getRandomDate(): string
     {
         $start = strtotime('2025-05-17');
@@ -25,6 +35,8 @@ class LocalSeniMatchSeeder extends Seeder
             $ageCategories = ['Usia Dini 1', 'Usia Dini 2', 'Pra Remaja'];
 
             for ($order = 1; $order <= 5; $order++) {
+                $nama1 = $this->randomNames[array_rand($this->randomNames)];
+
                 $data[] = [
                     'remote_match_id' => $matchId++,
                     'remote_contingent_id' => 10 + $order + $poolIndex,
@@ -42,9 +54,9 @@ class LocalSeniMatchSeeder extends Seeder
                     'category' => 'Tunggal',
                     'match_type' => 'seni_tunggal',
                     'gender' => $order % 2 === 0 ? 'female' : 'male',
-                    'contingent_name' => 'Kontingen ' . Str::random(5),
+                    'contingent_name' => 'Kontingen ' . substr(md5(rand()), 0, 5),
 
-                    'participant_1' => 'Peserta ' . $matchId,
+                    'participant_1' => $nama1,
                     'participant_2' => null,
                     'participant_3' => null,
 
@@ -60,6 +72,8 @@ class LocalSeniMatchSeeder extends Seeder
         foreach (['Pool D', 'Pool E'] as $poolIndex => $poolName) {
             for ($order = 1; $order <= 5; $order++) {
                 $ageCategory = $order % 2 === 0 ? 'Remaja' : 'Pra Remaja';
+                $nama1 = $this->randomNames[array_rand($this->randomNames)];
+                $nama2 = $this->randomNames[array_rand($this->randomNames)];
 
                 $data[] = [
                     'remote_match_id' => $matchId++,
@@ -78,10 +92,10 @@ class LocalSeniMatchSeeder extends Seeder
                     'category' => 'Ganda',
                     'match_type' => 'seni_ganda',
                     'gender' => $order % 2 === 0 ? 'male' : 'female',
-                    'contingent_name' => 'Kontingen ' . Str::random(5),
+                    'contingent_name' => 'Kontingen ' . substr(md5(rand()), 0, 5),
 
-                    'participant_1' => 'Pasangan ' . $matchId . 'A',
-                    'participant_2' => 'Pasangan ' . $matchId . 'B',
+                    'participant_1' => $nama1,
+                    'participant_2' => $nama2,
                     'participant_3' => null,
 
                     'age_category' => $ageCategory,
@@ -96,6 +110,9 @@ class LocalSeniMatchSeeder extends Seeder
         foreach (['Pool F', 'Pool G'] as $poolIndex => $poolName) {
             for ($order = 1; $order <= 5; $order++) {
                 $ageCategory = $order % 2 === 0 ? 'Remaja' : 'Usia Dini 2';
+                $nama1 = $this->randomNames[array_rand($this->randomNames)];
+                $nama2 = $this->randomNames[array_rand($this->randomNames)];
+                $nama3 = $this->randomNames[array_rand($this->randomNames)];
 
                 $data[] = [
                     'remote_match_id' => $matchId++,
@@ -114,11 +131,11 @@ class LocalSeniMatchSeeder extends Seeder
                     'category' => 'Regu',
                     'match_type' => 'seni_regu',
                     'gender' => $order % 2 === 0 ? 'female' : 'male',
-                    'contingent_name' => 'Kontingen ' . Str::random(5),
+                    'contingent_name' => 'Kontingen ' . substr(md5(rand()), 0, 5),
 
-                    'participant_1' => 'Anggota ' . $matchId . 'A',
-                    'participant_2' => 'Anggota ' . $matchId . 'B',
-                    'participant_3' => 'Anggota ' . $matchId . 'C',
+                    'participant_1' => $nama1,
+                    'participant_2' => $nama2,
+                    'participant_3' => $nama3,
 
                     'age_category' => $ageCategory,
                     'final_score' => null,
@@ -130,5 +147,4 @@ class LocalSeniMatchSeeder extends Seeder
 
         DB::table('local_seni_matches')->insert($data);
     }
-
 }

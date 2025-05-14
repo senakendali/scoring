@@ -35,14 +35,14 @@
                     <table class="mytable table">
                         <thead>
                             <tr>
-                                <th colspan="5" class="table-title bg-dark-gradient">JURI</th>
+                                <th colspan="4" class="table-title bg-dark-gradient">JURI</th>
                             </tr>
                             <tr>
                                 <th scope="col" class="bg-secondary text-center">1</th>
                                 <th scope="col" class="bg-secondary text-center">2</th>
                                 <th scope="col" class="bg-secondary text-center">3</th>
                                 <th scope="col" class="bg-secondary text-center">4</th>
-                                <th scope="col" class="bg-secondary text-center">5</th>
+                               
                             </tr>
                             
                         </thead>
@@ -52,7 +52,6 @@
                                 <td class="blue">-</td>
                                 <td class="blue">-</td>
                                 <td class="blue">-</td>
-                                <td class="red">-</td>
                                 <td class="red">-</td>
                             </tr>
                 

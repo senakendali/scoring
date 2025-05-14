@@ -53,13 +53,12 @@ $(document).ready(function () {
 
     
 
-   $.get(url + "/api/local-matches/seni", function (data) {
+    $.get(url + "/api/local-matches/seni", function (data) {
         $(".loader-bar").show();
         $('#match-tables').empty();
 
         data.forEach(categoryGroup => {
             const categoryLabel = `${categoryGroup.category} - ${categoryGroup.gender === 'male' ? 'PUTRA' : 'PUTRI'}`;
-
             let groupHtml = `<h4 class="text-uppercase text-primary mb-3">${categoryLabel}</h4>`;
 
             categoryGroup.pools.forEach(pool => {
@@ -71,18 +70,18 @@ $(document).ready(function () {
                         <table class="table table-dark mt-4">
                             <thead>
                                 <tr>
-                                    <th colspan="6" class="table-header text-start text-uppercase">${poolName}</th>
+                                    <th colspan="7" class="table-header text-start text-uppercase">${poolName}</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="6" class="table-header text-start text-uppercase">${ageCategory}</th>
+                                    <th colspan="7" class="table-header text-start text-uppercase">${ageCategory}</th>
                                 </tr>
                                 <tr class="table-sub-header">
                                     <th>Match</th>
                                     <th>Kontingen</th>
                                     <th colspan="3">Peserta</th>
-                                    ${isOperator ? '<th>Action</th>' : '<th></th>'}
+                                    <th>Score</th>
+                                    <th>Action</th>
                                 </tr>
-
                             </thead>
                             <tbody>
                 `;
@@ -113,7 +112,27 @@ $(document).ready(function () {
                         `;
                     }
 
-                    if (isOperator) {
+                   const scoreValue = parseFloat(match.final_score);
+                    const scoreText = match.status === 'finished' && !isNaN(scoreValue)
+                        ? scoreValue.toFixed(2)
+                        : '-';
+
+                    tableHtml += `<td>${scoreText}</td>`;
+
+
+                    if (match.status === 'finished') {
+                        // ✅ Semua bisa akses tombol Recap
+                        tableHtml += `
+                            <td>
+                                <button 
+                                    class="btn btn-sm btn-outline-warning btn-recap-match"
+                                    data-id="${match.id}">
+                                    Recap
+                                </button>
+                            </td>
+                        `;
+                    } else if (isOperator) {
+                        // ✅ Masuk hanya untuk operator
                         tableHtml += `
                             <td>
                                 <button 
@@ -121,16 +140,16 @@ $(document).ready(function () {
                                     data-id="${match.id}"
                                     data-arena="${arenaName}"
                                     data-tournament="${tournament}">
-                                    Mulai
+                                    Masuk
                                 </button>
                             </td>
                         `;
                     } else {
+                        // ❌ Selain operator dan belum selesai → kosong
                         tableHtml += `<td>-</td>`;
                     }
 
                     tableHtml += `</tr>`;
-
                 });
 
                 tableHtml += `
@@ -146,6 +165,13 @@ $(document).ready(function () {
         });
 
         $(".loader-bar").hide();
+    });
+
+
+    // ✅ Handler tombol Recap
+    $(document).on("click", ".btn-recap-match", function () {
+        const matchId = $(this).data("id");
+        window.location.href = `/matches/seni/${matchId}/recap`;
     });
 
     

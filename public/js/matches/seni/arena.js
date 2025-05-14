@@ -108,8 +108,8 @@ $(document).ready(function () {
                 $("#timer").text("00:00");
 
                 totalDeduction = 0;
-                currentScore = 9.75;
-                $("#starting-score").text("9.75");
+                currentScore = 9.90;
+                $("#starting-score").text("9.90");
                 $("#deduction").text("-0.00");
 
                 console.log("🔁 Timer direset");
@@ -234,7 +234,7 @@ $(document).ready(function () {
 
     function renderSeniJudges(juriCount) {
         const $container = $("#judges-preview");
-        const default_score = 9.75;
+        const default_score = 9.90;
         $container.empty(); // Kosongkan dulu
 
         for (let i = 1; i <= juriCount; i++) {

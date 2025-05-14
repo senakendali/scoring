@@ -65,7 +65,7 @@
                     MEDIAN
                 </div>
                 <div id="median-score" class="judge-score fw-bold">
-                    8.20
+                    0
                 </div>
             </div>
              <div class="flex-fill judge-score-detail">
