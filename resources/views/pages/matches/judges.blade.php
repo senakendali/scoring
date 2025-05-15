@@ -29,12 +29,12 @@
     <!-- Header Match -->
     <div class="match-header">
         
-        <div class="match-details">
+        <div class="match-details judges-page">
             <div class="detail-item" id="match-code">-</div>
             <div class="detail-item" id="stage">-</div>
             <div class="detail-item" id="class-name">-</div>
         </div>
-        <div class="match-item">
+        <div class="match-item judges-page">
             <div class="blue d-flex">
                 <div class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center" id="blue-name">
                     -
@@ -90,15 +90,25 @@
     <!-- Tombol Scoring -->
     <div class="judges-button d-flex justify-content-between align-items-center">
         <div class="blue-button text-center" style="width: 250px;">
-            <button class="button-item" data-corner="blue" data-type="punch">PUNCH</button>
-            <button class="button-item" data-corner="blue" data-type="kick">KICK</button>  
+            <button class="button-item d-flex gap-2" data-corner="blue" data-type="punch">
+                <img src="{{ asset('images/punch-icon.png') }}" width="30px" alt=""> PUNCH
+            </button>
+            <button class="button-item  d-flex gap-2" data-corner="blue" data-type="kick">
+                <img src="{{ asset('images/kick-icon.png') }}" width="30px" alt=""> KICK
+            </button>  
         </div>
 
        
 
         <div class="red-button text-center" style="width: 250px;">
-            <button class="button-item" data-corner="red" data-type="punch">PUNCH </button>
-            <button class="button-item" data-corner="red" data-type="kick">KICK </button>
+            <button class="button-item d-flex gap-2" data-corner="red" data-type="punch">
+                PUNCH 
+                <img src="{{ asset('images/punch-icon.png') }}" width="30px" alt="">
+            </button>
+            <button class="button-item d-flex gap-2" data-corner="red" data-type="kick">
+                KICK 
+                <img src="{{ asset('images/kick-icon.png') }}" width="30px" alt="">
+            </button>
         </div>
     </div>
 

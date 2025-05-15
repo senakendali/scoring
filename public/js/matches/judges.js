@@ -34,17 +34,6 @@ $(document).ready(function () {
         console.log("🌍 Global Event:", event, data);
     });
 
-    
-    
-    
-    
-
-   
-
-
-
-    
-
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed to:", data.new_match_id);
         window.location.href = `/matches/judges/${data.new_match_id}`; // atau operator, screen, sesuai page lo
@@ -340,7 +329,7 @@ $(document).ready(function () {
             const value = response.value; // 1 = punch, 2 = kick
             const colorClass = response.valid ? 'btn-success' : 'btn-secondary';
     
-            const span = $(`<span class="roboto-bold btn ${colorClass} pop-animate">${value}</span>`);
+            const span = $(`<span class="roboto-bold btn btn-sm ${colorClass} pop-animate">${value}</span>`);
             container.append(span);
     
             // 2. 🔥 Tetap reload full recap dari server supaya data fix
