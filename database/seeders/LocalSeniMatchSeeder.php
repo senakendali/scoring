@@ -145,6 +145,44 @@ class LocalSeniMatchSeeder extends Seeder
             }
         }
 
+        // 🔸 Solo Kreatif: 1 Pool × 5 match
+        foreach (['Pool H'] as $poolIndex => $poolName) {
+            for ($order = 1; $order <= 5; $order++) {
+                $ageCategory = $order % 2 === 0 ? 'Remaja' : 'Pra Remaja';
+                $nama1 = $this->randomNames[array_rand($this->randomNames)];
+
+                $data[] = [
+                    'remote_match_id' => $matchId++,
+                    'remote_contingent_id' => 70 + $order + $poolIndex,
+                    'remote_team_member_1' => 400 + $order,
+                    'remote_team_member_2' => null,
+                    'remote_team_member_3' => null,
+
+                    'tournament_name' => 'Indonesia National Championships 2025',
+                    'arena_name' => 'Arena 4',
+                    'match_date' => $this->getRandomDate(),
+                    'match_time' => sprintf('15:%02d:00', rand(0, 59)),
+                    'pool_name' => $poolName,
+                    'match_order' => $order,
+
+                    'category' => 'Solo Kreatif',
+                    'match_type' => 'solo_kreatif',
+                    'gender' => $order % 2 === 0 ? 'female' : 'male',
+                    'contingent_name' => 'Kontingen ' . substr(md5(rand()), 0, 5),
+
+                    'participant_1' => $nama1,
+                    'participant_2' => null,
+                    'participant_3' => null,
+
+                    'age_category' => $ageCategory,
+                    'final_score' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+
         DB::table('local_seni_matches')->insert($data);
     }
 }

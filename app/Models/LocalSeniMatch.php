@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\LocalSeniFinalScore;
+use App\Models\LocalSeniComponentScore;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -32,4 +35,16 @@ class LocalSeniMatch extends Model
         'end_time' => 'datetime',
         'duration' => 'integer',
     ];
+
+    public function finalScores()
+    {
+        return $this->hasMany(LocalSeniFinalScore::class, 'local_match_id');
+    }
+
+    public function componentScores()
+    {
+        return $this->hasMany(LocalSeniComponentScore::class, 'local_match_id');
+    }
+
+
 }

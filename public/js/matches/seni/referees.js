@@ -14,7 +14,7 @@ $(document).ready(function () {
     });
 
     fetchMatchData();
-    $(".reset-deduction, .poin-deduction").prop("disabled", true).addClass("disabled");
+   // $(".reset-deduction, .poin-deduction").prop("disabled", true).addClass("disabled");
 
 
     const host = window.location.hostname;
@@ -27,7 +27,7 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    const globalChannel = pusher.subscribe('seni.global.match');
+     const globalChannel = pusher.subscribe('global.seni.match');
 
     globalChannel.bind('seni.match.changed', function (data) {
         console.log("🎯 Match aktif berubah:", data);

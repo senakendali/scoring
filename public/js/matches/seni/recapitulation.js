@@ -63,17 +63,32 @@ $(document).ready(function () {
         judges.sort((a, b) => a.score - b.score);
         const scores = judges.map(j => j.score);
 
-        const $jurisHeader = $(".mytable thead tr").eq(1).find("th");
-        const $jurisRow = $(".mytable tbody tr").first().find("td");
+        // 🔷 Update Tabel Nilai Unsur (Kebenaran, Kemantapan, Total)
+        const $truthRow = $("#truth-row td").slice(1);
+        const $additionalRow = $("#additional-row td").slice(1);
+        const $totalRow = $("#total-row td").slice(1);
+
+        judges.forEach((j, index) => {
+            $truthRow.eq(index).text(j.truth_score.toFixed(2)).addClass("text-center");
+            $additionalRow.eq(index).text(j.additional_score.toFixed(2)).addClass("text-center");
+            $totalRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
+        });
+
+        // 🔴 Update Tabel Nilai Gabungan Akhir
+        const $jurisHeader = $(".mytable-gabungan thead tr").eq(1).find("th");
+        const $unsurHeader = $("#unsur-header").find("th");
+        const $jurisRow = $(".mytable-gabungan tbody tr").first().find("td");
 
         $jurisHeader.removeClass("median-cell");
         $jurisRow.removeClass("median-cell");
 
         judges.forEach((j, index) => {
             $jurisHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
+            $unsurHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
             $jurisRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
         });
 
+        // 📊 Perhitungan statistik
         let median = 0;
         if (scores.length % 2 === 0) {
             const mid1 = (scores.length / 2) - 1;
@@ -94,10 +109,10 @@ $(document).ready(function () {
         const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
         const stddev = Math.sqrt(variance);
 
-        $("#median").text(median.toFixed(2)).addClass("text-center");
+        $("#median").text(median.toFixed(6)).addClass("text-center");
         $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
-        $("#standar-deviasi").text(stddev.toFixed(2)).addClass("text-center");
-        $("#final-score").text((mean - totalPenalty).toFixed(2)).addClass("text-center");
+        $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
+        $("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
     }
 
 
@@ -174,38 +189,54 @@ $(document).ready(function () {
 
 
     
-    
-    
-
-    
     function updateRekapitulasiTable(matchId, tournament, arena) {
-        
-    
         $.get(`${url}/api/seni/judges-score?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}&match_id=${matchId}`, function (data) {
             const judges = data.judges || [];
             const totalPenalty = parseFloat(data.penalty ?? 0);
-
-            console.log("🧠 Judges:", data.judges);
-
             const penalties = data.penalties || [];
+
             updatePenaltyRecapTable(penalties);
 
-            // Urutkan berdasarkan skor kecil → besar
+            // Sort by final score
             judges.sort((a, b) => a.score - b.score);
             const scores = judges.map(j => j.score);
 
-            // Ambil elemen header dan isi baris
-            const $jurisHeader = $(".mytable thead tr").eq(1).find("th");
-            const $jurisRow = $(".mytable tbody tr").first().find("td");
+            const $headerRow = $(".mytable thead tr").eq(1).find("th");
+            const $unsurHeader = $("#unsur-header").find("th");
+            const $scoreRow = $(".mytable tbody tr").first().find("td");
 
-            // Reset tampilan lama
+            // ✅ Update untuk header utama
+            judges.forEach((j, i) => {
+                $headerRow.eq(i).text(`J${j.juri_number}`).addClass("text-center");
+                $unsurHeader.eq(i).text(`J${j.juri_number}`).addClass("text-center");
+
+            });
+
+            // ✅ Tabel Kebenaran, Kemantapan, Total
+            const truthRow = $("#truth-row").find("td:not(:first)");
+            const additionalRow = $("#additional-row").find("td:not(:first)");
+            const totalRow = $("#total-row").find("td:not(:first)");
+
+            judges.forEach((j, i) => {
+                truthRow.eq(i).text(j.truth_score?.toFixed(2) ?? "-");
+                additionalRow.eq(i).text(j.additional_score?.toFixed(2) ?? "-");
+                totalRow.eq(i).text(j.score?.toFixed(2) ?? "-");
+            });
+
+            // ✅ Tabel Gabungan (seperti sebelumnya)
+            const $jurisHeader = $(".mytable-gabungan thead tr").eq(1).find("th");
+            const $jurisRow = $(".mytable-gabungan tbody tr").first().find("td");
+
             $jurisHeader.removeClass("median-cell");
             $jurisRow.removeClass("median-cell");
 
-            // Render nomor juri (header) & skor (isi)
             judges.forEach((j, index) => {
+                const text = j.additional_score
+                    ? `${j.score.toFixed(2)}`
+                    : j.score.toFixed(2);
+
                 $jurisHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
-                $jurisRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
+                $jurisRow.eq(index).text(text).addClass("text-center");
             });
 
             // Hitung median
@@ -225,27 +256,22 @@ $(document).ready(function () {
                 median = scores[mid];
             }
 
-            // Hitung standar deviasi
             const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
             const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
             const stddev = Math.sqrt(variance);
 
-            // Update ke ringkasan bawah
-            $("#median").text(median.toFixed(2)).addClass("text-center");
+            $("#median").text(median.toFixed(6)).addClass("text-center");
             $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
-            $("#standar-deviasi").text(stddev.toFixed(2)).addClass("text-center");
-
-
-            $("#final-score").text((mean - totalPenalty).toFixed(2)).addClass("text-center");
+            $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
+            $("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
 
             const start = new Date(data.start_time);
             const end = new Date(data.end_time);
             const durasiDetik = (end - start) / 1000;
-
-
             $("#time").text(durasiDetik).addClass("text-center");
         });
     }
+
 
 
     

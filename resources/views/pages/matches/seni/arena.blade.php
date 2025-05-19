@@ -87,7 +87,7 @@
         </div>
         <div class="d-flex bg-dark seni-judges">
             <div id="total-score" class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
-                8.2000
+               -
             </div>
             <div class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
                 <div id="timer" class="timer">

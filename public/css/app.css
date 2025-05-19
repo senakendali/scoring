@@ -1539,6 +1539,11 @@ th, td {
     padding-bottom: .5rem!important;
   }
 
+  #mode_one > .flex-fill {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
   
   
   .wrong-move {
@@ -1549,7 +1554,7 @@ th, td {
         background-color: #D32F2F;
         color: #fff;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         font-weight: bold;
         text-align: center;
         cursor: pointer;
@@ -1696,7 +1701,7 @@ th, td {
 .mytable thead tr,
 .mytable tbody tr,
 .mytable tfoot tr {
-  height: calc((100vh - 260px) / 6);
+  height: calc((100vh - 260px) / 7);
 }
 
 
@@ -1718,6 +1723,64 @@ th, td {
   height: 100%;
   table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
 }
+
+
+.judges_table {
+  height: 100%;
+  table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
+}
+
+.judges_table {
+  border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.judges_table thead tr th{
+    padding: 20px !important;
+}
+
+/*.judges_table thead tr,
+.judges_table tbody tr{
+  height: calc((100vh - 160px) / 7); 
+  vertical-align: middle;
+}*/
+
+
+
+.judges_table th, .table td {
+    height: 100%;
+    vertical-align: middle !important;
+}
+
+.judges_table input.form-control {
+  max-width: 100px;
+  font-weight: bold;
+}
+
+.judges_table {
+  height: 100%;
+  table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
+}
+
+.judges_table td input.form-control {
+  max-width: 80px;
+}
+
+.judges_table .score-buttons-inner button {
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+.judges_table td .form-control,
+.judges_table td .btn {
+  height: 38px; /* atau sesuai ukuran .form-control bawaan Bootstrap */
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+
+
 
 .bg-dark-gradient{
     background: linear-gradient(to bottom, #2a2a2a, #000000);

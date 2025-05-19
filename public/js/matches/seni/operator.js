@@ -3,7 +3,7 @@ $(document).ready(function () {
     const matchId = window.location.pathname.split("/").pop();
     const timerEl = $("#timer");
     
-    let duration = 180;
+    let duration = 600;
     
     let interval = null;
     let roundId = null;
@@ -12,6 +12,8 @@ $(document).ready(function () {
     let allRounds = [];
     let elapsed = 0;
     let isPaused = false;
+    
+
 
     $.ajaxSetup({
         headers: {
@@ -118,7 +120,7 @@ $(document).ready(function () {
 
     function runTimer() {
         clearInterval(interval);
-        const maxDuration = 180; // 3 menit batas maksimal
+        const maxDuration = 600; // 3 menit batas maksimal
 
         function updateTimer() {
             timerEl.text(formatTime(elapsed));
@@ -174,13 +176,13 @@ $(document).ready(function () {
 
     
 
-    $(".start").on("click", function () {
+    /*$(".start").on("click", function () {
         const matchId = $("#match-id").val(); // Ambil dari hidden input atau variabel
     
         if (!matchId) return;
 
         const btn = $(this);
-        const duration = 180; // ⏱️ default 3 menit
+        const duration = 600; // ⏱️ default 3 menit
 
         setButtonLoading(btn, true);
 
@@ -189,7 +191,70 @@ $(document).ready(function () {
         }, function () {
             setTimeout(fetchAndStartTimer, 500); // 🟢 panggil fungsi timer jalan
         }).always(() => setButtonLoading(btn, false));
+    });*/
+
+   let isRunning = false;
+
+    $(document).on("click", ".start", function () {
+        const matchId = $("#match-id").val();
+        if (!matchId) return;
+
+        const btn = $(this);
+        btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        $.post(`${url}/api/matches/seni/${matchId}/start`, {
+            duration: 600 // ⏱️ 10 menit
+        }, function () {
+            setTimeout(fetchAndStartTimer, 500);
+
+            // Ganti jadi STOP
+            btn
+                .removeClass("start btn-success")
+                .addClass("stop btn-danger")
+                .html('<i class="bi bi-stop-fill me-1"></i> STOP');
+        }).fail(() => {
+            btn.html("START");
+        }).always(() => {
+            btn.prop("disabled", false);
+        });
     });
+
+
+
+    $(document).on("click", ".stop", function () {
+        const matchId = $("#match-id").val();
+        const btn = $(this);
+        if (!matchId) return;
+
+        btn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        $.ajax({
+            url: `${url}/api/local-seni-matches/${matchId}/finish`,
+            method: 'PATCH',
+            success: function () {
+                stopTimer();
+                timerEl.text("SELESAI");
+
+                // Balik jadi START
+                btn
+                    .removeClass("stop btn-danger")
+                    .addClass("start btn-success")
+                    .html('<i class="bi bi-play-fill me-1"></i> START');
+
+                $(".end-match").addClass("d-none");
+                $(".next-match").removeClass("d-none");
+            },
+            complete: function () {
+                btn.prop("disabled", false);
+            }
+        });
+    });
+
+
+
+
+
+
     
 
     
@@ -247,6 +312,12 @@ $(document).ready(function () {
             $.post(`${url}/api/matches/seni/${matchId}/reset`, function () {
                 stopTimer();
                 timerEl.text("00:00");
+
+                const $startStopBtn = $(".panel-footer .stop, .panel-footer .start");
+                $startStopBtn
+                    .removeClass("stop btn-danger")
+                    .addClass("start btn-success")
+                    .html('<i class="bi bi-play-fill me-1"></i> START');
                 //timerEl.text(formatTime(duration));
             }).always(() => setButtonLoading(btn, false));
         });

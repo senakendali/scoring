@@ -93,7 +93,7 @@ $(document).ready(function () {
                             <td>${match.contingent?.name || '-'}</td>
                     `;
 
-                    if (match.match_type === 'seni_tunggal') {
+                    if (match.match_type === 'seni_tunggal' || match.match_type === 'solo_kreatif') {
                         tableHtml += `
                             <td>${match.team_member1?.name || '-'}</td>
                             <td colspan="2">-</td>

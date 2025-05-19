@@ -1,17 +1,16 @@
 $(document).ready(function () {
     const url = window.location.origin;
 
-    let startingScore = 9.90;
-    const deduction = 0.01;
+   
 
     let matchId = parseInt($("#match-id").val());
     let roundId = null;
     let judgeNumber = $("#judge-number").val();
 
+    let startingScore = parseFloat($("#seni_base_score").val());
+    const deduction = 0.01;
+    let additionalScore = 0.00;
     let totalDeduction = 0;
-
-    
-
 
     $.ajaxSetup({
         headers: {
@@ -100,12 +99,8 @@ $(document).ready(function () {
                 
             } else if (data.status === 'not_started') {
 
-                // ✅ Reset variabel skor lokal
-                totalDeduction = 0;
-                currentScore = 9.75;
-
                 // ✅ Update UI
-                $("#starting-score").text("9.90");
+                $("#starting-score").text($("#seni_base_score").val());
                 $("#deduction").text("-0.00");
                 
                 $(".wrong-move").prop("disabled", true); // matikan tombol wrong move
@@ -127,6 +122,25 @@ $(document).ready(function () {
                 modal.show();
             }
         } else {
+
+            // ⬇️ Submit Component Scores
+            $(".judges_table tbody tr").each(function () {
+                const $row = $(this);
+                const component = $row.data("component");
+                const value = parseFloat($row.find("input").val()) || 0;
+
+                $.post('/api/seni-component-score', {
+                    match_id: matchId,
+                    judge_number: judgeNumber,
+                    component: component,
+                    value: value,
+                }, function (res) {
+                    console.log(`✅ Component [${component}] submitted:`, res);
+                }).fail(function (xhr) {
+                    console.error(`❌ Gagal simpan komponen ${component}`);
+                });
+            });
+
             
 
             const finishedModalEl = document.getElementById('finishedModal');
@@ -137,14 +151,75 @@ $(document).ready(function () {
         }
     });
 
-
-
-
-
     
-
-
     updateScoreUI();
+
+    $(".judges_table tbody tr").each(function () {
+        const $row = $(this);
+        const $buttonTd = $row.find("td").eq(1);
+        const $scoreCell = $row.find("td").eq(2);
+        const $scoreInput = $scoreCell.find("input");
+
+        // Bungkus input + tombol reset jadi satu div inline
+        const $scoreWrapper = $('<div class="d-flex align-items-center gap-2 justify-content-center"></div>');
+        $scoreInput.addClass('flex-grow-1'); // Biar input tetap fleksibel
+
+        const $resetBtn = $('<button class="btn btn-sm btn-secondary">Reset</button>');
+        $resetBtn.on("click", function () {
+            $scoreInput.val("0.00");
+            updateTotals();
+        });
+
+        $scoreWrapper.append($scoreInput).append($resetBtn);
+        $scoreCell.empty().append($scoreWrapper);
+
+        // Tambahkan wrapper 2 lapis untuk tombol nilai
+        const $buttonContainer = $(`
+            <div class="score-buttons-wrapper">
+                <div class="score-buttons-inner d-flex flex-wrap justify-content-center gap-1"></div>
+            </div>
+        `);
+        const $inner = $buttonContainer.find(".score-buttons-inner");
+
+        // Generate 30 tombol nilai 0.01 - 0.30
+        for (let i = 1; i <= 30; i++) {
+            const val = (i / 100).toFixed(2);
+            const $btn = $(`<button class="btn btn-sm btn-success">${val}</button>`);
+
+            $btn.on("click", function () {
+                let current = parseFloat($scoreInput.val()) || 0;
+                current += parseFloat(val);
+                $scoreInput.val(current.toFixed(2));
+                updateTotals();
+            });
+
+            $inner.append($btn);
+
+            // ⬇️ Break line setiap 15 tombol
+            if (i % 15 === 0) {
+                $inner.append('<div class="w-100"></div>');
+            }
+        }
+
+        $buttonTd.append($buttonContainer);
+    });
+
+
+
+  // Fungsi untuk hitung total + final score
+  function updateTotals() {
+    let total = 0;
+
+    $(".judges_table tbody input").each(function () {
+      total += parseFloat($(this).val()) || 0;
+    });
+
+    const base = parseFloat($(".judges_table tfoot input").eq(1).val()) || 0;
+    const final = total + base;
+
+    $(".judges_table tfoot input").eq(0).val(total.toFixed(2));  // Total Score
+    $(".judges_table tfoot input").eq(2).val(final.toFixed(2));  // Final Score
+  }
     
     $(".wrong-move").on("click", function () {
         const finalScore = startingScore - totalDeduction - deduction;
@@ -172,21 +247,65 @@ $(document).ready(function () {
     });
 
     function updateScoreUI() {
-        const currentScore = startingScore - totalDeduction;
+        const displayScore = startingScore + additionalScore - totalDeduction;
 
-        $("#starting-score").text(currentScore.toFixed(2));
+        $("#starting-score").text(displayScore.toFixed(2));
         $("#deduction").text("-" + totalDeduction.toFixed(2));
-    }   
+    }  
+    
+    //$(".wrong-move").prop("disabled", true); // Disable semua tombol diawal
+
+    $(document).on('click', '.btn-increase-additional', function () {
+        let current = parseFloat($('#additional_score').val()) || 0;
+
+        if (current < 0.10) {
+            current = Math.min(current + 0.01, 0.10);
+            additionalScore = current;
+            $('#additional_score').val(current.toFixed(2));
+            updateScoreUI();
+        }
+    });
+
+    $(document).on('click', '.btn-decrease-additional', function () {
+        let current = parseFloat($('#additional_score').val()) || 0;
+
+        if (current > 0.00) {
+            current = Math.max(current - 0.01, 0.00);
+            additionalScore = current;
+            $('#additional_score').val(current.toFixed(2));
+            updateScoreUI();
+        }
+    });
+
+    $(document).on('click', '.btn-reset-additional', function () {
+        additionalScore = 0.00;
+        $('#additional_score').val('0.00');
+        updateScoreUI();
+    });
 
 
-   
-    
-    
-    
-    
-    $(".wrong-move").prop("disabled", true); // Disable semua tombol diawal
 
-    
+    $(document).on('click', '.btn-submit-additional', function () {
+        const score = parseFloat($('#additional_score').val());
+
+        $.post('/api/seni-additional-score', {
+            match_id: matchId,
+            judge_number: judgeNumber,
+            additional_score: score,
+        }, function (res) {
+            showScoreModal('Score berhasil disimpan!');
+        }).fail(function (xhr) {
+            showScoreModal('Gagal menyimpan score tambahan.');
+        });
+    });
+
+
+    // Fungsi helper untuk tampilkan modal
+    function showScoreModal(message) {
+        $('#scoreSubmitModalBody').text(message);
+        const modal = new bootstrap.Modal(document.getElementById('scoreSubmitModal'));
+        modal.show();
+    }
     
     
 
@@ -207,6 +326,16 @@ $(document).ready(function () {
         $(".loader-bar").show();
         
         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
+            if(data.match_type === 'seni_tunggal' || data.match_type === 'seni_regu'){
+                //$(".app-header").addClass("d-block"); 
+                $("#mode_one").show();
+                $("#mode_two").addClass('d-none');
+            }else if(data.match_type === 'seni_ganda' || data.match_type === 'solo_kreatif'){
+                //$(".app-header").addClass("d-none");
+                $("#mode_one").addClass('d-none');
+                $("#mode_two").show();
+            }
+
             $("#match-id").val(data.id);
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
@@ -237,55 +366,7 @@ $(document).ready(function () {
 
             $(".loader-bar").hide();
         });
-    }
-
-    
-
-    function submitPoint(corner, type) {
-        if (!matchId || !roundId || !judgeNumber) {
-            console.warn("❌ Data belum lengkap untuk submit skor");
-            return;
-        }
-        
-    
-        // 🔥 Submit ke server
-        $.post(`/api/local-judge-scores`, {
-            match_id: matchId,
-            round_id: roundId,
-            judge_number: judgeNumber,
-            judge_name: 'Juri ' + judgeNumber,
-            corner: corner,
-            type: type
-        })
-        .done(function (response) {
-            console.log("✅ Point submitted", response);
-    
-            // 1. Inject langsung ke UI dulu biar user ngerasa responsif
-            const roundNumber = parseInt($("#current-round").text().replace('ROUND', '').trim());
-            const container = response.corner === 'blue'
-                ? $(`.judges-recapitulation:nth-child(${roundNumber}) .blue-recapitulation`)
-                : $(`.judges-recapitulation:nth-child(${roundNumber}) .red-recapitulation`);
-    
-            const value = response.value; // 1 = punch, 2 = kick
-            const colorClass = response.valid ? 'btn-success' : 'btn-secondary';
-    
-            const span = $(`<span class="roboto-bold btn ${colorClass} pop-animate">${value}</span>`);
-            container.append(span);
-    
-            // 2. 🔥 Tetap reload full recap dari server supaya data fix
-            setTimeout(() => {
-                loadJudgeRecap();
-            }, 500); // kasih delay dikit biar smooth
-        })
-        .fail(function (xhr) {
-            console.error("❌ Gagal submit point:", xhr.responseJSON?.message || xhr.statusText);
-        });
-    }
-    
-    
-    
-    
-    
+    }  
     
     
 });

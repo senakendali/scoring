@@ -32,7 +32,60 @@
             
         
                 <div id="match-tables">
-                    <table class="mytable table">
+                   <table class="mytable table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="table-title bg-secondary text-center">UNSUR</th>
+                                <th colspan="4" class="table-title bg-dark-gradient text-center">JURI</th>
+                            </tr>
+                            <tr id="unsur-header">
+                                <th scope="col" class="bg-secondary text-center">J1</th>
+                                <th scope="col" class="bg-secondary text-center">J2</th>
+                                <th scope="col" class="bg-secondary text-center">J3</th>
+                                <th scope="col" class="bg-secondary text-center">J4</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="truth-row">
+                                <td class="blue">Kebenaran</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                            </tr>
+                            <tr id="additional-row">
+                                <td class="blue">Kemantapan</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                            </tr>
+                            <tr id="total-row">
+                                <td class="blue">Total Nilai</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                                <td class="blue text-center">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                    
+
+
+                    
+
+                </div>
+            
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+            
+        
+                <div id="match-tables">
+                    <table class="mytable table mytable-gabungan">
                         <thead>
                             <tr>
                                 <th colspan="4" class="table-title bg-dark-gradient">JURI</th>
@@ -134,6 +187,13 @@
                                 
                             </thead>
                             <tbody>
+                                <tr>
+                                
+                                    <td class="blue">Waktu</td>
+                                    <td class="blue">-</td>
+                                  
+                                    
+                                </tr>
                                 <tr>
                                 
                                     <td class="blue">Performa Melebihi Arena 10m x 10m</td>

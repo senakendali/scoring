@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 class LocalMatchSeniController extends Controller
 {
-    public function index(Request $request)
+    public function index__(Request $request)
     {
         $matches = \App\Models\LocalSeniMatch::orderBy('match_date')
             ->orderBy('match_time')
@@ -76,6 +76,84 @@ class LocalMatchSeniController extends Controller
 
         return response()->json($result);
     }
+
+    public function index(Request $request)
+{
+    $arenaName = session('arena_name');
+    $matchType = session('match_type'); // 'seni' atau 'tanding'
+
+    $query = \App\Models\LocalSeniMatch::query();
+
+    if ($arenaName) {
+        $query->where('arena_name', $arenaName);
+    }
+
+    if ($matchType) {
+        $query->where('match_type', 'like', "seni_%"); // karena match_type bisa seni_tunggal, seni_ganda, dll
+    }
+
+    $matches = $query->orderBy('match_date')
+        ->orderBy('match_time')
+        ->get();
+
+    $grouped = $matches->groupBy([
+        fn ($match) => $match->category,
+        fn ($match) => $match->gender,
+        fn ($match) => $match->pool_name,
+    ]);
+
+    $result = [];
+
+    foreach ($grouped as $category => $byGender) {
+        foreach ($byGender as $gender => $byPool) {
+            $groupData = [
+                'category' => $category,
+                'gender' => $gender,
+                'pools' => []
+            ];
+
+            $sortedPools = collect($byPool)->sortKeys();
+
+            foreach ($sortedPools as $poolName => $matchesInPool) {
+                $matchesInPool = $matchesInPool->sortBy('match_order');
+
+                $poolData = [
+                    'name' => $poolName,
+                    'matches' => [],
+                ];
+
+                foreach ($matchesInPool as $match) {
+                    $poolData['matches'][] = [
+                        'id' => $match->id,
+                        'match_order' => $match->match_order,
+                        'match_type' => $match->match_type,
+                        'contingent' => [
+                            'name' => $match->contingent_name
+                        ],
+                        'final_score' => $match->final_score,
+                        'status' => $match->status,
+                        'team_member1' => ['name' => $match->participant_1],
+                        'team_member2' => ['name' => $match->participant_2],
+                        'team_member3' => ['name' => $match->participant_3],
+                        'pool' => [
+                            'age_category' => [
+                                'name' => $match->age_category ?? '-'
+                            ]
+                        ]
+                    ];
+                }
+
+                $groupData['pools'][] = $poolData;
+            }
+
+            $result[] = $groupData;
+        }
+    }
+
+    return response()->json($result);
+}
+
+
 
     public function show($id)
     {

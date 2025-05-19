@@ -20,13 +20,11 @@ class SeniTimerStarted implements ShouldBroadcast
     {
         $this->match = $match;
 
-        // ✅ Logging untuk debug
         \Log::info('📢 Event SeniTimerStarted DIKIRIM', [
             'match_id' => $match->id,
             'arena_name' => $match->arena_name,
             'tournament_name' => $match->tournament_name,
-            'start_time' => optional($match->start_time)->toIso8601String(),
-            'duration' => $match->duration,
+            'start_time' => $match->start_time,
         ]);
     }
 
@@ -45,13 +43,16 @@ class SeniTimerStarted implements ShouldBroadcast
 
     public function broadcastWith()
     {
+        \Log::info("📡 broadcastWith SENI TIMER", [
+            'start_time' => $this->match->start_time,
+        ]);
+
         return [
             'match_id' => $this->match->id,
             'arena_name' => $this->match->arena_name,
             'tournament_name' => $this->match->tournament_name,
             'duration' => $this->match->duration ?? 180,
-            'status' => $this->match->status,
-            'start_time' => optional($this->match->start_time)->toIso8601String(),
+            'start_time' => optional($this->match->start_time)->toIso8601String(), // ✅ INI PENTING
         ];
     }
 }

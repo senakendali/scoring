@@ -38,6 +38,9 @@
             </select>
         </div>
 
+        
+
+
         <div class="mb-3">
             <label for="role" class="form-label">Masuk Sebagai</label>
             <select id="role" name="role" class="form-select">
@@ -49,6 +52,17 @@
                 <option value="penonton">Penonton (Big Screen)</option> <!-- ✅ Tambahan -->
             </select>
 
+        </div>
+
+        <div id="seni-category-wrapper" class="mt-3" style="display: none;">
+            <label for="seni_category" class="form-label">Kategori Seni</label>
+            <select class="form-select" id="seni_category" name="seni_category">
+                <option value="">-- Pilih Kategori --</option>
+                <option value="tunggal">Tunggal</option>
+                <option value="regu">Regu</option>
+                <option value="ganda">Ganda</option>
+                <option value="solo_kreatif">Solo Kreatif</option>
+            </select>
         </div>
 
         <div class="mb-3 d-none" id="juri-number-group">

@@ -68,6 +68,22 @@ $(document).ready(function () {
             });
     });
 
+    function toggleSeniCategory() {
+        const matchType = $('#match_type').val();
+        const role = $('#role').val();
+
+        if (matchType === 'seni' && role === 'juri') {
+            $('#seni-category-wrapper').show();
+        } else {
+            $('#seni-category-wrapper').hide();
+            $('#seni_category').val('');
+        }
+    }
+
+    $('#match_type').on('change', toggleSeniCategory);
+    $('#role').on('change', toggleSeniCategory);
+
+
 
     function shouldFetchJuri() {
         return $("#role").val() === "juri"
@@ -104,13 +120,15 @@ $(document).ready(function () {
         const $submitBtn = $(this).find('button[type="submit"]');
         $submitBtn.prop("disabled", true).text("Memproses");
     
-        const formData = {
+       const formData = {
             tournament_name: $("#tournament_name").val(),
             arena_name: $("#arena_name").val(),
             match_type: $("#match_type").val(),
+            seni_category: $("#match_type").val() === "seni" ? $("#seni_category").val() : null,
             role: $("#role").val(),
             juri_number: $("#juri_number").val() || null,
         };
+
     
         if (!formData.tournament_name || !formData.arena_name || !formData.match_type || !formData.role) {
             $(".loader-bar").hide();

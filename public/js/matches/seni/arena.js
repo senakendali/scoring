@@ -56,6 +56,8 @@ $(document).ready(function () {
     }
 
    
+    console.log("🎯 Channel yang dipakai:", `seni-timer.${tournamentSlug}.${arenaSlug}`);
+
    window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
     .listen('.SeniTimerStarted', (e) => {
         console.log("🔥 Timer started raw:", e);
@@ -68,13 +70,16 @@ $(document).ready(function () {
             return;
         }
 
-        startCountUp(startTimestamp, e.duration || 180);
+        startCountUp(startTimestamp, e.duration || 600);
     });
 
     
     window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
         .listen('.SeniTimerUpdated', (data) => {
             console.log("🕒 Event SeniTimerUpdated diterima:", data);
+
+             // ✅ Stop interval dulu apapun statusnya
+            clearInterval(countdownInterval);
 
             if (data.status === 'ongoing') {
                 clearInterval(countdownInterval); // biar gak dobel interval
@@ -83,7 +88,7 @@ $(document).ready(function () {
                 const startTimestamp = Date.parse(data.start_time);
                 if (!isNaN(startTimestamp)) {
                     console.log("▶️ Melanjutkan timer dari:", data.start_time);
-                    startCountUp(startTimestamp, data.duration || 180);
+                    startCountUp(startTimestamp, data.duration || 600);
                 } else {
                     console.warn("❌ start_time tidak valid saat resume:", data.start_time);
                 }
@@ -107,13 +112,18 @@ $(document).ready(function () {
                 $(".wrong-move").prop("disabled", true);
                 $("#timer").text("00:00");
 
+                const category = $("#gender").text().toLowerCase(); // atau pakai data lain yang lebih spesifik
+                const baseScore = (category.includes('tunggal') || category.includes('regu')) ? 9.90 : 9.10;
+
                 totalDeduction = 0;
-                currentScore = 9.90;
-                $("#starting-score").text("9.90");
+                currentScore = baseScore;
+
+                $("#starting-score").text(baseScore.toFixed(2));
                 $("#deduction").text("-0.00");
 
-                console.log("🔁 Timer direset");
+                console.log("🔁 Timer direset dengan base score", baseScore);
             }
+
         });
 
 
@@ -121,6 +131,7 @@ $(document).ready(function () {
      window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
         .listen('.SeniTimerFinished', function (data) {
             console.log("🏁 Match selesai:", data);
+            clearInterval(countdownInterval); // ✅ ⬅️ tambahkan di sini juga
 
             $(".wrong-move").prop("disabled", true);
 
@@ -170,7 +181,7 @@ $(document).ready(function () {
     
 
     // ✅ Countdown Timer Handler
-    function startCountUp(startTime, maxDuration = 180) {
+    function startCountUp(startTime, maxDuration = 600) {
         clearInterval(countdownInterval);
 
         countdownInterval = setInterval(() => {
@@ -201,6 +212,16 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
          $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
+
+            const category = data.category?.toLowerCase(); // contoh: "Tunggal", "Regu", "Ganda"
+
+            const baseScore = ['tunggal', 'regu'].includes(category) ? 9.90 : 9.10;
+
+            // Set UI
+            $("#starting-score").text(baseScore.toFixed(2));
+            $("#seni_base_score").val(baseScore.toFixed(2));
+            startingScore = baseScore;
+
             $("#tournament-name").text(data.tournament_name);
           
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
@@ -232,16 +253,15 @@ $(document).ready(function () {
         });
     }
 
-    function renderSeniJudges(juriCount) {
+    function renderSeniJudges(juriCount, baseScore = 9.90) {
         const $container = $("#judges-preview");
-        const default_score = 9.90;
-        $container.empty(); // Kosongkan dulu
+        $container.empty();
 
         for (let i = 1; i <= juriCount; i++) {
             const judgeHtml = `
                 <div class="flex-fill judge-score-detail">
                     <div class="judge-title fw-bold">J${i}</div>
-                    <div class="judge-score fw-bold" id="judge-score-${i}">${default_score.toFixed(2)}</div></div>
+                    <div class="judge-score fw-bold" id="judge-score-${i}">${baseScore.toFixed(2)}</div>
                 </div>
             `;
             $container.append(judgeHtml);
@@ -249,14 +269,28 @@ $(document).ready(function () {
     }
 
 
+
+    
+
     function fetchJuriCount(tournament, arena) {
-        $.get(`${url}/api/seni/juri-count?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}`, function (data) {
-            renderSeniJudges(data.count);
+        const matchId = $("#match-id").val();
+
+        $.when(
+            $.get(`${url}/api/seni/juri-count?tournament=${encodeURIComponent(tournament)}&arena=${encodeURIComponent(arena)}`),
+            $.get(`${url}/api/local-matches/seni/${matchId}`)
+        ).done(function (juriRes, matchRes) {
+            const juriCount = juriRes[0].count;
+            const matchCategory = matchRes[0].category?.toLowerCase();
+
+            const baseScore = ['tunggal', 'regu'].includes(matchCategory) ? 9.90 : 9.10;
+
+            renderSeniJudges(juriCount, baseScore);
         }).fail(function () {
-            console.error("❌ Gagal fetch jumlah juri");
+            console.error("❌ Gagal fetch juri atau match");
             $(".seni-judges").html('<div class="text-danger">Gagal memuat juri</div>');
         });
     }
+
 
     function pollSeniJudgeScores(matchId, tournament, arena) {
         setInterval(() => {
@@ -302,13 +336,13 @@ $(document).ready(function () {
                     }
                 }
 
-                $("#median-score").text(median.toFixed(2));
+                $("#median-score").text(median.toFixed(6));
                 $("#penalty").text("-" + totalPenalty.toFixed(2));
 
                 const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
                 const variance = scores.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / scores.length;
                 const stddev = Math.sqrt(variance);
-                $("#standar-deviasi").text(stddev.toFixed(2));
+                $("#standar-deviasi").text(stddev.toFixed(6));
 
                 const totalScore = mean - totalPenalty;
                 $("#total-score").text(totalScore.toFixed(2));
@@ -361,16 +395,16 @@ $(document).ready(function () {
                     }
                 }
 
-                $("#median-score").text(median.toFixed(2));
+                $("#median-score").text(median.toFixed(6));
                 $("#penalty").text("-" + totalPenalty.toFixed(2));
 
                 const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
                 const variance = scores.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / scores.length;
                 const stddev = Math.sqrt(variance);
 
-                $("#standar-deviasi").text(stddev.toFixed(2));
+                $("#standar-deviasi").text(stddev.toFixed(6));
                 const totalScore = mean - totalPenalty;
-                $("#total-score").text(totalScore.toFixed(2));
+                $("#total-score").text(totalScore.toFixed(6));
             });
     }
 

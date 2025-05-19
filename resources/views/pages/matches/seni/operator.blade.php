@@ -101,17 +101,19 @@
                     </div>
                     <div class="panel-footer">
                         <div class="d-flex gap-2">
-                            <button class="pause d-flex justify-content-center align-items-center text-white roboto-bold border-0">PAUSE</button>
-                            <button class="start d-flex justify-content-center align-items-center text-white roboto-bold border-0">START</button>
-                            <button class="reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
+                            <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0">PAUSE</button>
+                            <button class="start btn btn-success d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+    <i class="bi bi-play-fill me-1"></i> START
+</button>
+                            <button class="btn reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
                         </div>
                         
 
                         <div class="d-flex mt-2">
-                            <button class="end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">DISQUALIFY</button>
+                            <button class="btn end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">DISQUALIFY</button>
                         </div>
                         <div class="d-flex mt-2">
-                            <button class="next-match d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none">NEXT MATCH</button>
+                            <button class="btn next-match d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none">NEXT MATCH</button>
                         </div>
                     </div>
                 </div>

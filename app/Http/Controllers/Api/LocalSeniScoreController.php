@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\LocalSeniScore;
 use App\Models\LocalSeniPenalties;
 use App\Models\LocalSeniMatch;
+use App\Models\LocalSeniFinalScore;
+use App\Models\LocalSeniComponentScore;
 
 class LocalSeniScoreController extends Controller
 {
@@ -67,5 +69,69 @@ class LocalSeniScoreController extends Controller
         ));
 
         return response()->json(['message' => 'Penalties saved successfully']);
+    }
+
+    public function storeAdditionalScore(Request $request)
+    {
+        $data = $request->validate([
+            'match_id' => 'required|exists:local_seni_matches,id',
+            'judge_number' => 'required|integer|min:1|max:10',
+            'additional_score' => 'required|numeric|between:0,0.10',
+        ]);
+
+        // Update / create final score khusus tambahan nilai
+        LocalSeniFinalScore::updateOrCreate(
+            [
+                'local_match_id' => $data['match_id'],
+                'judge_number' => $data['judge_number'],
+            ],
+            [
+                'submitted_at' => now(), // optional, kalau tambahan dinilai saat submit
+                'kemantapan' => $data['additional_score'], // bisa disimpan ke kolom "kemantapan"
+            ]
+        );
+
+        $match = LocalSeniMatch::find($data['match_id']);
+
+        event(new \App\Events\SeniScoreUpdated(
+            $match->id,
+            $match->arena_name,
+            $match->tournament_name
+        ));
+
+        return response()->json(['message' => 'Score tambahan berhasil disimpan']);
+    }
+
+    public function storeComponentScore(Request $request)
+    {
+        
+         $request->validate([
+            'match_id' => 'required|exists:local_seni_matches,id',
+            'judge_number' => 'required|integer|min:1|max:10',
+            'component' => 'required|in:attack_defense_technique,firmness_harmony,soulfulness',
+            'value' => 'required|numeric|between:0,0.30',
+        ]);
+
+        LocalSeniComponentScore::updateOrCreate(
+            [
+                'local_match_id' => $request->match_id,
+                'judge_number' => $request->judge_number,
+            ],
+            [
+                $request->component => $request->value,
+                'submitted_at' => now(),
+            ]
+        );
+
+        $match = LocalSeniMatch::find($request->match_id);
+
+         event(new \App\Events\SeniScoreUpdated(
+            $match->id,
+            $match->arena_name,
+            $match->tournament_name
+        ));
+
+
+        return response()->json(['message' => 'Component score saved.']);
     }
 }

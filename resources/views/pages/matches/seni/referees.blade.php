@@ -70,6 +70,16 @@
                     </tr>
                 </thead>
                 <tbody>
+                   <tr>
+                    <td>Waktu</td>
+                    <td>
+                        <button class="btn btn-success btn-sm reset-deduction">CLEAR</button>
+                        <button class="btn btn-danger btn-sm poin-deduction">-0.50</button>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control text-center" readonly value="0.00">
+                    </td>
+                    </tr>
                     <tr>
                     <td>Performa Melebihi Arena 10m x 10m</td>
                     <td>

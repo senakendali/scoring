@@ -21,6 +21,7 @@ class MatchSetupController extends Controller
                 'match_type' => 'required|in:tanding,seni',
                 'role' => 'required|in:juri,operator,dewan,ketua,penonton',
                 'juri_number' => 'nullable|integer',
+                'seni_category' => 'nullable|in:tunggal,regu,ganda,solo_kreatif',
             ]);
 
             $query = MatchPersonnelAssignment::where('tournament_name', $data['tournament_name'])
@@ -33,7 +34,7 @@ class MatchSetupController extends Controller
 
             $alreadyExists = $query->exists();
 
-            // Set session (baik sudah ada atau baru dibuat)
+            // ✅ Set session dasar
             session([
                 'role' => $data['role'],
                 'arena_name' => $data['arena_name'],
@@ -42,7 +43,16 @@ class MatchSetupController extends Controller
                 'juri_number' => $data['role'] === 'juri' ? $data['juri_number'] : null,
             ]);
 
-            // Jika belum ada, insert
+            // ✅ Set base score jika seni DAN role juri
+            if ($data['match_type'] === 'seni' && $data['role'] === 'juri' && isset($data['seni_category'])) {
+                $baseScore = in_array($data['seni_category'], ['tunggal', 'regu']) ? 9.90 : 9.10;
+                session([
+                    'seni_category' => $data['seni_category'],
+                    'seni_base_score' => $baseScore,
+                ]);
+            }
+
+            // ✅ Simpan ke DB jika belum ada
             if (! $alreadyExists) {
                 MatchPersonnelAssignment::create([
                     'tournament_name' => $data['tournament_name'],
@@ -53,7 +63,7 @@ class MatchSetupController extends Controller
                 ]);
             }
 
-            // Tentukan URL redirect berdasarkan role
+            // ✅ Redirect sesuai role
             $redirectUrl = match ($data['role']) {
                 'juri' => '/matches/judges',
                 'dewan' => '/matches/referees',
@@ -75,6 +85,8 @@ class MatchSetupController extends Controller
             ], 500);
         }
     }
+
+
 
     
 

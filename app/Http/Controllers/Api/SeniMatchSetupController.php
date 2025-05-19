@@ -13,8 +13,11 @@ use App\Models\LocalSeniMatch;
 use App\Models\LocalSeniScore;
 use App\Models\LocalSeniPenalties;
 use App\Models\MatchPersonnelAssignment;
+use App\Models\LocalSeniFinalScore;
+use App\Models\LocalSeniComponentScore;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 
 class SeniMatchSetupController extends Controller
@@ -57,6 +60,45 @@ class SeniMatchSetupController extends Controller
     }
 
     public function startPerformance($id, Request $request)
+    {
+        $request->validate([
+            'duration' => 'required|integer|min:60|max:600'
+        ]);
+
+        $match = LocalSeniMatch::findOrFail($id);
+        $duration = (int) $request->duration;
+
+        // ✅ Set data mulai
+        $match->start_time = now();
+        $match->pause_time = null;
+        $match->end_time = null;
+        $match->status = 'ongoing';
+        $match->duration = $duration;
+        $match->save();
+
+        // ✅ Ambil ulang agar data konsisten & format ISO ready
+        $fresh = LocalSeniMatch::find($match->id);
+
+        // ✅ Logging buat debug
+        \Log::info("📦 [Seni] Match Dimulai", [
+            'id' => $fresh->id,
+            'match_type' => $fresh->match_type,
+            'start_time' => optional($fresh->start_time)->toIso8601String(),
+            'duration' => $fresh->duration,
+        ]);
+
+       broadcast(new \App\Events\SeniTimerStarted($fresh));
+
+
+        return response()->json([
+            'message' => 'Penampilan dimulai.',
+            'start_time' => optional($fresh->start_time)->toIso8601String(),
+            'duration' => $fresh->duration,
+        ]);
+    }
+
+
+    public function startPerformance_($id, Request $request)
     {
         $request->validate([
             'duration' => 'required|integer|min:60|max:600'
@@ -315,7 +357,7 @@ class SeniMatchSetupController extends Controller
         return response()->json(['count' => $count]);
     }
 
-    public function getJudgeScores(Request $request)
+    public function getJudgeScores__(Request $request)
     {
         $request->validate([
             'match_id' => 'required|integer',
@@ -362,6 +404,76 @@ class SeniMatchSetupController extends Controller
             'end_time' => optional($match->end_time)->toDateTimeString(),
         ]);
     }
+
+    public function getJudgeScores(Request $request)
+    {
+        $request->validate([
+            'match_id' => 'required|integer',
+        ]);
+
+        $matchId = $request->match_id;
+
+        $juris = MatchPersonnelAssignment::where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->where('arena_name', $request->arena)
+            ->where('tournament_name', $request->tournament)
+            ->get();
+
+        $results = [];
+        $match = LocalSeniMatch::find($matchId);
+        $category = strtolower($match->category);
+        $baseScore = in_array($category, ['tunggal', 'regu']) ? 9.90 : 9.10;
+
+        foreach ($juris as $juri) {
+            $deduction = LocalSeniScore::where('local_match_id', $matchId)
+                ->where('judge_number', $juri->juri_number)
+                ->sum('deduction');
+
+            $final = LocalSeniFinalScore::where('local_match_id', $matchId)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $component = LocalSeniComponentScore::where('local_match_id', $matchId)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $additional = $final?->kemantapan ?? 0;
+
+            $componentTotal = 0;
+            if ($component) {
+                $componentTotal += $component->attack_defense_technique ?? 0;
+                $componentTotal += $component->firmness_harmony ?? 0;
+                $componentTotal += $component->soulfulness ?? 0;
+            }
+
+            $truthScore = $baseScore + $componentTotal - $deduction;
+            $totalScore = $truthScore + $additional;
+
+            $results[] = [
+                'juri_number' => $juri->juri_number,
+                'truth_score' => round($truthScore, 2),
+                'additional_score' => round($additional, 2),
+                'score' => round($totalScore, 2),
+                'deduction' => round($deduction, 2),
+            ];
+        }
+
+        $penalty = LocalSeniPenalties::where('local_match_id', $matchId)->sum('penalty_value');
+
+        $penalties = LocalSeniPenalties::where('local_match_id', $matchId)
+            ->select('reason', 'penalty_value')
+            ->get();
+
+        return response()->json([
+            'judges' => $results,
+            'penalty' => round($penalty, 2),
+            'penalties' => $penalties,
+            'start_time' => optional($match->start_time)->toDateTimeString(),
+            'end_time' => optional($match->end_time)->toDateTimeString(),
+        ]);
+    }
+
+
 
 
 
