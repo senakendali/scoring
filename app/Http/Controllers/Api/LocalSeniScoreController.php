@@ -109,7 +109,7 @@ class LocalSeniScoreController extends Controller
             'match_id' => 'required|exists:local_seni_matches,id',
             'judge_number' => 'required|integer|min:1|max:10',
             'component' => 'required|in:attack_defense_technique,firmness_harmony,soulfulness',
-            'value' => 'required|numeric|between:0,0.30',
+            'value' => 'required|numeric|min:0|max:0.30',
         ]);
 
         LocalSeniComponentScore::updateOrCreate(
