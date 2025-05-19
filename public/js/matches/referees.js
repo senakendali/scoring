@@ -13,7 +13,7 @@ $(document).ready(function () {
     });
 
     fetchMatchData();
-    $(".item, .drop").prop("disabled", true).addClass("disabled");
+    //$(".item, .drop").prop("disabled", true).addClass("disabled");
 
 
     const host = window.location.hostname;

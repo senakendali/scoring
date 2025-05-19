@@ -758,17 +758,25 @@ class LocalMatchController extends Controller
                             'corner' => $corner
                         ])
                         ->orderBy('scored_at')
-                        ->pluck('point')
-                        ->toArray();
+                        ->get(); // ⬅️ Ambil objek, bukan pluck
+
+                    $pointData = $points->map(function ($p) {
+                        return [
+                            'point' => $p->point,
+                            'type' => $p->type,
+                            'valid' => (bool) $p->is_validated,
+                        ];
+                    });
 
                     $roundData['judges'][] = [
                         'judge' => "Juri $i",
                         'corner' => $corner,
-                        'points' => $points,
-                        'total' => array_sum($points),
+                        'points' => $pointData,
+                        'total' => $points->sum('point'),
                     ];
                 }
             }
+
 
             // ✅ Nilai Sah
             foreach (['blue', 'red'] as $corner) {

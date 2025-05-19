@@ -139,14 +139,20 @@ $(document).ready(function () {
 
     function renderPoints(points, isValid = false) {
         if (!points || points.length === 0) return '-';
+
         return points.map(p => {
             if (isValid) {
+                // 🔹 Untuk nilai sah (array angka)
                 return `<span class="badge bg-success me-1">${p}</span>`;
             } else {
-                return `<span class="badge bg-secondary me-1">${p}</span>`;
+                // 🔹 Untuk poin juri (object), tampilkan angkanya aja
+                const badgeClass = p.valid ? 'bg-success' : 'bg-secondary';
+                return `<span class="badge ${badgeClass} me-1" title="${p.type} – ${p.valid ? 'Valid' : 'Tidak Valid'}">${p.point}</span>`;
             }
         }).join('');
     }
+
+
     
     
     

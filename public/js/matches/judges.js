@@ -165,7 +165,7 @@ $(document).ready(function () {
     
     
     
-    $(".button-item").prop("disabled", true); // Disable semua tombol diawal
+    //$(".button-item").prop("disabled", true); // Disable semua tombol diawal
 
     
     

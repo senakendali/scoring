@@ -1,6 +1,14 @@
 $(document).ready(function () {
     let matchId = parseInt($("#match-id").val());
 
+   const preloadImages = {
+        kick: new Image(),
+        punch: new Image()
+    };
+
+    preloadImages.kick.src = "/images/kick-icon.png";
+    preloadImages.punch.src = "/images/punch-icon.png";
+
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
     let roundId = null;
@@ -387,9 +395,37 @@ $(document).ready(function () {
     function resetRefereeActions() {
         $(".item, .drop").removeClass('active');
     }
-    
 
     function updateJudgeIcon(corner, judgeNumber, type) {
+        const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
+
+        console.log(`🛠️ Try update #judge-${corner}-${judgeNumber}`);
+
+        if (!judgeEl.length) {
+            console.warn("❌ Element tidak ditemukan:", `#judge-${corner}-${judgeNumber}`);
+            return;
+        }
+
+        judgeEl.addClass("active");
+        const originalText = `J${judgeNumber}`;
+
+        if (type === 'kick' || type === 'punch') {
+            const img = preloadImages[type].cloneNode(); // ⬅️ gunakan gambar dari cache
+            img.style.height = "40px";
+            judgeEl.html(img);
+        } else {
+            console.warn("❌ Unknown type:", type);
+        }
+
+        setTimeout(() => {
+            judgeEl.text(originalText);
+            judgeEl.removeClass("active");
+        }, 2000);
+    }
+
+    
+
+    function updateJudgeIcon_(corner, judgeNumber, type) {
         const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
     
         console.log(`🛠️ Try update #judge-${corner}-${judgeNumber}`);
