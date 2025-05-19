@@ -56,6 +56,8 @@ $(document).ready(function () {
     function loadRekapitulasi(matchId) {
         $.get(`/api/local-matches/${matchId}/recap`, function (data) {
             $('#match-tables').html('');
+            let finalBlue = 0;
+            let finalRed = 0;
             data.forEach((round, index) => {
                 let html = `
                     <table class="table table-striped mb-5">
@@ -130,7 +132,13 @@ $(document).ready(function () {
     
                 html += `</tbody></table>`;
                 $('#match-tables').append(html);
+
+                finalBlue += round.final.blue;
+                finalRed += round.final.red;
             });
+
+            $('#blue-score').text(finalBlue);
+            $('#red-score').text(finalRed);
             $(".loader-bar").hide();
         });
     }
