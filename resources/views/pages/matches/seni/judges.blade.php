@@ -51,7 +51,11 @@
 
 
 <div class="fix-match-info light roboto-bold" id="tournament-name">-</div>
+@if(in_array(session('seni_category'), ['tunggal', 'regu']))
 <div class="judges-container d-flex flex-column"  style="height:calc(100vh - 100px);">
+@else
+<div class="judges-container d-flex flex-column"  style="height:100vh;">
+@endif
     
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="judge-number" value="{{ session('juri_number') }}">
@@ -141,14 +145,14 @@
                <table class="judges_table table table-dark w-100 mb-0">
                   <thead>
                       <tr>
-                      <th style="width: 30%">SCORING ELEMENET</th>
-                      <th style="width: 60%"></th>
-                      <th style="width: 10%">SCORE</th>
+                      <th style="width: 15%">SCORING ELEMENET</th>
+                      <th style="width: 70%"></th>
+                      <th style="width: 15%">SCORE</th>
                       </tr>
                   </thead>
                  <tbody>
                     <tr data-component="attack_defense_technique">
-                      <td>Attack Defense Technique (0.01 - 0.30)</td>
+                      <td style="font-size:11px; ">Attack Defense Technique (0.01 - 0.30)</td>
                       <td class="score-buttons d-flex flex-wrap gap-1">
                         <!-- Button 0.01 - 0.30 -->
                         <!-- Isi pakai JS atau generate manual -->
@@ -156,27 +160,27 @@
                       <td><input type="text" class="form-control text-center component-total" readonly value="0.00"></td>
                     </tr>
                     <tr data-component="firmness_harmony">
-                      <td>Firmness and Harmony (0.01 - 0.30)</td>
+                      <td style="font-size:11px; ">Firmness and Harmony (0.01 - 0.30)</td>
                       <td class="score-buttons d-flex flex-wrap gap-1"></td>
                       <td><input type="text" class="form-control text-center component-total" readonly value="0.00"></td>
                     </tr>
                     <tr data-component="soulfulness">
-                      <td>Soulfullness (0.01 - 0.30)</td>
+                      <td style="font-size:11px; ">Soulfullness (0.01 - 0.30)</td>
                       <td class="score-buttons d-flex flex-wrap gap-1"></td>
                       <td><input type="text" class="form-control text-center component-total" readonly value="0.00"></td>
                     </tr>
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colspan="2">Total Score</td>
+                      <td colspan="2" style="font-size:11px; ">Total Score</td>
                       <td><input type="text" id="component-total" class="form-control text-center" readonly value="0.00"></td>
                     </tr>
                     <tr style="display: none">
-                      <td colspan="2">Base Score</td>
+                      <td colspan="2" style="font-size:11px; ">Base Score</td>
                       <td><input type="text" id="base-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
                     <tr>
-                      <td colspan="2">Final Score</td>
+                      <td colspan="2" style="font-size:11px; ">Final Score</td>
                       <td><input type="text" id="final-score" class="form-control text-center" readonly value="0.00"></td>
                     </tr>
                     

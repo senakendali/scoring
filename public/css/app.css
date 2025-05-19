@@ -1725,10 +1725,10 @@ th, td {
 }
 
 
-.judges_table {
+/*.judges_table {
   height: 100%;
-  table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
-}
+  table-layout: fixed; 
+}*/
 
 .judges_table {
   border-top: none !important;
@@ -1736,9 +1736,9 @@ th, td {
     border-right: none !important;
 }
 
-.judges_table thead tr th{
+/*.judges_table thead tr th{
     padding: 20px !important;
-}
+}*/
 
 /*.judges_table thead tr,
 .judges_table tbody tr{
@@ -1758,10 +1758,11 @@ th, td {
   font-weight: bold;
 }
 
-.judges_table {
+/*.judges_table {
   height: 100%;
-  table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
-}
+  table-layout: fixed; 
+
+  */
 
 .judges_table td input.form-control {
   max-width: 80px;
@@ -1774,9 +1775,9 @@ th, td {
 
 .judges_table td .form-control,
 .judges_table td .btn {
-  height: 38px; /* atau sesuai ukuran .form-control bawaan Bootstrap */
+  /*height: 38px; 
   padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: 0.875rem;*/
 }
 
 
