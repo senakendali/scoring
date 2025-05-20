@@ -172,7 +172,7 @@ $(document).ready(function () {
         const $scoreWrapper = $('<div class="d-flex align-items-center gap-2 justify-content-center"></div>');
         $scoreInput.addClass('flex-grow-1'); // Biar input tetap fleksibel
 
-        const $resetBtn = $('<button class="btn btn-sm btn-secondary"><i class="bi bi-arrow-counterclockwise"></i></button>');
+        const $resetBtn = $('<button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>');
         $resetBtn.on("click", function () {
             $scoreInput.val("0.00");
             updateTotals();
@@ -192,7 +192,7 @@ $(document).ready(function () {
         // Generate 30 tombol nilai 0.01 - 0.30
         for (let i = 1; i <= 30; i++) {
             const val = (i / 100).toFixed(2);
-            const $btn = $(`<button class="btn btn-sm btn-success">${val}</button>`);
+            const $btn = $(`<button class="btn btn-sm btn-secondary">${val}</button>`);
 
             $btn.on("click", function () {
                 let current = parseFloat($scoreInput.val()) || 0;
@@ -335,13 +335,13 @@ $(document).ready(function () {
         
         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
             if(data.match_type === 'seni_tunggal' || data.match_type === 'seni_regu'){
-                $(".app-header").addClass("d-block"); 
-                $(".fix-match-info").addClass("d-block");
+                //$(".app-header").addClass("d-block"); 
+                //$(".fix-match-info").addClass("d-block");
                 $("#mode_one").show();
                 $("#mode_two").addClass('d-none');
             }else if(data.match_type === 'seni_ganda' || data.match_type === 'solo_kreatif'){
-                $(".app-header").addClass("d-none");
-                $(".fix-match-info").addClass("d-none");
+                //$(".app-header").addClass("d-none");
+                //$(".fix-match-info").addClass("d-none");
                 $("#mode_one").addClass('d-none');
                 $("#mode_two").show();
             }

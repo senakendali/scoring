@@ -26,6 +26,7 @@
                 <div class="logo">
                     <img src="{{ asset('images/logo.png') }}" alt="">
                 </div>
+                <div class="seni-match-info light roboto-bold" id="tournament-name">-</div>
             @endif
 
            

@@ -50,12 +50,8 @@
 </div>
 
 
-<div class="fix-match-info light roboto-bold" id="tournament-name">-</div>
-@if(in_array(session('seni_category'), ['tunggal', 'regu']))
+<!--div class="fix-match-info light roboto-bold" id="tournament-name">-</div-->
 <div class="judges-container d-flex flex-column"  style="height:calc(100vh - 100px);">
-@else
-<div class="judges-container d-flex flex-column"  style="height:100vh;">
-@endif
     
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="judge-number" value="{{ session('juri_number') }}">
@@ -72,13 +68,13 @@
     <div class="match-header">
         <input type="hidden" id="round-id">
 
-        <div class="match-details">
+        <div class="match-details judges-page" style="font-size: 12px;">
             <div class="detail-item" id="match-code">-</div>
             <div class="detail-item" id="age-category">-</div>
             <div class="detail-item" id="gender">-</div>
         </div>
 
-        <div class="match-item">
+        <div class="match-item judges-page" style="font-size: 12px;">
             <div class="seni-participant-detail">
                 <div id="contingent-name" class="contingent-name item">-</div>
                 <div id="participant-1" class="participant-1 item">-</div>
@@ -99,11 +95,12 @@
                 <div id="deduction" class="deduction d-flex align-items-center justify-content-center">
                     -
                 </div>
-                <div class="additional-score-wrapper d-flex align-items-center justify-content-end gap-2 w-100 px-2">
-                  <!-- Label -->
-                  <div class="text-white" style="white-space: nowrap; min-width: 220px;">
+                 <!-- Label -->
+                <div class="text-white" style="white-space: nowrap; min-width: 220px; font-size: 12px; margin-left: 10px;">
                       <strong>Kemantapan / Penghayatan / Stamina</strong>
-                  </div>
+                </div>
+                <div class="additional-score-wrapper d-flex align-items-center justify-content-end gap-2 w-100 px-2">
+                 
 
                   <!-- Minus Button -->
                   <button type="button" class="btn btn-danger btn-decrease-additional">
@@ -111,7 +108,7 @@
                   </button>
 
                   <!-- Score Input -->
-                  <input type="text" id="additional_score" class="form-control text-center" style="width: 80px;" value="0.00" readonly>
+                  <input type="text" id="additional_score" class="form-control text-center"  value="0.00" readonly>
 
                   <!-- Plus Button -->
                   <button type="button" class="btn btn-primary btn-increase-additional">
@@ -144,7 +141,7 @@
           <div class="table-responsive w-100 h-100">
                <table class="judges_table table table-dark w-100 mb-0">
                   <thead>
-                      <tr>
+                      <tr style="display: none">
                       <th style="width: 15%">SCORING ELEMENET</th>
                       <th style="width: 70%"></th>
                       <th style="width: 15%">SCORE</th>
@@ -172,16 +169,16 @@
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colspan="2" style="font-size:11px; ">Total Score</td>
-                      <td><input type="text" id="component-total" class="form-control text-center" readonly value="0.00"></td>
+                      <td colspan="2" style="font-size:11px; border:none; text-align: right">Total Score</td>
+                      <td style="border:none; "><input type="text" id="component-total" class="form-control text-center" readonly value="0.00"></td>
                     </tr>
                     <tr style="display: none">
-                      <td colspan="2" style="font-size:11px; ">Base Score</td>
-                      <td><input type="text" id="base-score" class="form-control text-center" readonly value="9.10"></td>
+                      <td colspan="2" style="font-size:11px; border:none; ">Base Score</td>
+                      <td style="border:none; "><input type="text" id="base-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
                     <tr>
-                      <td colspan="2" style="font-size:11px; ">Final Score</td>
-                      <td><input type="text" id="final-score" class="form-control text-center" readonly value="0.00"></td>
+                      <td colspan="2" style="font-size:11px; border:none;  text-align: right">Final Score</td>
+                      <td style="border:none; "><input type="text" id="final-score" class="form-control text-center" readonly value="0.00"></td>
                     </tr>
                     
                   </tfoot>
