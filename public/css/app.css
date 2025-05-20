@@ -1154,7 +1154,7 @@ body{
     align-items: center;
     justify-content: center;
     color: #FFFFFF;
-    
+    height: 100%;
 
 }
 
@@ -1394,6 +1394,26 @@ th, td {
     transform: none;
     box-shadow: none;
 }
+
+.button-item {
+    transition: transform 0.1s ease-in-out;
+    /* Biar tombol gak terlalu mepet isinya */
+    padding: 10px 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    background-color: #f3f3f3; /* Bisa disesuaikan */
+    cursor: pointer;
+}
+
+.button-item:hover {
+    transform: scale(0.95); /* Mengecil saat hover */
+}
+
+.button-item:active {
+    transform: scale(0.90); /* Sedikit lebih kecil saat ditekan */
+}
+
 
 #blue-name, #red-name {
     display: flex;
