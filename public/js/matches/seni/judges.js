@@ -6,6 +6,7 @@ $(document).ready(function () {
     let matchId = parseInt($("#match-id").val());
     let roundId = null;
     let judgeNumber = $("#judge-number").val();
+    
 
     let startingScore = parseFloat($("#seni_base_score").val());
     const deduction = 0.01;
@@ -113,6 +114,13 @@ $(document).ready(function () {
 
         $(".wrong-move").prop("disabled", true);
 
+        const judgeNumbers = $('#judge-number').val(); // ✅ dipanggil DI SINI
+
+        if (!judgeNumbers) {
+            console.warn("❌ Juri number tidak ditemukan");
+            return;
+        }
+
         if (data.status === 'finished' && data.disqualified === true) {
            
 
@@ -131,7 +139,7 @@ $(document).ready(function () {
 
                 $.post('/api/seni-component-score', {
                     match_id: matchId,
-                    judge_number: judgeNumber,
+                    judge_number: judgeNumbers,
                     component: component,
                     value: value,
                 }, function (res) {
