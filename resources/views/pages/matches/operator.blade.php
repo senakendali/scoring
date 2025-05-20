@@ -182,17 +182,17 @@
                     </div>
                     <div class="panel-footer">
                         <div class="d-flex gap-2">
-                            <button class="pause d-flex justify-content-center align-items-center text-white roboto-bold border-0">PAUSE</button>
-                            <button class="start d-flex justify-content-center align-items-center text-white roboto-bold border-0">START</button>
-                            <button class="reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
+                            <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-pause-fill"></i> PAUSE</button>
+                            <button class="start btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-play-fill"></i> START</button>
+                            <button class="reset btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-arrow-clockwise"></i> RESET</button>
                         </div>
                         
 
                         <div class="d-flex mt-2">
-                            <button class="end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">END MATCH</button>
+                            <button class="end-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-fill"></i> END MATCH</button>
                         </div>
                         <div class="d-flex mt-2">
-                            <button class="next-match d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none">NEXT MATCH</button>
+                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none"><i class="bi bi-arrow-right-circle-fill"></i> NEXT MATCH</button>
                         </div>
                     </div>
                 </div>

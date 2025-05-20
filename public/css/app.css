@@ -112,7 +112,7 @@ body{
     font-size: 25px;
     background: linear-gradient(to bottom, #2a2a2a, #000000);
     min-height: 80px;
-    min-width: 600px;
+    /*min-width: 600px;*/
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -138,7 +138,7 @@ body{
     background: none !important;
     background-color: #FFFFFF !important;
     min-height: 70px;
-    min-width: 600px;
+    /*min-width: 600px;*/
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -248,6 +248,22 @@ body{
     top: 100px;
     left: 0;
     /*border-top: 1px solid #FFFFFF;*/
+   
+    text-transform: uppercase;
+    color: #FFFFFF;
+}
+
+.match-header .match-details.judges-page.fighting{
+   background-color: var(--black);
+    width:100%;
+    min-height: 50px !important;
+    padding:0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 100px;
+    left: 0;
+    border-top: 2px solid #F93100;
    
     text-transform: uppercase;
     color: #FFFFFF;

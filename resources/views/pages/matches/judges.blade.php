@@ -29,12 +29,12 @@
     <!-- Header Match -->
     <div class="match-header">
         
-        <div class="match-details judges-page">
+        <div class="match-details judges-page fighting" style="font-size: 12px;">
             <div class="detail-item" id="match-code">-</div>
             <div class="detail-item" id="stage">-</div>
             <div class="detail-item" id="class-name">-</div>
         </div>
-        <div class="match-item judges-page">
+        <div class="match-item judges-page" style="font-size: 12px;">
             <div class="blue d-flex">
                 <div class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center" id="blue-name">
                     -
@@ -62,21 +62,21 @@
    <div class="judges-display d-flex flex-column h-100">
         <div class="judges-recapitulation d-flex">
             <div class="blue-recapitulation d-flex align-items-center gap-2"></div>
-            <div class="round roboto-bold d-flex justify-content-center align-items-center">
+            <div class="round roboto-bold d-flex justify-content-center align-items-center" style="font-size: 12px;">
                 ROUND 1
             </div>
             <div class="red-recapitulation d-flex align-items-center gap-2"></div>
         </div>
         <div class="judges-recapitulation d-flex">
             <div class="blue-recapitulation d-flex align-items-center gap-2"></div>
-            <div class="round roboto-bold d-flex justify-content-center align-items-center">
+            <div class="round roboto-bold d-flex justify-content-center align-items-center" style="font-size: 12px;">
                 ROUND 2
             </div>
             <div class="red-recapitulation d-flex align-items-center gap-2"></div>
         </div>
         <div class="judges-recapitulation d-flex">
             <div class="blue-recapitulation d-flex align-items-center gap-2"></div>
-            <div class="round roboto-bold d-flex justify-content-center align-items-center">
+            <div class="round roboto-bold d-flex justify-content-center align-items-center" style="font-size: 12px;">
                 ROUND 3
             </div>
             <div class="red-recapitulation d-flex align-items-center gap-2"></div>
