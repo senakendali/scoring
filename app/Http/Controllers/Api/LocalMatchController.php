@@ -933,7 +933,7 @@ class LocalMatchController extends Controller
     }
 
 
-    public function requestVerification(Request $request)
+    public function requestVerification_(Request $request)
     {
         $data = $request->validate([
             'match_id' => 'required|integer',
@@ -957,7 +957,36 @@ class LocalMatchController extends Controller
         return response()->json(['message' => 'Verification request broadcasted']);
     }
 
-    public function submitVerificationVote(Request $request)
+    public function requestVerification(Request $request)
+    {
+        $data = $request->validate([
+            'match_id' => 'required|integer',
+            'round_id' => 'required|integer',
+            'type' => 'required|in:jatuhan,hukuman',
+            'corner' => 'required|in:blue,red',
+        ]);
+
+        $cacheKey = "verification_votes_{$data['match_id']}_{$data['round_id']}";
+
+        // Simpan struktur lengkap ke cache
+        Cache::put($cacheKey, [
+            'type' => $data['type'],
+            'corner' => $data['corner'],
+            'votes' => [],
+        ], now()->addMinutes(5));
+
+        broadcast(new \App\Events\VerificationRequested(
+            $data['match_id'],
+            $data['round_id'],
+            $data['type'],
+            $data['corner']
+        ))->toOthers();
+
+        return response()->json(['message' => 'Verification request broadcasted']);
+    }
+
+
+    public function submitVerificationVote_(Request $request)
     {
         $data = $request->validate([
             'match_id' => 'required|integer',
@@ -991,6 +1020,58 @@ class LocalMatchController extends Controller
 
         return response()->json(['message' => 'Vote recorded']);
     }
+
+    public function submitVerificationVote(Request $request)
+    {
+        $data = $request->validate([
+            'match_id' => 'required|integer',
+            'round_id' => 'required|integer',
+            'vote' => 'required|in:blue,red,invalid',
+            'judge_name' => 'required|string',
+        ]);
+
+        $cacheKey = "verification_votes_{$data['match_id']}_{$data['round_id']}";
+        $cached = Cache::get($cacheKey);
+
+        // ✅ Pastikan struktur cache valid
+        if (!$cached || !isset($cached['votes'])) {
+            return response()->json(['message' => 'No verification in progress'], 400);
+        }
+
+        $votes = collect($cached['votes']);
+
+        // Hindari duplicate vote dari juri yang sama
+        $votes = $votes->reject(fn ($v) => $v['judge'] === $data['judge_name'])->values();
+
+        $votes->push([
+            'judge' => $data['judge_name'],
+            'vote' => $data['vote'],
+        ]);
+
+        // Update kembali ke cache
+        Cache::put($cacheKey, [
+            'type' => $cached['type'],
+            'corner' => $cached['corner'],
+            'votes' => $votes->toArray(),
+        ], now()->addMinutes(5));
+
+        // ✅ Jika sudah 3 vote, broadcast hasil
+        if ($votes->count() >= 3) {
+            broadcast(new VerificationResulted(
+                $data['match_id'],
+                $data['round_id'],
+                $votes->toArray(),
+                $cached['type'],
+                $cached['corner']
+            ))->toOthers();
+
+            Cache::forget($cacheKey);
+        }
+
+        return response()->json(['message' => 'Vote recorded']);
+    }
+
+
 
 
 

@@ -333,20 +333,36 @@ $(document).ready(function () {
             let redPercent = totalVotes ? (redVotes / totalVotes * 100).toFixed(0) : 0;
             let invalidPercent = totalVotes ? (invalidVotes / totalVotes * 100).toFixed(0) : 0;
 
+             // Generate description
+            let actionLabel = e.type === 'jatuhan' ? 'Jatuhan' : 'Hukuman';
+            let cornerLabel = e.corner === 'blue' ? 'sudut Biru' : 'sudut Merah';
+            let titleText = `${actionLabel} untuk ${cornerLabel}`;
+
+            // 🔷 Ganti warna modal sesuai corner
+            let modalEl = document.getElementById('verificationResultModal');
+            modalEl.classList.remove('bg-blue', 'bg-red');
+            if (e.corner === 'blue') {
+                modalEl.classList.add('bg-blue');
+            } else {
+                modalEl.classList.add('bg-red');
+            }
+
+
             // Generate HTML progress bar
             let resultHtml = `
+                <div class="text-center fw-bold mb-3">${titleText}</div>
                 <div class="text-start mb-2">Biru (${blueVotes} vote)</div>
-                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress mb-3" style="height: 50px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: ${bluePercent}%;">${bluePercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Merah (${redVotes} vote)</div>
-                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress mb-3" style="height: 50px;">
                 <div class="progress-bar bg-danger" role="progressbar" style="width: ${redPercent}%;">${redPercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Tidak Sah (${invalidVotes} vote)</div>
-                <div class="progress mb-2" style="height: 20px;">
+                <div class="progress mb-2" style="height: 50px;">
                 <div class="progress-bar bg-secondary" role="progressbar" style="width: ${invalidPercent}%;">${invalidPercent}%</div>
                 </div>
             `;

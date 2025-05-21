@@ -70,11 +70,6 @@
         
     </div>
     <div class="main-container flex-grow-1 overflow-auto">
-
-        <!-- Display Score dan Timer -->
-        
-
-        
         <div class="arena-container">
             <div class="blue">
                 <div class="additional-point">
@@ -159,22 +154,9 @@
                     </div>
                     
                 </div>
-            </div>
-
-            
-
-            
-            
+            </div> 
         </div>
-        <!--div class="additional-point d-flex flex-column">
-            <div class="score-items">
-                <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="blue">Verifikasi Jatuhan</div>
-            </div>
-            
-            <div class="score-items">
-                <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="red">Verifikasi Hukuman</div>
-            </div>
-        </div-->
+        
     </div>
 </div>    
 @endsection

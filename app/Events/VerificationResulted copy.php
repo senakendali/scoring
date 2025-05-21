@@ -13,16 +13,12 @@ class VerificationResulted implements ShouldBroadcast
     public $matchId;
     public $roundId;
     public $results;
-    public $type;   // jatuhan / hukuman
-    public $corner; // blue / red
 
-    public function __construct($matchId, $roundId, $results, $type, $corner)
+    public function __construct($matchId, $roundId, $results)
     {
         $this->matchId = $matchId;
         $this->roundId = $roundId;
-        $this->results = $results;
-        $this->type = $type;
-        $this->corner = $corner;
+        $this->results = $results; // array of { judge: "J1", vote: "blue" }
     }
 
     public function broadcastOn()
@@ -41,8 +37,6 @@ class VerificationResulted implements ShouldBroadcast
             'match_id' => $this->matchId,
             'round_id' => $this->roundId,
             'results' => $this->results,
-            'type' => $this->type,
-            'corner' => $this->corner,
         ];
     }
 }

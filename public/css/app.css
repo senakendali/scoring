@@ -1046,7 +1046,6 @@ body{
 .additional-point .score-items .item:hover{
     width: 50%;
     text-align: center;
-    padding: 20px;
     background-color: var(--secondary-color);
 }
 
@@ -1057,9 +1056,7 @@ body{
     background-color: var(--secondary-color);
 }
 
-.additional-point .score-items .item:nth-child(1){
-    border-right: 1px solid #FFFFFF;
-}
+
 
 .score.flash {
     animation: flash-bg 0.5s;
@@ -1342,7 +1339,7 @@ th, td {
 }
 
 .additional-point .item[data-corner="blue"]:hover, .drop[data-corner="blue"]:hover {
-    background-color: #3a1ca9; /* Biru hover */
+    background-color: #4E25FF; /* Biru hover */
 }
 
 /* 🔴 Sudut merah */
@@ -1351,7 +1348,7 @@ th, td {
 }
 
 .additional-point .item[data-corner="red"]:hover, .drop[data-corner="red"]:hover {
-    background-color: #B71C1C; /* Merah hover lebih tua */
+    background-color: #E8003F; /* Merah hover lebih tua */
 }
 
 /* 🚫 Disabled state */
@@ -1910,6 +1907,17 @@ th, td {
     transform: none;
   }
 }
+
+#verificationResultModal.bg-blue .modal-content {
+    background-color: #4E25FF; /* navy biru */
+    color: white;
+}
+
+#verificationResultModal.bg-red .modal-content {
+    background-color: #E8003F; /* merah tua */
+    color: white;
+}
+
 
    
 
