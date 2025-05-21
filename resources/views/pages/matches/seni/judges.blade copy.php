@@ -49,15 +49,9 @@
   </div>
 </div>
 
-<div class="fix-match-info dark" id="tournament-name">-</div>
-<div class="fix-match-detail">
-    <div class="detail-item" id="match-code">-</div>
-    <div class="detail-item" id="age-category">-</div>
-    <div class="detail-item" id="gender">-</div>
-</div>
 
 <!--div class="fix-match-info light roboto-bold" id="tournament-name">-</div-->
-<div class="judges-container d-flex flex-column"  style="height:calc(100vh - 180px);">
+<div class="judges-container d-flex flex-column"  style="height:calc(100vh - 100px);">
     
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="judge-number" value="{{ session('juri_number') }}">
@@ -74,11 +68,11 @@
     <div class="match-header">
         <input type="hidden" id="round-id">
 
-        <!--div class="match-details judges-page" style="font-size: 12px;">
+        <div class="match-details judges-page" style="font-size: 12px;">
             <div class="detail-item" id="match-code">-</div>
             <div class="detail-item" id="age-category">-</div>
             <div class="detail-item" id="gender">-</div>
-        </div-->
+        </div>
 
         <div class="match-item judges-page" style="font-size: 12px;">
             <div class="seni-participant-detail">
@@ -101,39 +95,36 @@
                 <div id="deduction" class="deduction d-flex align-items-center justify-content-center">
                     -
                 </div>
-
-                <div class="additional-seni-score d-flex flex-column align-items-center justify-content-start">
-                  <!-- Label -->
-                  <div style="white-space: nowrap; min-width: 100%; font-size: 12px; margin-left: 10px; text-align:left; ">
-                        <strong>Kemantapan / Penghayatan / Stamina</strong>
-                  </div>
-                  <div class="additional-score-wrapper d-flex align-items-center justify-content-end gap-2 w-100 px-2">
-                  
-
-                    <!-- Minus Button -->
-                    <button type="button" class="btn btn-danger btn-decrease-additional">
-                        <i class="bi bi-dash-circle"></i>
-                    </button>
-
-                    <!-- Score Input -->
-                    <input type="text" id="additional_score" class="form-control text-center"  value="0.00" readonly>
-
-                    <!-- Plus Button -->
-                    <button type="button" class="btn btn-primary btn-increase-additional">
-                        <i class="bi bi-plus-circle"></i>
-                    </button>
-
-                    <!-- Reset Button -->
-                    <button type="button" class="btn btn-secondary btn-reset-additional">
-                        Reset
-                    </button>
-
-                    <!-- Submit Button -->
-                    <button type="button" class="btn btn-success btn-submit-additional">
-                        Submit
-                    </button>
-                  </div>
+                 <!-- Label -->
+                <div class="text-white" style="white-space: nowrap; min-width: 220px; font-size: 12px; margin-left: 10px;">
+                      <strong>Kemantapan / Penghayatan / Stamina</strong>
                 </div>
+                <div class="additional-score-wrapper d-flex align-items-center justify-content-end gap-2 w-100 px-2">
+                 
+
+                  <!-- Minus Button -->
+                  <button type="button" class="btn btn-danger btn-decrease-additional">
+                      <i class="bi bi-dash-circle"></i>
+                  </button>
+
+                  <!-- Score Input -->
+                  <input type="text" id="additional_score" class="form-control text-center"  value="0.00" readonly>
+
+                  <!-- Plus Button -->
+                  <button type="button" class="btn btn-primary btn-increase-additional">
+                      <i class="bi bi-plus-circle"></i>
+                  </button>
+
+                  <!-- Reset Button -->
+                  <button type="button" class="btn btn-secondary btn-reset-additional">
+                      Reset
+                  </button>
+
+                  <!-- Submit Button -->
+                  <button type="button" class="btn btn-success btn-submit-additional">
+                      Submit
+                  </button>
+              </div>
 
 
 

@@ -18,9 +18,9 @@
 <body>
     <div id="loader" class="loader-bar"></div>
     
-    <header class="app-header d-flex justify-content-start @if(request()->segment(3) == 'display-arena' || request()->segment(3) == 'referees' || request()->segment(4) == 'recap') light @endif">
+    <header class="app-header d-flex justify-content-start @if(request()->segment(3) == 'display-arena' || request()->segment(3) == 'referees' || request()->segment(3) == 'judges' || request()->segment(4) == 'recap') light @endif">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            @if(request()->segment(3) == 'display-arena' || request()->segment(3) == 'referees' || request()->segment(4) == 'recap')
+            @if(request()->segment(3) == 'display-arena' || request()->segment(3) == 'referees' || request()->segment(3) == 'judges' || request()->segment(4) == 'recap')
                 <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
             @else
                 <div class="logo">
@@ -39,7 +39,7 @@
                         ? 'Juri ' . session('juri_number') 
                         : ucfirst(session('role') ?? 'Guest');
                 @endphp
-                <button class="btn btn-outline-light dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-dark dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     {{ $roleLabel }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userInfoDropdown">
