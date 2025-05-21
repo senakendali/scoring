@@ -110,7 +110,37 @@ $(document).ready(function () {
         $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
         $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
     
-        
+        // 🔥 Tambahkan logika ganti background sesuai pemenang
+        /*if (blueScore > redScore) {
+            $("#blue-score").css({
+                backgroundColor: "#4E25FF", // Biru background
+                color: "#FFFFFF",             // Teks putih
+            });
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"              // Teks merah biasa
+            });
+        } else if (redScore > blueScore) {
+            $("#red-score").css({
+                backgroundColor: "#D32F2F",   // Merah background
+                color: "#FFFFFF",              // Teks putih
+            });
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"              // Teks biru biasa
+                
+            });
+        } else {
+            // Kalau imbang
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+        }*/
     });
 
     let waitingModalInstance = null;
@@ -213,62 +243,45 @@ $(document).ready(function () {
     
 
     $(".item[data-action], .drop[data-action]").on("click", function () {
-        const $btn = $(this);
-        const action = $btn.data("action");
-        const point = $btn.data("point");
-        const corner = $btn.data("corner");
-
-        if ($btn.hasClass("active")) {
-            // 🔴 UNDO: jika sudah aktif, cancel aksi
-            $btn.removeClass("active");
-
-            $.ajax({
-                url: "/api/local-referee-actions/cancel",
-                method: "POST",
-                data: {
-                    match_id: matchId,
-                    round_id: roundId,
-                    action: action,
-                    corner: corner
-                },
-                success: function (res) {
-                    console.log("🧹 Undo berhasil:", res);
-                },
-                error: function (xhr) {
-                    console.error("❌ Gagal undo:", xhr.responseJSON?.message || xhr.statusText);
-                }
+        const action = $(this).data("action");
+        const point = $(this).data("point");
+        const corner = $(this).data("corner");
+    
+        console.log(`🟢 Aksi: ${action}, Corner: ${corner}, Point: ${point}`);
+    
+        $(this).addClass("active");
+    
+        if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
+            // 🔥 Kalau butuh verifikasi, panggil API verifikasi
+            $.post("/api/request-verification", {
+                match_id: matchId,
+                round_id: roundId,
+                type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
+                corner: corner,
+            })
+            .done(function (res) {
+                console.log("✅ Verification request sent", res);
+            })
+            .fail(function (xhr) {
+                console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
             });
         } else {
-            // 🟢 SUBMIT ACTION
-            $btn.addClass("active");
-
-            if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
-                $.post("/api/request-verification", {
-                    match_id: matchId,
-                    round_id: roundId,
-                    type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
-                    corner: corner,
-                }).done(function (res) {
-                    console.log("✅ Verification request sent", res);
-                }).fail(function (xhr) {
-                    console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
-                });
-            } else {
-                $.post("/api/local-referee-actions", {
-                    local_match_id: matchId,
-                    round_id: roundId,
-                    action: action,
-                    point_change: point,
-                    corner: corner,
-                }).done(function (res) {
-                    console.log("✅ Referee action sent", res);
-                }).fail(function (xhr) {
-                    console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
-                });
-            }
+            // ✅ Kalau bukan verifikasi, tetap kirim action biasa
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            })
+            .done(function (res) {
+                console.log("✅ Referee action sent", res);
+            })
+            .fail(function (xhr) {
+                console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
+            });
         }
     });
-
         
 
     function resetRefereeActions() {

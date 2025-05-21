@@ -19,8 +19,13 @@
   </div>
 </div>
 
-<div class="fix-match-info light roboto-bold" id="tournament-name">-</div>
-<div class="judges-container d-flex flex-column"  style="height:calc(100vh - 100px);">
+<div class="fix-match-info dark" id="tournament-name">-</div>
+<div class="fix-match-detail">
+    <div class="detail-item" id="match-code">-</div>
+    <div class="detail-item" id="stage">-</div>
+    <div class="detail-item" id="class-name">-</div>
+</div>
+<div class="judges-container d-flex flex-column"  style="height:calc(100vh - 180px);">
     
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="judge-number" value="{{ session('juri_number') }}">
@@ -29,11 +34,11 @@
     <!-- Header Match -->
     <div class="match-header">
         
-        <div class="match-details judges-page fighting" style="font-size: 12px;">
+        <!--div class="match-details judges-page fighting" style="font-size: 12px;">
             <div class="detail-item" id="match-code">-</div>
             <div class="detail-item" id="stage">-</div>
             <div class="detail-item" id="class-name">-</div>
-        </div>
+        </div-->
         <div class="match-item judges-page" style="font-size: 12px;">
             <div class="blue d-flex">
                 <div class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center" id="blue-name">

@@ -31,12 +31,11 @@ body{
 }
 
 .app-header.light img {
+    max-height: 180px;
+    height: auto;
     width: auto;
-    height: calc(100% - 20px); /* Kurangi 20px dari tinggi header */
-    max-height: 25vh;
     object-fit: contain;
-    padding: 10px 0; /* ❗Padding di gambar */
-    box-sizing: border-box; /* ❗Biar padding dihitung di dalam tinggi */
+    display: block;
     transition: all 0.3s ease;
 }
 
@@ -65,7 +64,7 @@ body{
     align-items: center;
     justify-content: center;
     color: #000000;
-    font-size:60px;
+    font-size:100px;
     padding-left: 20px;
 }
 
@@ -110,10 +109,10 @@ body{
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 30px;
+    font-size: 25px;
     background: linear-gradient(to bottom, #2a2a2a, #000000);
     min-height: 80px;
-    min-width: 800px;
+    /*min-width: 600px;*/
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -139,7 +138,7 @@ body{
     background: none !important;
     background-color: #FFFFFF !important;
     min-height: 70px;
-    min-width: 800px;
+    /*min-width: 600px;*/
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -156,6 +155,50 @@ body{
 
 }
 
+.fix-match-info.dark{
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+   background: linear-gradient(to bottom, #2a2a2a, #000000);
+    min-height: 70px;
+    /*min-width: 600px;*/
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    padding: 20px;
+
+    /* 🎯 Tambahin shadow di sini */
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+
+
+}
+
+.seni-match-info{
+    font-size: 15px;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    padding: 20px;
+    margin: 0 auto;
+    margin-top: -30px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+    
+   
+}
+
 .fix-match-detail {
     position: fixed;
     top: 95px;
@@ -163,7 +206,7 @@ body{
     transform: translateX(-50%);
    
     min-height: 80px;
-    min-width: 800px;
+    min-width: 600px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -189,6 +232,7 @@ body{
     justify-content: center;
     display: flex;
     border-radius:5px;
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
 }
 
 
@@ -214,6 +258,38 @@ body{
     top: 100px;
     left: 0;
     /*border-top: 1px solid #FFFFFF;*/
+   
+    text-transform: uppercase;
+    color: #FFFFFF;
+}
+
+.match-header .match-details.judges-page{
+   background-color: var(--secondary-color);
+    width:100%;
+    min-height: 50px !important;
+    padding:0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 100px;
+    left: 0;
+    /*border-top: 1px solid #FFFFFF;*/
+   
+    text-transform: uppercase;
+    color: #FFFFFF;
+}
+
+.match-header .match-details.judges-page.fighting{
+   background-color: var(--black);
+    width:100%;
+    min-height: 50px !important;
+    padding:0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 100px;
+    left: 0;
+    border-top: 2px solid #F93100;
    
     text-transform: uppercase;
     color: #FFFFFF;
@@ -247,6 +323,35 @@ body{
    
     text-transform: uppercase;
     color: #FFFFFF;
+}
+
+.match-header .match-item.judges-page{
+    width:100%;
+    min-height: 50px;
+    background-color:var(--black);
+    display: flex;
+    top: 100px;
+    left: 0;
+   
+    text-transform: uppercase;
+    color: #FFFFFF;
+}
+
+.match-header .match-item .seni-participant-detail{
+    width: 100%;
+    display: flex;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.match-header .match-item .seni-participant-detail .item{
+    flex: 1;
+    min-height: 50px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+    color: #FFFFFF;
+    text-transform: uppercase;
+    align-items: center;
+    justify-content: center;
+    display: flex;
 }
 
 @media (min-width: 1920px) {
@@ -515,7 +620,7 @@ body{
     align-items: center;
     justify-content: center;
 
-    font-size: clamp(40px, 10vw, 200px); /* 🔥 Dinamis */
+    font-size: clamp(40px, 20vw, 200px); /* 🔥 Dinamis */
     line-height: 1;
     white-space: nowrap;
     text-align: center;
@@ -630,8 +735,8 @@ body{
 
 .judges-recapitulation .round{
     width: 200px;
-    border-left: 1px solid #000000;
-    border-right: 1px solid #000000;
+    /*border-left: 1px solid #000000;
+    border-right: 1px solid #000000;*/
     color: #000000;
 }
 
@@ -684,7 +789,7 @@ body{
 
 .arena-container .blue{
     display: flex;
-    width: 50%;
+    width: 33.3%;
     border-right: 1px solid #FFFFFF;
     height: auto;
 }
@@ -697,7 +802,7 @@ body{
 
 .arena-container .blue .additional-point{
     background-color: #FFFFFF;
-    width: 50%;
+    width: 100%;
    padding-top: 10px;
    padding-right: 5px;
    padding-bottom: 10px;
@@ -717,6 +822,39 @@ body{
 
 }
 
+.arena-container .score-container{
+    display: flex;
+    flex-direction: column;
+    width: 33.3%;
+    border-right: 1px solid #FFFFFF;
+    height: auto;
+}
+
+.arena-container .score-container .display-score{
+    height: 50%;
+    width: 100%;
+    display: flex;
+}
+
+.arena-container .score-container .verification{
+    height: 50%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+
+}
+
+.arena-container .red{
+    display: flex;
+    width: 33.3%;
+    border-right: 1px solid #FFFFFF;
+    height: auto;
+}
+
 .arena-container .red #red-score{
     height: 100%;
     width: 100%;
@@ -728,7 +866,7 @@ body{
 }
 
 
-.arena-container .blue .referee-score{
+.arena-container .score-container .referee-score.blue{
     width: 50%;
     padding: 10px;
     background-color: #FFFFFF;
@@ -753,7 +891,7 @@ body{
 
 .arena-container .red{
     display: flex;
-    width: 50%;
+    width: 33.3%;
     height: auto;
 }
 
@@ -771,11 +909,11 @@ body{
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 50%;
-    border-right: 1px solid #FFFFFF;
+    width: 100%;
+   
 }
 
-.arena-container .red .referee-score{
+.arena-container .score-container .referee-score.red{
     background-color: #FFFFFF;
     padding: 10px;
     width: 50%;
@@ -808,6 +946,36 @@ body{
     
 }
 
+.verification .score-items{
+    display: flex;
+    
+    
+    width: 100%;
+    height: 50%;
+    
+}
+
+.verification .score-items .drop{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-transform: uppercase;
+    user-select: none;
+
+}
+
+.verification .score-items .drop.black{
+    background: linear-gradient(to bottom, #2a2a2a, #000000) !important;
+}
+
 .additional-score .score-items .item{
     width: 50%;
     text-align: center;
@@ -831,12 +999,12 @@ body{
     display: flex;
     gap: 10px;
     width: 100%;
-    height: 20%;
+    height: 25%;
     
 }
 
 .additional-point .score-items .item{
-    width: 50%;
+    width:25%;
     text-align: center;
     padding: 20px;
     cursor: pointer;
@@ -902,7 +1070,7 @@ body{
 }
 
 .item.active {
-    background: var(--secondary-color) !important;
+    background: #ffc107 !important;
     color: #FFFFFF;
     
     transition: all 0.3s ease;
@@ -956,6 +1124,7 @@ body{
 .judges-button{
     /*position: fixed;
     bottom: 0;*/
+    height:400px;
     padding-top: 10px;
     display: flex;
     width: 100%;
@@ -970,6 +1139,7 @@ body{
     align-items: center;
     justify-content: center;
     color: #FFFFFF;
+    height: 100%;
     
 
 }
@@ -984,7 +1154,7 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 80px;
+    height: 50px;
     width: 100%;
     border-bottom: 1px solid #FFFFFF;
 }
@@ -992,7 +1162,7 @@ body{
 .judges-button .blue-button .button-item{
     border:none;
     width: 100%;
-    height: 80px;
+    height: 50%;
     display: flex;
     align-items: center;
     justify-content: start;
@@ -1010,14 +1180,14 @@ body{
     align-items: center;
     justify-content: center;
     color: #FFFFFF;
-    
+    height: 100%;
 
 }
 
 .judges-button .red-button .button-item{
     border:none;
     width: 100%;
-    height: 80px;
+    height: 50%;
     display: flex;
     align-items: center;
     justify-content: end;
@@ -1228,9 +1398,6 @@ th, td {
     border-radius: 10px;
 }
 
-.button-item[data-corner="blue"]:hover {
-    background-color: #3a1ca9;
-}
 
 /* 🔴 Tombol sudut merah */
 .button-item[data-corner="red"] {
@@ -1238,9 +1405,6 @@ th, td {
     border-radius: 10px;
 }
 
-.button-item[data-corner="red"]:hover {
-    background-color: #B71C1C;
-}
 
 /* 🚫 Disabled tombol */
 .button-item:disabled {
@@ -1250,6 +1414,31 @@ th, td {
     transform: none;
     box-shadow: none;
 }
+
+.button-item {
+    transition: transform 0.1s ease-in-out;
+    /* Biar tombol gak terlalu mepet isinya */
+    padding: 10px 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    background-color: #f3f3f3; /* Bisa disesuaikan */
+    cursor: pointer;
+}
+
+.button-item:hover {
+    transform: scale(0.95); /* Mengecil saat hover */
+}
+
+.button-item:active {
+    transform: scale(0.90); /* Sedikit lebih kecil saat ditekan */
+}
+
+.button-item.hovering {
+    transform: scale(0.95);
+}
+
+
 
 #blue-name, #red-name {
     display: flex;
@@ -1305,6 +1494,11 @@ th, td {
     
     overflow-x: auto;
   }
+
+  #bracket-container {
+    position: relative;
+  }
+  
   
   
   
@@ -1366,7 +1560,354 @@ th, td {
     display: none;
   }
 
+  /* Garis horizontal dari corner biru */
+.connector-to-child-blue::after {
+    content: "";
+    position: absolute;
+    top: 25%; /* kira-kira posisi team-blue */
+    right: -30px;
+    width: 30px;
+    height: 2px;
+    background-color: #3498db;
+  }
   
+  /* Garis horizontal dari corner merah */
+  .connector-to-child-red::after {
+    content: "";
+    position: absolute;
+    top: 75%; /* kira-kira posisi team-red */
+    right: -30px;
+    width: 30px;
+    height: 2px;
+    background-color: #e74c3c;
+  }
+
+  #bracket-container.bracket {
+    position: relative;
+  }
+
+  #bracket-svg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none; /* biar klik tetap ke elemen di bawah */
+  }
+
+  .match-wrapper {
+    z-index: 1; /* HAPUS atau turunkan */
+  }
+  
+ 
+  
+  .match {
+    background-color: #2c2c2c;
+    color: #fff;
+  }
+
+  .judges-seni-score{
+    padding-left:.5rem!important;
+    padding-top: .5rem!important;
+    padding-bottom: .5rem!important;
+  }
+
+  .judges-seni-button{
+    padding-right:.5rem!important;
+    padding-top: .5rem!important;
+    padding-bottom: .5rem!important;
+  }
+
+  #mode_one > .flex-fill {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+  
+  
+  .wrong-move {
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+        font-size: 24px;
+        background-color: #D32F2F;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .wrong-move:hover {
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    }
+
+    .wrong-move:active {
+    transform: scale(0.95);
+    }
+
+    .wrong-move:disabled {
+        background-color: #444;
+        color: #999;
+        cursor: not-allowed;
+        opacity: 1;
+    }
+
+  
+  
+  
+
+  
+
+    .starting-score,
+    .deduction {
+        font-size: 48px;
+        font-weight: bold;
+        text-align: center;
+        padding: 20px;
+        border: 2px solid #333;
+        border-radius: 12px;
+        background-color: #f8f8f8;
+        min-width: 200px; /* ✅ Sama dengan max-width button */
+    }
+
+    .starting-score {
+        color: #0c7c0c; /* Hijau */
+        height: 50%;
+    }
+
+    .deduction {
+        color: #b30000; /* Merah tua */
+        height: 50%;
+    }
+
+    .seni-judges{
+        height: 33.3%;
+        display: flex;
+        width: 100%;
+    }
+
+    .seni-referees{
+        height: 25%;
+        display: flex;
+        width: 100%;
+    }
+
+    .judge-title{
+        background: linear-gradient(to bottom, #6884AF, #51678E, #3B4C6F);
+
+        width: 100%;
+       height: 40%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        font-size: 20px;
+    }
+
+    .judge-score{
+        background-color: #FFF;
+        width: 100%;
+        height: 60%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+    }
+
+    .penalty-point{
+        background-color: #FFF;
+        width: 100%;
+        height: 60%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+
+    .seni-footer{
+        font-size: 50px;
+    }
+
+    .referee-score-detail .judge-title{
+        background: linear-gradient(to bottom, #6884AF, #51678E, #3B4C6F);
+
+        width: 100%;
+       height: 40%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        font-size: 15px;
+    }
+
+    .seni-judges > .referee-score-detail {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 33.33%;
+    }
+
+    .penalty-point {
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+    }
+
+    .penalty-point input.form-control {
+        max-width: 100px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    button.poin-deduction {
+        width: 80px;
+    }
+
+    
+
+.table-responsive {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.mytable {
+  border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.mytable thead tr,
+.mytable tbody tr,
+.mytable tfoot tr {
+  height: calc((100vh - 260px) / 7);
+}
+
+
+.mytable th, .table td {
+  vertical-align: middle !important;
+}
+
+.mytable input.form-control {
+  max-width: 100px;
+  font-weight: bold;
+}
+
+.table-responsive {
+  height: 100%;
+  overflow: hidden; /* scroll jangan muncul */
+}
+
+.mytable {
+  height: 100%;
+  table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
+}
+
+
+/*.judges_table {
+  height: 100%;
+  table-layout: fixed; 
+}*/
+
+.judges_table {
+  border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/*.judges_table thead tr th{
+    padding: 20px !important;
+}*/
+
+/*.judges_table thead tr,
+.judges_table tbody tr{
+  height: calc((100vh - 160px) / 7); 
+  vertical-align: middle;
+}*/
+
+
+
+.judges_table th, .table td {
+    height: 100%;
+    vertical-align: middle !important;
+}
+
+.judges_table input.form-control {
+  max-width: 100px;
+  font-weight: bold;
+}
+
+/*.judges_table {
+  height: 100%;
+  table-layout: fixed; 
+
+  */
+
+.judges_table td input.form-control {
+  max-width: 80px;
+}
+
+.judges_table .score-buttons-inner button {
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+.judges_table td .form-control,
+.judges_table td .btn {
+  height: 25px; 
+  padding: 4px;
+  
+}
+
+
+
+
+
+
+.bg-dark-gradient{
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+}
+
+.equal-height-box {
+  display: flex;
+}
+
+.equal-height-box > .w-50 {
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+}
+
+.equal-height-box > .w-50 > * {
+  flex: 1 1 auto;
+}
+
+.judge-score-detail.median .judge-score{
+    background-color: #fdd835;
+   
+}
+
+.median-cell {
+    background-color: #fdd835 !important;
+   
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+@media (hover: none) {
+  .button-item:hover {
+    transform: none;
+  }
+}
+
+   
+
+
+
+
   
   
     

@@ -39,8 +39,8 @@
 
 
 
-<div class="fix-match-info" id="tournament-name">-</div>
- <div class="fix-match-detail">
+<div class="fix-match-info dark" id="tournament-name">-</div>
+<div class="fix-match-detail">
     <div class="detail-item" id="match-code">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
@@ -50,16 +50,7 @@
     <input type="hidden" id="round-id" value="{{ $round_id }}">
 
     <div class="match-header">
-        <!--div class="match-info" id="tournament-name">-</div>
-        <div class="match-details">
-            <div class="detail-item" id="match-code">-</div>
-            <div class="detail-item" id="stage">-</div>
-            <div class="detail-item" id="class-name">-</div>
-            <div id="timer" class="detail-item arena roboto-bold">
-                03:00
-            </div>
-        </div-->
-        <div class="match-item">
+       <div class="match-item judges-page" style="font-size: 12px;">
             <div class="blue d-flex">
                 <div id="blue-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
                     -
@@ -86,7 +77,7 @@
         
         <div class="arena-container">
             <div class="blue">
-            <div class="additional-point">
+                <div class="additional-point">
                     <div class="score-items">
                         <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="blue">
                             <img src="{{ asset('images/binaan-1.png') }}">

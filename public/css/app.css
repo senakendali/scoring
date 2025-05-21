@@ -155,6 +155,31 @@ body{
 
 }
 
+.fix-match-info.dark{
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+   background: linear-gradient(to bottom, #2a2a2a, #000000);
+    min-height: 70px;
+    /*min-width: 600px;*/
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    padding: 20px;
+
+    /* 🎯 Tambahin shadow di sini */
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+
+
+}
+
 .seni-match-info{
     font-size: 15px;
     background-color: #FFFFFF !important;
@@ -207,6 +232,7 @@ body{
     justify-content: center;
     display: flex;
     border-radius:5px;
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
 }
 
 
@@ -777,16 +803,17 @@ body{
 .arena-container .blue .additional-point{
     background-color: #FFFFFF;
     width: 100%;
-   padding-top: 10px;
+   padding-top: 5px;
    padding-right: 5px;
    padding-bottom: 10px;
    padding-left: 5px;
    display: flex;
    flex-direction: column;
-   gap: 10px;
+   gap: 5px;
 }
 
 .arena-container .blue #blue-score{
+    border: 1px solid;
     height: 100%;
     width: 100%;
     border-radius: 8px;
@@ -815,10 +842,10 @@ body{
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding-right: 10px;
+    gap: 5px;
+    padding-right: 5px;
     padding-bottom: 10px;
-    padding-left: 10px;
+    padding-left: 5px;
 
 }
 
@@ -832,6 +859,7 @@ body{
 .arena-container .red #red-score{
     height: 100%;
     width: 100%;
+    border: 1px solid;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -842,13 +870,16 @@ body{
 
 .arena-container .score-container .referee-score.blue{
     width: 50%;
-    padding: 10px;
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 10px;
+    padding-left: 5px;
     background-color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #4E25FF;
-    font-size: 150px;
+    font-size: 60px;
 
 }
 
@@ -876,27 +907,30 @@ body{
 
 .arena-container .red .additional-point{
     background-color: #FFFFFF;
-    padding-top: 10px;
+    padding-top: 5px;
     padding-right: 5px;
     padding-bottom: 10px;
     padding-left: 5px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
     width: 100%;
    
 }
 
 .arena-container .score-container .referee-score.red{
     background-color: #FFFFFF;
-    padding: 10px;
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 10px;
+    padding-left: 5px;
     width: 50%;
     border-right: 1px solid #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #D32F2F;
-    font-size: 150px;
+    font-size: 60px;
 
 }
 
@@ -971,7 +1005,7 @@ body{
 
 .additional-point .score-items{
     display: flex;
-    gap: 10px;
+    gap: 5px;
     width: 100%;
     height: 25%;
     
@@ -980,7 +1014,7 @@ body{
 .additional-point .score-items .item{
     width: 50%;
     text-align: center;
-    padding: 20px;
+    padding: 10px;
     cursor: pointer;
     height: 100%;
     display: flex;
@@ -1372,9 +1406,6 @@ th, td {
     border-radius: 10px;
 }
 
-.button-item[data-corner="blue"]:hover {
-    background-color: #3a1ca9;
-}
 
 /* 🔴 Tombol sudut merah */
 .button-item[data-corner="red"] {
@@ -1382,9 +1413,6 @@ th, td {
     border-radius: 10px;
 }
 
-.button-item[data-corner="red"]:hover {
-    background-color: #B71C1C;
-}
 
 /* 🚫 Disabled tombol */
 .button-item:disabled {
@@ -1413,6 +1441,11 @@ th, td {
 .button-item:active {
     transform: scale(0.90); /* Sedikit lebih kecil saat ditekan */
 }
+
+.button-item.hovering {
+    transform: scale(0.95);
+}
+
 
 
 #blue-name, #red-name {
@@ -1870,6 +1903,12 @@ th, td {
 
 .modal.fade .modal-dialog {
     transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+@media (hover: none) {
+  .button-item:hover {
+    transform: none;
+  }
 }
 
    

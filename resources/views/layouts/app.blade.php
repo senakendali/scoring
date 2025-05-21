@@ -18,31 +18,31 @@
 <body>
     <div id="loader" class="loader-bar"></div>
     
-    <header class="app-header d-flex justify-content-start @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
+    <header class="app-header d-flex justify-content-start @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'judges' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap')
+            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'judges' || request()->segment(2) == 'referees' ||  request()->segment(3) == 'recap')
                 <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
             @else
                 <div class="logo">
-                    <img src="{{ asset('images/logo.png') }}" alt="">
+                    <img src="{{ asset('images/logo.png') }}" class="img-fluid" alt="IPSI">
                 </div>
             @endif
 
-            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees')
+            @if(request()->segment(2) == 'display-arena')
                 <div id="timer" class="timer arena roboto-bold">
                     00:00
                 </div>
             @endif
 
             
-            @if(session('role') && request()->segment(2) != 'display-arena' && request()->segment(2) != 'referees' && request()->segment(3) != 'recap')
+            @if(session('role') && request()->segment(2) != 'display-arena')
             <div class="dropdown ms-auto">
                 @php
                     $roleLabel = session('juri_number') 
                         ? 'Juri ' . session('juri_number') 
                         : ucfirst(session('role') ?? 'Guest');
                 @endphp
-                <button class="btn btn-outline-light dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-dark dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     {{ $roleLabel }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userInfoDropdown">

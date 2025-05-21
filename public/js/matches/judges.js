@@ -132,6 +132,26 @@ $(document).ready(function () {
     $('#voteRed').click(function () {
         submitVerificationVote('red');
     });
+
+    /*$('.button-item').on('mouseenter', function () {
+        alert('hovering');
+        $(this).addClass('hovering');
+    });
+
+    $('.button-item').on('mouseleave', function () {
+        $(this).removeClass('hovering');
+    });
+
+    $('.button-item').on('click touchstart', function () {
+        const $btn = $(this);
+        $btn.removeClass('hovering');
+
+        // Biarkan efek :active dari CSS jalan, bersihkan hovering setelah delay kecil
+        setTimeout(() => {
+            $btn.removeClass('hovering');
+        }, 100);
+    });*/
+
     
     function submitVerificationVote(vote) {
         if (!currentVerification.match_id || !currentVerification.round_id) return;
@@ -200,46 +220,39 @@ $(document).ready(function () {
     function initializeScoring() {
         fetchMatchData();
         
-
         $(".button-item").on("click", function () {
             const $btn = $(this);
             const corner = $btn.data("corner");
             const type = $btn.data("type");
-        
+
             submitPoint(corner, type);
-        
-            // ✅ Tambahkan efek aktif
+
+            // ✅ Efek aktif: transform + background
             if (corner === 'blue') {
                 $btn.css({
-                    backgroundColor: "#2E0DB3", // Biru lebih gelap
                     color: "#FFFFFF",
-                    borderColor: "#FFFFFF"
+                    borderColor: "#FFFFFF",
+                    transform: "scale(0.90)" // efek kecil
                 });
             } else if (corner === 'red') {
                 $btn.css({
-                    backgroundColor: "#B00020", // Merah lebih gelap
                     color: "#FFFFFF",
-                    borderColor: "#FFFFFF"
+                    borderColor: "#FFFFFF",
+                    transform: "scale(0.90)" // juga kasih efek kecil
                 });
             }
-        
-            // ✅ Setelah 2 detik, balikin styling normal
+
+            // ✅ Setelah 200ms (lebih realistis untuk klik), reset styling
             setTimeout(() => {
-                if (corner === 'blue') {
-                    $btn.css({
-                        backgroundColor: "", // Kembali ke class btn-primary
-                        color: "",
-                        borderColor: ""
-                    });
-                } else if (corner === 'red') {
-                    $btn.css({
-                        backgroundColor: "", // Kembali ke class btn-danger
-                        color: "",
-                        borderColor: ""
-                    });
-                }
-            }, 2000);
+                $btn.css({
+                    backgroundColor: "",
+                    color: "",
+                    borderColor: "",
+                    transform: "" // reset efek scale biar balik normal
+                });
+            }, 200);
         });
+
         
     }
 

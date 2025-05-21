@@ -396,12 +396,21 @@ class LocalMatchController extends Controller
         ))->toOthers();
 
         // ✅ 3. Cek skor dalam 2 detik terakhir
-        $recent = \App\Models\LocalJudgeScore::where('local_match_id', $data['match_id'])
+        /*$recent = \App\Models\LocalJudgeScore::where('local_match_id', $data['match_id'])
             ->where('round_id', $data['round_id'])
             ->where('corner', $data['corner'])
             ->where('type', $data['type'])
             ->where('scored_at', '>=', $judgeScore->scored_at->subSeconds(2)) // 🔥 2 detik
-            ->get();
+            ->get();*/
+
+        $recent = \App\Models\LocalJudgeScore::where('local_match_id', $data['match_id'])
+        ->where('round_id', $data['round_id'])
+        ->where('corner', $data['corner'])
+        ->where('type', $data['type'])
+        ->where('scored_at', '>=', $judgeScore->scored_at->subSeconds(2)) // 🔥 2 detik
+        ->where('is_validated', false) // ✅ Tambahkan ini
+        ->get();
+
 
         logger('🧪 Recent scores (2 detik):', $recent->toArray());
 
@@ -730,6 +739,59 @@ class LocalMatchController extends Controller
 
         return response()->json(['message' => 'Tindakan wasit berhasil disimpan']);
     }
+
+    public function cancelRefereeAction(Request $request)
+    {
+        $data = $request->validate([
+            'match_id' => 'required|exists:local_matches,id',
+            'round_id' => 'required|exists:local_match_rounds,id',
+            'corner' => 'required|in:red,blue',
+            'action' => 'required|string',
+        ]);
+
+        // 🔍 Cari record terakhir dengan action & corner yang sama
+        $lastAction = \App\Models\LocalRefereeAction::where('local_match_id', $data['match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', $data['corner'])
+            ->where('action', $data['action'])
+            ->latest()
+            ->first();
+
+        if (!$lastAction) {
+            return response()->json(['message' => 'Tidak ada aksi untuk dibatalkan'], 404);
+        }
+
+        // 🔥 Hapus dan hitung ulang skor
+        $lastAction->delete();
+
+        $blueScore = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
+            ->where('corner', 'blue')
+            ->sum('point');
+
+        $redScore = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
+            ->where('corner', 'red')
+            ->sum('point');
+
+        $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['match_id'])
+            ->where('corner', 'blue')
+            ->sum('point_change');
+
+        $redAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['match_id'])
+            ->where('corner', 'red')
+            ->sum('point_change');
+
+        broadcast(new \App\Events\ScoreUpdated(
+            $data['match_id'],
+            $data['round_id'],
+            $blueScore + $blueAdjustment,
+            $redScore + $redAdjustment,
+            $blueAdjustment,
+            $redAdjustment
+        ))->toOthers();
+
+        return response()->json(['message' => 'Aksi wasit dibatalkan']);
+    }
+
 
 
 

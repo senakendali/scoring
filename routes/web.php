@@ -105,6 +105,8 @@ Route::prefix('api')->group(function () {
     Route::post('/local-judge-scores', [LocalMatchController::class, 'submitPoint']);
     Route::get('local-matches/{id}/judge-recap', [LocalMatchController::class, 'judgeRecap']);
     Route::post('/local-referee-actions', [LocalMatchController::class, 'refereeAction']);
+    Route::post('/local-referee-actions/cancel', [LocalMatchController::class, 'cancelRefereeAction']);
+
 
     Route::post('/match-personnel-assignments', [MatchSetupController::class, 'store']);
     Route::get('/active-juris', [MatchSetupController::class, 'getActiveJuriNumbers']);
