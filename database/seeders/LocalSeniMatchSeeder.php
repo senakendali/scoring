@@ -27,6 +27,19 @@ class LocalSeniMatchSeeder extends Seeder
 
     public function run()
     {
+        // 🔥 Disable FK constraint dulu
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+        // 🔥 Truncate semua tabel terkait
+        DB::table('local_seni_matches')->truncate();
+        DB::table('local_seni_scores')->truncate();
+        DB::table('local_seni_penalties')->truncate();
+        DB::table('local_seni_final_scores')->truncate();
+        DB::table('local_seni_component_scores')->truncate();
+
+        // 🔒 Aktifkan kembali FK
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
         $matchId = 1;
         $data = [];
 
