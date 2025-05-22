@@ -93,57 +93,57 @@
    <div class="judges-display d-flex flex-column h-100 bg-dark"> 
        
         @if(in_array(session('seni_category'), ['tunggal', 'regu']))
-        <div id="mode_one" class="d-flex gap-2 h-100">
-            <div class="flex-fill d-flex flex-column gap-2 judges-seni-score">
-                <div id="starting-score" class="starting-score d-flex align-items-center justify-content-center">
-                    -
-                </div>
-                <div id="deduction" class="deduction d-flex align-items-center justify-content-center">
-                    -
-                </div>
-
-                <div class="additional-seni-score d-flex flex-column align-items-center justify-content-start">
-                  <!-- Label -->
-                  <div style="white-space: nowrap; min-width: 100%; font-size: 12px; margin-left: 10px; text-align:left; ">
-                        <strong>Kemantapan / Penghayatan / Stamina</strong>
+        <div id="mode_one" class="d-flex flex-column flex-grow-1 overflow-auto" style="min-height: 0; padding-bottom: 1.5rem;">
+            <div class="d-flex gap-2">
+              <div class="flex-fill d-flex flex-column gap-2 judges-seni-score">
+                  <div id="starting-score" class="starting-score d-flex align-items-center justify-content-center">
+                      -
                   </div>
-                  <div class="additional-score-wrapper d-flex align-items-center justify-content-end gap-2 w-100 px-2">
-                  
-
-                    <!-- Minus Button -->
-                    <button type="button" class="btn btn-danger btn-decrease-additional">
-                        <i class="bi bi-dash-circle"></i>
-                    </button>
-
-                    <!-- Score Input -->
-                    <input type="text" id="additional_score" class="form-control text-center"  value="0.00" readonly>
-
-                    <!-- Plus Button -->
-                    <button type="button" class="btn btn-primary btn-increase-additional">
-                        <i class="bi bi-plus-circle"></i>
-                    </button>
-
-                    <!-- Reset Button -->
-                    <button type="button" class="btn btn-secondary btn-reset-additional">
-                        Reset
-                    </button>
-
-                    <!-- Submit Button -->
-                    <button type="button" class="btn btn-success btn-submit-additional">
-                        Submit
-                    </button>
-                  </div>
-                </div>
-
-
-
-                
+                  <div id="deduction" class="deduction d-flex align-items-center justify-content-center">
+                      -
+                  </div>  
+              </div>
+              <div class="flex-fill d-flex flex-column gap-2 align-items-center justify-content-center judges-seni-button">
+                  <button class="wrong-move">
+                      WRONG MOVE
+                  </button>
+              </div>
             </div>
-            <div class="flex-fill d-flex align-items-center justify-content-center judges-seni-button">
-                <button class="wrong-move">
-                    WRONG MOVE
+            
+
+            <div class="additional-seni-score d-flex align-items-center justify-content-end">
+              <!-- Label -->
+              <div class="text-white" style="white-space: nowrap; font-size: 12px; margin-left: 10px; text-align:left; ">
+                    <strong>Kemantapan / Penghayatan / Stamina</strong>
+              </div>
+              <div class="additional-score-wrapper d-flex align-items-center justify-content-end gap-2 px-2">
+              
+
+                <!-- Minus Button -->
+                <button type="button" class="btn btn-danger btn-decrease-additional">
+                    <i class="bi bi-dash-circle"></i>
                 </button>
+
+                <!-- Score Input -->
+                <input type="text" id="additional_score" class="form-control text-center"  style="width: 80px;" value="0.00" readonly>
+
+                <!-- Plus Button -->
+                <button type="button" class="btn btn-primary btn-increase-additional">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+
+                <!-- Reset Button -->
+                <button type="button" class="btn btn-secondary btn-reset-additional">
+                    Reset
+                </button>
+
+                <!-- Submit Button -->
+                <button type="button" class="btn btn-success btn-submit-additional">
+                    Submit
+                </button>
+              </div>
             </div>
+            
         </div>
         @else
         <div id="mode_two" class="d-flex gap-2 h-100">
@@ -177,33 +177,23 @@
                     </tr>
                   </tbody>
                   <tfoot>
-                    <tr>
-                      <td colspan="2" style="font-size:11px; border:none; text-align: right">Total Score</td>
-                      <td style="border:none; "><input type="text" id="component-total" class="form-control text-center" readonly value="0.00"></td>
+                    <tr style="display: none">
+                      <td colspan="2" style="font-size:11px; border:none; text-align: right"></td>
+                      <td style="border:none; ">Total Score <input type="text" id="component-total" class="form-control text-center" readonly value="0.00"></td>
                     </tr>
                     <tr style="display: none">
                       <td colspan="2" style="font-size:11px; border:none; ">Base Score</td>
                       <td style="border:none; "><input type="text" id="base-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
                     <tr>
-                      <td colspan="2" style="font-size:11px; border:none;  text-align: right">Final Score</td>
-                      <td style="border:none; "><input type="text" id="final-score" class="form-control text-center" readonly value="0.00"></td>
+                      <td colspan="2" style="font-size:11px; border:none;  text-align: left">Score</td>
+                      <td style="border:none; "><input type="text" id="final-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
-                    
                   </tfoot>
               </table>
           </div>
         </div>
         @endif
       </div>
-
-
-
-
-
-
-    
-
-
 </div>
 @endsection

@@ -12,6 +12,7 @@ $(document).ready(function () {
     const deduction = 0.01;
     let additionalScore = 0.00;
     let totalDeduction = 0;
+    let hasClickedPlus = false;
 
     $.ajaxSetup({
         headers: {
@@ -168,20 +169,23 @@ $(document).ready(function () {
         const $scoreCell = $row.find("td").eq(2);
         const $scoreInput = $scoreCell.find("input");
 
-        // Bungkus input + tombol reset jadi satu div inline
+        // Bungkus input + tombol reset
         const $scoreWrapper = $('<div class="d-flex align-items-center gap-2 justify-content-center"></div>');
-        $scoreInput.addClass('flex-grow-1'); // Biar input tetap fleksibel
+        $scoreInput.addClass('flex-grow-1');
 
         const $resetBtn = $('<button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>');
         $resetBtn.on("click", function () {
             $scoreInput.val("0.00");
             updateTotals();
+
+            // 🔁 Reset semua tombol ke hijau
+            $row.find(".score-buttons-inner button").removeClass("btn-warning").addClass("btn-success");
         });
 
         $scoreWrapper.append($scoreInput).append($resetBtn);
         $scoreCell.empty().append($scoreWrapper);
 
-        // Tambahkan wrapper 2 lapis untuk tombol nilai
+        // Buat wrapper tombol nilai
         const $buttonContainer = $(`
             <div class="score-buttons-wrapper">
                 <div class="score-buttons-inner d-flex flex-wrap justify-content-center gap-1"></div>
@@ -189,21 +193,24 @@ $(document).ready(function () {
         `);
         const $inner = $buttonContainer.find(".score-buttons-inner");
 
-        // Generate 30 tombol nilai 0.01 - 0.30
+        // Generate tombol nilai 0.01 - 0.30
         for (let i = 1; i <= 30; i++) {
             const val = (i / 100).toFixed(2);
-            const $btn = $(`<button class="btn btn-sm btn-secondary">${val}</button>`);
+            const $btn = $(`<button class="btn btn-sm btn-success">${val}</button>`);
 
             $btn.on("click", function () {
                 let current = parseFloat($scoreInput.val()) || 0;
                 current += parseFloat(val);
                 $scoreInput.val(current.toFixed(2));
                 updateTotals();
+
+                // ✅ Ganti warna tombol jadi warning
+                $btn.removeClass("btn-success").addClass("btn-warning");
             });
 
             $inner.append($btn);
 
-            // ⬇️ Break line setiap 15 tombol
+            // Break baris tiap 15 tombol
             if (i % 15 === 0) {
                 $inner.append('<div class="w-100"></div>');
             }
@@ -211,6 +218,7 @@ $(document).ready(function () {
 
         $buttonTd.append($buttonContainer);
     });
+
 
 
 
@@ -256,41 +264,57 @@ $(document).ready(function () {
 
     function updateScoreUI() {
         const displayScore = startingScore + additionalScore - totalDeduction;
-
         $("#starting-score").text(displayScore.toFixed(2));
         $("#deduction").text("-" + totalDeduction.toFixed(2));
-    }  
-    
-    //$(".wrong-move").prop("disabled", true); // Disable semua tombol diawal
+    }
 
-    $(document).on('click', '.btn-increase-additional', function () {
-        let current = parseFloat($('#additional_score').val()) || 0;
-
-        if (current < 0.10) {
-            current = Math.min(current + 0.01, 0.10);
-            additionalScore = current;
-            $('#additional_score').val(current.toFixed(2));
-            updateScoreUI();
-        }
-    });
-
-    $(document).on('click', '.btn-decrease-additional', function () {
-        let current = parseFloat($('#additional_score').val()) || 0;
-
-        if (current > 0.00) {
-            current = Math.max(current - 0.01, 0.00);
-            additionalScore = current;
-            $('#additional_score').val(current.toFixed(2));
-            updateScoreUI();
-        }
-    });
-
-    $(document).on('click', '.btn-reset-additional', function () {
-        additionalScore = 0.00;
+    $(document).ready(function () {
         $('#additional_score').val('0.00');
         updateScoreUI();
     });
 
+    $(document).on('click', '.btn-increase-additional', function () {
+        let current = parseFloat($('#additional_score').val()) || 0;
+        let next;
+
+        if (!hasClickedPlus && current === 0) {
+            next = 0.05;
+            hasClickedPlus = true;
+        } else {
+            next = current + 0.01;
+        }
+
+        // ✅ Batas maksimum 0.10
+        if (next > 0.10) {
+            next = 0.10;
+        }
+
+        next = Math.round(next * 100) / 100;
+        additionalScore = next;
+        $('#additional_score').val(next.toFixed(2));
+        updateScoreUI();
+    });
+
+    $(document).on('click', '.btn-decrease-additional', function () {
+        let current = parseFloat($('#additional_score').val()) || 0;
+        let next = current - 0.01;
+
+        if (next < 0.05) {
+            hasClickedPlus = false; // reset loncatan jika nilai < 0.05
+        }
+
+        next = Math.max(0, Math.round(next * 100) / 100);
+        additionalScore = next;
+        $('#additional_score').val(next.toFixed(2));
+        updateScoreUI();
+    });
+
+    $(document).on('click', '.btn-reset-additional', function () {
+        additionalScore = 0.00;
+        hasClickedPlus = false;
+        $('#additional_score').val('0.00');
+        updateScoreUI();
+    });
 
 
     $(document).on('click', '.btn-submit-additional', function () {

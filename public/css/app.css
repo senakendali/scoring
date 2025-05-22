@@ -1615,7 +1615,7 @@ th, td {
   .judges-seni-score{
     padding-left:.5rem!important;
     padding-top: .5rem!important;
-    padding-bottom: 1.4rem!important;
+    padding-bottom: .5rem!important;
   }
 
   .judges-seni-button{
@@ -1667,8 +1667,7 @@ th, td {
   
 
     .starting-score,
-    .deduction,
-    .additional-seni-score{
+    .deduction{
         font-size: 48px;
         font-weight: bold;
         text-align: center;
@@ -1681,18 +1680,22 @@ th, td {
 
     .starting-score {
         color: #0c7c0c; /* Hijau */
-        /*height: 50%;*/
-        height: 33.3%;
+        height: 50%;
     }
 
     .deduction {
         color: #b30000; /* Merah tua */
-         height: 33.3%;
+        height: 50%;
     }
 
+    
+
     .additional-seni-score{
-        height: 33.3%;
-        background-color: #f2f2f2;
+    
+        width: 100%;
+       
+       
+       
     }
 
     .seni-judges{
@@ -1924,6 +1927,14 @@ th, td {
     background-color: #E8003F; /* merah tua */
     color: white;
 }
+
+#mode_one {
+  max-height: 100%;
+}
+
+
+
+
 
 
    
