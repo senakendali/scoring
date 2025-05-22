@@ -352,17 +352,17 @@ $(document).ready(function () {
             let resultHtml = `
                 <div class="text-center fw-bold mb-3">${titleText}</div>
                 <div class="text-start mb-2">Biru (${blueVotes} vote)</div>
-                <div class="progress mb-3" style="height: 50px;">
+                <div class="progress mb-3" style="height: 20px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: ${bluePercent}%;">${bluePercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Merah (${redVotes} vote)</div>
-                <div class="progress mb-3" style="height: 50px;">
+                <div class="progress mb-3" style="height: 20px;">
                 <div class="progress-bar bg-danger" role="progressbar" style="width: ${redPercent}%;">${redPercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Tidak Sah (${invalidVotes} vote)</div>
-                <div class="progress mb-2" style="height: 50px;">
+                <div class="progress mb-2" style="height: 20px;">
                 <div class="progress-bar bg-secondary" role="progressbar" style="width: ${invalidPercent}%;">${invalidPercent}%</div>
                 </div>
             `;

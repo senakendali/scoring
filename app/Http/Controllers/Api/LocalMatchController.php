@@ -1043,33 +1043,44 @@ class LocalMatchController extends Controller
         // Hindari duplicate vote dari juri yang sama
         $votes = $votes->reject(fn ($v) => $v['judge'] === $data['judge_name'])->values();
 
+        // Tambahkan vote baru
         $votes->push([
             'judge' => $data['judge_name'],
             'vote' => $data['vote'],
         ]);
 
-        // Update kembali ke cache
+        // Update cache dengan vote terbaru
         Cache::put($cacheKey, [
             'type' => $cached['type'],
-            'corner' => $cached['corner'],
+            'corner' => $cached['corner'], // tetap simpan corner permintaan awal
             'votes' => $votes->toArray(),
         ], now()->addMinutes(5));
 
-        // ✅ Jika sudah 3 vote, broadcast hasil
+        // ✅ Jika sudah 3 vote, proses hasilnya
         if ($votes->count() >= 3) {
+            // 🔎 Hitung mayoritas
+            $blueVotes = $votes->where('vote', 'blue')->count();
+            $redVotes = $votes->where('vote', 'red')->count();
+
+            // 🧠 Tentukan sudut mayoritas
+            $majorityCorner = $blueVotes > $redVotes ? 'blue' : 'red';
+
+            // 🔊 Broadcast hasil verifikasi
             broadcast(new VerificationResulted(
                 $data['match_id'],
                 $data['round_id'],
                 $votes->toArray(),
                 $cached['type'],
-                $cached['corner']
+                $majorityCorner // ✅ Kirim sudut hasil vote mayoritas
             ))->toOthers();
 
+            // 🧹 Bersihkan cache
             Cache::forget($cacheKey);
         }
 
         return response()->json(['message' => 'Vote recorded']);
     }
+
 
 
 

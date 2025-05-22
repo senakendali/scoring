@@ -234,8 +234,42 @@ $(document).ready(function () {
         const point = $btn.data("point");
         const corner = $btn.data("corner");
 
+        // 🔁 DROP boleh diklik berkali-kali
+        if (action === 'drop') {
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            }).done(function (res) {
+                console.log("✅ Drop action sent", res);
+            }).fail(function (xhr) {
+                console.error("❌ Gagal kirim drop:", xhr.responseJSON?.message || xhr.statusText);
+            });
+
+            return;
+        }
+
+        // 🔁 JATUHAN juga bisa diklik berkali-kali
+        if (action === 'jatuhan') {
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            }).done(function (res) {
+                console.log("✅ Jatuhan action sent", res);
+            }).fail(function (xhr) {
+                console.error("❌ Gagal kirim jatuhan:", xhr.responseJSON?.message || xhr.statusText);
+            });
+
+            return;
+        }
+
+        // 🔄 Aksi biasa (toggle)
         if ($btn.hasClass("active")) {
-            // 🔴 UNDO: jika sudah aktif, cancel aksi
             $btn.removeClass("active");
 
             $.ajax({
@@ -255,7 +289,6 @@ $(document).ready(function () {
                 }
             });
         } else {
-            // 🟢 SUBMIT ACTION
             $btn.addClass("active");
 
             if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
@@ -284,6 +317,8 @@ $(document).ready(function () {
             }
         }
     });
+
+
 
         
 

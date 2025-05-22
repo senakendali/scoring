@@ -236,6 +236,9 @@ class LocalMatchRoundController extends Controller
     
         // Hapus semua tindakan wasit yang berkaitan
         \App\Models\LocalRefereeAction::where('round_id', $round->id)->delete();
+
+        // Hapus semua tindakan wasit yang berkaitan
+        \App\Models\LocalValidScore::where('round_id', $round->id)->delete();
     
         // Broadcast timer reset
         broadcast(new \App\Events\TimerUpdated($round))->toOthers();
