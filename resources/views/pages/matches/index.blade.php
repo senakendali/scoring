@@ -27,17 +27,27 @@
 <input type="hidden" id="session-role" value="{{ session('role') }}">
 <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
 
-
+<div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
+@if(session('role') === 'operator')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
         <div class="content">
       
-            <div id="match-tables"></div>
+             
+                <div id="match-tables"></div>
+                
+            
         </div>
         </div>
     </div>
 </div>
+@else
+<div class="bg-white text-dark d-flex align-items-center justify-content-center" style="height: calc(100vh - 180px);">
+    <h4 id="typing-text" class="roboto-bold text-uppercase"></h4>
+</div>
+    
+@endif
     
     
 @endsection

@@ -11,12 +11,23 @@ $(document).ready(function () {
 
     const arena = $("#session-arena").val();
     const tournament = $("#session-tournament").val();
-
-   
-
     
     const tournamentSlug = slugify(tournament); // pastikan disamakan
     const arenaSlug = slugify(arena);
+
+    const text = "Ikatan Pencak Silat Indonesia";
+    let index = 0;
+    const $target = $("#typing-text");
+
+    function typeWriter() {
+        if (index < text.length) {
+            $target.append(text.charAt(index));
+            index++;
+            setTimeout(typeWriter, 100); // kecepatan ketik
+        }
+    }
+
+    typeWriter();
 
 
     

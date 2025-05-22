@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{{ asset('bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.css">
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
@@ -17,31 +18,31 @@
 <body>
     <div id="loader" class="loader-bar"></div>
     
-    <header class="app-header d-flex justify-content-start @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
+    <header class="app-header d-flex justify-content-start @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'tanding' || request()->segment(2) == 'seni' || request()->segment(2) == 'judges' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap') light @endif">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees' || request()->segment(3) == 'recap')
+            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'tanding' || request()->segment(2) == 'seni' || request()->segment(2) == 'judges' || request()->segment(2) == 'referees' ||  request()->segment(3) == 'recap')
                 <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
             @else
                 <div class="logo">
-                    <img src="{{ asset('images/logo.png') }}" alt="">
+                    <img src="{{ asset('images/logo.png') }}" class="img-fluid" alt="IPSI">
                 </div>
             @endif
 
-            @if(request()->segment(2) == 'display-arena' || request()->segment(2) == 'referees')
+            @if(request()->segment(2) == 'display-arena')
                 <div id="timer" class="timer arena roboto-bold">
                     00:00
                 </div>
             @endif
 
             
-            @if(session('role') && request()->segment(2) != 'display-arena' && request()->segment(2) != 'referees' && request()->segment(3) != 'recap')
+            @if(session('role') && request()->segment(2) != 'display-arena')
             <div class="dropdown ms-auto">
                 @php
                     $roleLabel = session('juri_number') 
                         ? 'Juri ' . session('juri_number') 
                         : ucfirst(session('role') ?? 'Guest');
                 @endphp
-                <button class="btn btn-outline-light dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-dark dropdown-toggle btn-sm" type="button" id="userInfoDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     {{ $roleLabel }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userInfoDropdown">
@@ -75,30 +76,50 @@
     <script src="{{ asset('bootstrap/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js"></script>
+   
+    
+
     <!-- Jquery Bracket -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-bracket/0.11.1/jquery.bracket.min.js"></script>
 
 
 
+   <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.2.0/dist/web/pusher.min.js"></script>
 
-    <script>
+    <script type="module">
+        import Echo from 'https://cdn.skypack.dev/laravel-echo';
+
         window.Pusher = Pusher;
-        const host = window.location.hostname;
+
         window.Echo = new Echo({
             broadcaster: 'pusher',
             key: 'reverb',
-            wsHost: host,
+            wsHost: window.location.hostname,
             wsPort: 6001,
             forceTLS: false,
             encrypted: false,
             disableStats: true,
             cluster: 'mt1',
-            wsPath: '', // penting buat Reverb
+            wsPath: '',
         });
+
+        console.log('✅ Echo initialized as module:', window.Echo);
     </script>
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
 
 
     

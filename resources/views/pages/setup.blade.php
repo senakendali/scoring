@@ -17,8 +17,6 @@
 </div>
 
 <div class="container mt-5 text-white">
-    <h2 class="mb-4">Pilih Mode Pertandingan</h2>
-
     <form id="match-setup-form">
         <div class="mb-3">
             <label for="tournament_name" class="form-label">Pilih Tournament</label>
