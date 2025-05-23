@@ -259,7 +259,7 @@ $(document).ready(function () {
 
     
 
-   $(".pause").on("click", function () {
+   /*$(".pause").on("click", function () {
         const matchId = $("#match-id").val();
         if (!matchId) return;
 
@@ -290,7 +290,53 @@ $(document).ready(function () {
                 btn.text("RESUME"); // ✅ pindah ke bawah setelah loading selesai
             });
         }
+    });*/
+
+    $(document).on("click touchstart", ".pause", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const matchId = $("#match-id").val();
+        if (!matchId) {
+            console.warn("⛔ matchId belum ada");
+            return;
+        }
+
+        const btn = $(this);
+        setButtonLoading(btn, true);
+
+        if (isPaused) {
+            // 🔄 RESUME
+            $.post(`${url}/api/matches/seni/${matchId}/resume`)
+                .done((res) => {
+                    isPaused = false;
+                    elapsed = typeof res.elapsed === 'number' ? res.elapsed : 0;
+                    runTimer();
+                })
+                .fail(() => {
+                    alert("❌ Gagal melanjutkan pertandingan.");
+                })
+                .always(() => {
+                    setButtonLoading(btn, false);
+                    btn.text("PAUSE");
+                });
+        } else {
+            // ⏸️ PAUSE
+            stopTimer();
+            $.post(`${url}/api/matches/seni/${matchId}/pause`)
+                .done(() => {
+                    isPaused = true;
+                })
+                .fail(() => {
+                    alert("❌ Gagal mem-pause pertandingan.");
+                })
+                .always(() => {
+                    setButtonLoading(btn, false);
+                    btn.text("RESUME");
+                });
+        }
     });
+
 
 
 
