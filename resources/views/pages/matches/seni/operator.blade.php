@@ -53,17 +53,21 @@
 
 
 
-
-<div class="fix-match-info light roboto-bold" id="tournament-name">-</div>
+<div class="fix-match-info dark" id="tournament-name">-</div>
+<div class="fix-match-detail">
+    <div class="detail-item" id="match-code">-</div>
+    <div class="detail-item" id="age-category">-</div>
+    <div class="detail-item" id="gender">-</div>
+</div>
 <div class="match-header">
     <input type="hidden" id="round-id">
 
     
-    <div class="match-details">
+    <!--div class="match-details">
         <div class="detail-item" id="match-code">-</div>
         <div class="detail-item" id="age-category">-</div>
         <div class="detail-item" id="gender">-</div>
-    </div>
+    </div-->
 
     <div class="match-item">
         <div class="seni-participant-detail">
