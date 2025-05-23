@@ -220,7 +220,7 @@ $(document).ready(function () {
 
     
 
-    $(".pause").on("click", function () {
+    /*$(".pause").on("click", function () {
         const btn = $(this);
         setButtonLoading(btn, true);
         if (isPaused) {
@@ -246,7 +246,52 @@ $(document).ready(function () {
                 btn.text("RESUME");
             });
         }
+    });*/
+    $(".pause").on("click touchstart", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!roundId) {
+            console.warn("⛔ roundId belum di-set");
+            return;
+        }
+
+        // Pastikan duration selalu keisi
+        duration = parseInt($('#round-duration').val() || 180);
+
+        const btn = $(this);
+        setButtonLoading(btn, true);
+
+        if (isPaused) {
+            $.post(`${url}/api/local-match-rounds/${roundId}/resume`, {
+                duration: duration
+            }, function (res) {
+                isPaused = false;
+                const startTime = new Date(res.start_time).getTime();
+                const serverNow = new Date(res.now).getTime();
+
+                elapsed = Math.max(0, Math.floor((serverNow - startTime) / 1000));
+                runTimer();
+            })
+            .fail(err => console.error("❌ Resume Error:", err))
+            .always(() => {
+                setButtonLoading(btn, false);
+                btn.text("PAUSE");
+            });
+        } else {
+            stopTimer();
+            $.post(`${url}/api/local-match-rounds/${roundId}/pause`)
+            .done(() => {
+                isPaused = true;
+            })
+            .fail(err => console.error("❌ Pause Error:", err))
+            .always(() => {
+                setButtonLoading(btn, false);
+                btn.text("RESUME");
+            });
+        }
     });
+
     
 
     $(".reset").on("click", function () {
