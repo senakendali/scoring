@@ -80,9 +80,18 @@ $(document).ready(function () {
                     <div class="mb-5">
                         <table class="table table-dark mt-4">
                             <thead>
-                                <tr>
-                                    <th colspan="7" class="table-header text-start text-uppercase">${poolName}</th>
+                               <tr>
+                                    <th colspan="6" class="table-header text-uppercase">
+                                        <span>${poolName}</span>
+                                        
+                                    </th>
+                                    <th class="table-header text-end">
+                                        <button class="btn btn-sm btn-outline-info btn-view-rank" data-pool="${poolName}" data-matches='${JSON.stringify(pool.matches)}'>
+                                            Lihat Peringkat
+                                        </button>
+                                    </th>
                                 </tr>
+
                                 <tr>
                                     <th colspan="7" class="table-header text-start text-uppercase">${ageCategory}</th>
                                 </tr>
@@ -176,6 +185,40 @@ $(document).ready(function () {
         });
 
         $(".loader-bar").hide();
+    });
+
+
+    $(document).on("click", ".btn-view-rank", function () {
+        const rawMatches = $(this).data("matches");
+        const matches = Array.isArray(rawMatches) ? rawMatches : JSON.parse(rawMatches);
+
+        const sorted = matches
+            .filter(m => m.status === 'finished' && !isNaN(parseFloat(m.final_score)))
+            .sort((a, b) => parseFloat(b.final_score) - parseFloat(a.final_score))
+            .slice(0, 3);
+
+        const $list = $("#ranking-list");
+        $list.empty();
+
+        if (sorted.length === 0) {
+            $list.append('<li class="list-group-item bg-dark text-white">Belum ada skor.</li>');
+        } else {
+            sorted.forEach((match, idx) => {
+                const peserta = [match.team_member1?.name, match.team_member2?.name, match.team_member3?.name]
+                    .filter(Boolean).join(' / ');
+                const contingent = match.contingent?.name || '-';
+
+                $list.append(`
+                    <li class="list-group-item bg-dark text-white d-flex justify-content-between">
+                        <strong>#${idx + 1}</strong> ${peserta} (${contingent})<br>
+                        <small>${parseFloat(match.final_score).toFixed(6)}</small>
+                    </li>
+                `);
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById("rankingModal"));
+        modal.show();
     });
 
 
