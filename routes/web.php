@@ -85,14 +85,6 @@ Route::prefix('api')->group(function () {
     Route::get('/local-matches/{id}/live-score', [LocalMatchController::class, 'liveScore']);
     Route::get('/local-matches/{id}/recap', [LocalMatchController::class, 'getRecap']);
 
-
-    
-
-    
-
-    
-
-   
     Route::get('/local-match-rounds/{id}', [LocalMatchRoundController::class, 'show']);
     Route::post('/local-match-rounds/{id}/start', [LocalMatchRoundController::class, 'start']);
     Route::post('/local-match-rounds/{id}/pause', [LocalMatchRoundController::class, 'pause']);

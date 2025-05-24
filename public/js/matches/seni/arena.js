@@ -249,6 +249,8 @@ $(document).ready(function () {
                 $("#participant-2").text(data.team_members[1] || '-').show();
                 $("#participant-3").text(data.team_members[2] || '-').show();
             }
+
+             pollSeniJudgeScores(matchId, tournament, arena);
             $(".loader-bar").hide();
         });
     }

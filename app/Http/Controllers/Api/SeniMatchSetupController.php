@@ -208,6 +208,12 @@ class SeniMatchSetupController extends Controller
         // (Opsional) kalau lu punya tabel penalti, hapus juga
         \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->delete();
 
+        // (Opsional) kalau lu punya tabel komponen skor, hapus juga
+        \App\Models\LocalSeniComponentScore::where('local_match_id', $match->id)->delete();
+
+        // (Opsional) kalau lu punya tabel skor akhir, hapus juga
+        \App\Models\LocalSeniFinalScore::where('local_match_id', $match->id)->delete();
+
         // Broadcast timer update biar semua UI reset
         broadcast(new \App\Events\SeniTimerUpdated($match))->toOthers();
 
@@ -216,49 +222,7 @@ class SeniMatchSetupController extends Controller
         ]);
     }
 
-   public function finish_($id)
-    {
-        $match = \App\Models\LocalSeniMatch::findOrFail($id);
-
-        if ($match->status === 'finished') {
-            return response()->json(['message' => 'Pertandingan sudah selesai.'], 400);
-        }
-
-        $match->status = 'finished';
-        $match->end_time = now();
-
-        // ✅ Hitung final score dari total deduction juri
-        $startingScore = 9.75;
-
-        // Ambil semua skor juri untuk match ini
-        $deductions = \App\Models\LocalSeniScore::where('local_match_id', $match->id)->get();
-
-        // Group by juri_number, hitung masing-masing total deduction
-        $finalScores = $deductions
-            ->groupBy('judge_number')
-            ->map(function ($items) use ($startingScore) {
-                $totalDeduction = $items->sum('deduction');
-                return round($startingScore - $totalDeduction, 2);
-            });
-
-        // ✅ Hitung rata-rata nilai akhir dari semua juri
-        if ($finalScores->count() > 0) {
-            $averageFinalScore = round($finalScores->avg(), 2);
-            $match->final_score = $averageFinalScore;
-        }
-
-        $match->save();
-
-        // ✅ Kirim event selesai
-        broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();
-
-        return response()->json([
-            'message' => 'Pertandingan selesai.',
-            'final_score' => $match->final_score,
-        ]);
-    }
-
-    public function finish($id)
+    public function finish_($id)
     {
         $match = \App\Models\LocalSeniMatch::findOrFail($id);
 
@@ -303,10 +267,81 @@ class SeniMatchSetupController extends Controller
         ]);
     }
 
+    public function finish($id)
+    {
+        $match = \App\Models\LocalSeniMatch::findOrFail($id);
+
+        if ($match->status === 'finished') {
+            return response()->json(['message' => 'Pertandingan sudah selesai.'], 400);
+        }
+
+        $match->status = 'finished';
+        $match->end_time = now();
+
+        // Tentukan base score berdasarkan kategori
+        $category = strtolower($match->category);
+        $baseScore = in_array($category, ['tunggal', 'regu']) ? 9.90 : 9.10;
+
+        // Ambil semua juri yang bertugas di pertandingan ini
+        $juris = \App\Models\MatchPersonnelAssignment::where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->where('arena_name', $match->arena_name)
+            ->where('tournament_name', $match->tournament_name)
+            ->get();
+
+        $finalScores = [];
+
+        foreach ($juris as $juri) {
+            $deduction = \App\Models\LocalSeniScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->sum('deduction');
+
+            $final = \App\Models\LocalSeniFinalScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $component = \App\Models\LocalSeniComponentScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $additional = $final?->kemantapan ?? 0;
+
+            $componentTotal = 0;
+            if ($component) {
+                $componentTotal += $component->attack_defense_technique ?? 0;
+                $componentTotal += $component->firmness_harmony ?? 0;
+                $componentTotal += $component->soulfulness ?? 0;
+            }
+
+            $total = $baseScore + $additional + $componentTotal - $deduction;
+
+            $finalScores[] = $total;
+        }
+
+        if (count($finalScores) > 0) {
+            $rawAverage = collect($finalScores)->avg();
+            $totalPenalty = \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
+            $match->final_score = round($rawAverage - $totalPenalty, 6);
+           // $match->final_score = round(collect($scores)->avg() - $penalty, 6);
+
+        }
+
+        $match->save();
+
+        // Broadcast event selesai
+        broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();
+
+        return response()->json([
+            'message' => 'Pertandingan selesai.',
+            'final_score' => $match->final_score,
+        ]);
+    }
 
 
 
-    public function changeToNextMatch($currentId)
+
+
+    public function changeToNextMatch_($currentId)
     {
 
         // Ambil current match
@@ -339,6 +374,44 @@ class SeniMatchSetupController extends Controller
             'message' => 'No next match available'
         ], 404);
     }
+
+    public function changeToNextMatch($currentId)
+    {
+        $currentMatch = LocalSeniMatch::findOrFail($currentId);
+
+        $matches = LocalSeniMatch::where('arena_name', $currentMatch->arena_name)
+            ->where('match_type', $currentMatch->match_type)
+            ->orderBy('category')
+            ->orderBy('gender')
+            ->orderBy('pool_name')
+            ->orderBy('match_order')
+            ->get();
+
+        // Temukan index match sekarang
+        $index = $matches->search(fn($m) => $m->id === $currentMatch->id);
+
+        // Cek apakah ada match berikutnya
+        if ($index !== false && $index + 1 < $matches->count()) {
+            $nextMatch = $matches[$index + 1];
+
+            if ($nextMatch->status !== 'finished' && $nextMatch->disqualified !== 'yes') {
+                $nextMatch->status = 'ongoing';
+                $nextMatch->save();
+
+                broadcast(new \App\Events\SeniActiveMatchChanged($nextMatch->id))->toOthers();
+
+                return response()->json([
+                    'message' => 'Match switched',
+                    'new_match_id' => $nextMatch->id
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'No next match available'
+        ], 404);
+    }
+
 
     // app/Http/Controllers/Api/SeniMatchController.php
     public function getJuriCount(Request $request)

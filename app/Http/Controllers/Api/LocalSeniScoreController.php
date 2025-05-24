@@ -9,6 +9,7 @@ use App\Models\LocalSeniPenalties;
 use App\Models\LocalSeniMatch;
 use App\Models\LocalSeniFinalScore;
 use App\Models\LocalSeniComponentScore;
+use App\Models\MatchPersonnelAssignment;
 
 class LocalSeniScoreController extends Controller
 {
@@ -93,6 +94,8 @@ class LocalSeniScoreController extends Controller
 
         $match = LocalSeniMatch::find($data['match_id']);
 
+        $this->recalculateFinalScore($match);
+
         event(new \App\Events\SeniScoreUpdated(
             $match->id,
             $match->arena_name,
@@ -101,6 +104,53 @@ class LocalSeniScoreController extends Controller
 
         return response()->json(['message' => 'Score tambahan berhasil disimpan']);
     }
+
+    private function recalculateFinalScore($match)
+    {
+        $juris = MatchPersonnelAssignment::where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->where('arena_name', $match->arena_name)
+            ->where('tournament_name', $match->tournament_name)
+            ->get();
+
+        $category = strtolower($match->category);
+        $baseScore = in_array($category, ['tunggal', 'regu']) ? 9.90 : 9.10;
+
+        $scores = [];
+
+        foreach ($juris as $juri) {
+            $deduction = LocalSeniScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->sum('deduction');
+
+            $final = LocalSeniFinalScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $component = LocalSeniComponentScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $additional = $final?->kemantapan ?? 0;
+
+            $componentTotal = 0;
+            if ($component) {
+                $componentTotal += $component->attack_defense_technique ?? 0;
+                $componentTotal += $component->firmness_harmony ?? 0;
+                $componentTotal += $component->soulfulness ?? 0;
+            }
+
+            $score = $baseScore + $additional + $componentTotal - $deduction;
+            $scores[] = $score;
+        }
+
+        if (count($scores) > 0) {
+            $penalty = LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
+            $match->final_score = round(collect($scores)->avg() - $penalty, 6);
+            $match->save();
+        }
+    }
+
 
     public function storeComponentScore(Request $request)
     {

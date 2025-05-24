@@ -125,7 +125,7 @@ $(document).ready(function () {
 
                    const scoreValue = parseFloat(match.final_score);
                     const scoreText = match.status === 'finished' && !isNaN(scoreValue)
-                        ? scoreValue.toFixed(2)
+                        ? scoreValue.toFixed(6)
                         : '-';
 
                     tableHtml += `<td>${scoreText}</td>`;
