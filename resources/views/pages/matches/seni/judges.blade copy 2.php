@@ -61,7 +61,7 @@
     
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="judge-number" value="{{ session('juri_number') }}">
-    <input type="hidden" name="seni_base_score" id="seni_base_score" value="9.90">
+    <input type="text" name="seni_base_score" id="seni_base_score" value="{{ number_format(session('seni_base_score'), 2) }} ">
 
     <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
     <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
@@ -92,7 +92,7 @@
 
    <div class="judges-display d-flex flex-column h-100 bg-dark"> 
        
-       
+        @if(in_array(session('seni_category'), ['tunggal', 'regu']))
         <div id="mode_one" class="d-flex flex-column flex-grow-1 overflow-auto" style="min-height: 0; padding-bottom: 1.5rem;">
             <div class="d-flex gap-2">
               <div class="flex-fill d-flex flex-column gap-2 judges-seni-score">
@@ -145,7 +145,7 @@
             </div>
             
         </div>
-        
+        @else
         <div id="mode_two" class="d-flex gap-2 h-100">
           <div class="table-responsive w-100 h-100">
                <table class="judges_table table table-dark w-100 mb-0">
@@ -193,7 +193,7 @@
               </table>
           </div>
         </div>
-        
+        @endif
       </div>
 </div>
 @endsection

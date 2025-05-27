@@ -394,23 +394,47 @@ class SeniMatchSetupController extends Controller
     }
 
 
-    public function changeToNextMatch_($currentId)
+    public function changeToNextMatch($currentId)
     {
+        $currentMatch = \App\Models\LocalSeniMatch::findOrFail($currentId);
 
-        // Ambil current match
-        $currentMatch = LocalSeniMatch::findOrFail($currentId);
+        // Ambil semua match di arena yang sama
+        $matches = \App\Models\LocalSeniMatch::where('arena_name', $currentMatch->arena_name)
+            // ->where('match_type', $currentMatch->match_type) // optional filter
+            ->orderBy('category')
+            ->orderBy('gender')
+            ->orderBy('pool_name')
+            ->orderBy('match_order')
+            ->get();
 
-        // Cari pertandingan selanjutnya di arena dan turnamen yang sama, belum selesai
-        $nextMatch = LocalSeniMatch::where('id', '>', $currentMatch->id)
-            ->where('arena_name', $currentMatch->arena_name)
-            ->where('tournament_name', $currentMatch->tournament_name)
-            ->where('status', '!=', 'finished')
-            ->where(function ($q) {
-                $q->whereNull('disqualified')->orWhere('disqualified', '!=', 'yes');
-            })
-            ->orderBy('id')
-            ->first();
+        // Debug log
+        \Log::debug('🔍 Total match ditemukan:', ['total' => $matches->count()]);
+        \Log::debug('🔍 Semua ID match:', ['ids' => $matches->pluck('id')->toArray()]);
+        \Log::debug('🔍 Current ID:', ['id' => $currentMatch->id]);
 
+        // Cari index match sekarang
+        $index = $matches->search(fn($m) => $m->id === $currentMatch->id);
+
+        if ($index === false) {
+            \Log::warning('⚠️ Match sekarang tidak ditemukan dalam daftar hasil query.', [
+                'current_id' => $currentMatch->id,
+            ]);
+            return response()->json(['message' => 'Match sekarang tidak ditemukan.'], 404);
+        }
+
+        // Cari match berikutnya (setelah current)
+        $nextMatch = $matches->slice($index + 1)->first(fn($m) =>
+            $m->status !== 'finished' && $m->disqualified !== 'yes'
+        );
+
+        // Kalau tidak ada di bawahnya, cari dari awal sampai current
+        if (!$nextMatch) {
+            $nextMatch = $matches->slice(0, $index)->first(fn($m) =>
+                $m->status !== 'finished' && $m->disqualified !== 'yes'
+            );
+        }
+
+        // Kalau ketemu, update status dan broadcast
         if ($nextMatch) {
             $nextMatch->status = 'ongoing';
             $nextMatch->save();
@@ -423,22 +447,27 @@ class SeniMatchSetupController extends Controller
             ]);
         }
 
+        // Kalau semua match udah selesai
         return response()->json([
             'message' => 'No next match available'
         ], 404);
     }
 
-    public function changeToNextMatch($currentId)
+
+
+
+    public function changeToNextMatch_($currentId)
     {
         $currentMatch = LocalSeniMatch::findOrFail($currentId);
 
         $matches = LocalSeniMatch::where('arena_name', $currentMatch->arena_name)
-            ->where('match_type', $currentMatch->match_type)
+            //->where('match_type', $currentMatch->match_type)
             ->orderBy('category')
             ->orderBy('gender')
             ->orderBy('pool_name')
             ->orderBy('match_order')
             ->get();
+            
 
         // Temukan index match sekarang
         $index = $matches->search(fn($m) => $m->id === $currentMatch->id);

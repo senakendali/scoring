@@ -317,19 +317,34 @@ $(document).ready(function () {
     });
 
 
-    $(document).on('click', '.btn-submit-additional', function () {
+   $(document).on('click', '.btn-submit-additional', function () {
+        const $btn = $(this);
+        const originalText = $btn.html(); // simpan isi tombol awal
+
         const score = parseFloat($('#additional_score').val());
+
+        // ✅ Ganti jadi loader dan disable tombol
+        $btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...');
+        $btn.prop('disabled', true);
 
         $.post('/api/seni-additional-score', {
             match_id: matchId,
             judge_number: judgeNumber,
             additional_score: score,
-        }, function (res) {
+        })
+        .done(function (res) {
             showScoreModal('Score berhasil disimpan!');
-        }).fail(function (xhr) {
+        })
+        .fail(function (xhr) {
             showScoreModal('Gagal menyimpan score tambahan.');
+        })
+        .always(function () {
+            // ✅ Kembalikan tombol seperti semula
+            $btn.html(originalText);
+            $btn.prop('disabled', false);
         });
     });
+
 
 
     // Fungsi helper untuk tampilkan modal
@@ -359,11 +374,17 @@ $(document).ready(function () {
         
         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
             if(data.match_type === 'seni_tunggal' || data.match_type === 'seni_regu'){
+               
+                $("#seni_base_score").val((9.9).toFixed(2)); // hasil: "9.20"
+
                 //$(".app-header").addClass("d-block"); 
                 //$(".fix-match-info").addClass("d-block");
                 $("#mode_one").show();
                 $("#mode_two").addClass('d-none');
             }else if(data.match_type === 'seni_ganda' || data.match_type === 'solo_kreatif'){
+                
+                 $("#seni_base_score").val((9.1).toFixed(2)); // hasil: "9.20"
+
                 //$(".app-header").addClass("d-none");
                 //$(".fix-match-info").addClass("d-none");
                 $("#mode_one").addClass('d-none');

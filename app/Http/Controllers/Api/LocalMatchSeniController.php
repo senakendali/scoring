@@ -205,6 +205,7 @@ class LocalMatchSeniController extends Controller
                     'json' => [
                         'remote_match_id' => $match->remote_match_id,
                         'status' => 'finished',
+                        'final_score' => null
                     ],
                     'timeout' => 5,
                 ]);

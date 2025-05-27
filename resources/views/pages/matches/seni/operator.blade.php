@@ -50,6 +50,25 @@
   </div>
 </div>
 
+<!-- Modal Notifikasi -->
+<div class="modal fade" id="nextMatchModalInfo" tabindex="-1" aria-labelledby="nextMatchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white text-center">
+      <div class="modal-header">
+        <h5 class="modal-title" id="nextMatchModalLabel">Info</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body" id="nextMatchModalBody">
+        <!-- Isi pesan akan dimasukkan via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 
 

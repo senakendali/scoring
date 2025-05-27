@@ -524,6 +524,10 @@ $(document).ready(function () {
                 alert("Tidak ada pertandingan berikutnya.");
             }
         }).fail(function (xhr) {
+             // ✅ Set isi modal dan tampilkan
+            $("#nextMatchModalBody").text("Tidak ada pertandingan berikutnya. Semua pertandingan telah selesai.");
+            const modal = new bootstrap.Modal(document.getElementById('nextMatchModalInfo'));
+            modal.show();
             console.error("❌ Gagal ganti match:", xhr.responseJSON?.message || xhr.statusText);
         });
     });
