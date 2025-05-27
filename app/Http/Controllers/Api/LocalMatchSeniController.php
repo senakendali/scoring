@@ -18,70 +18,87 @@ class LocalMatchSeniController extends Controller
     {
         $this->live_server = config('app_settings.data_source');
     }
-    public function index__(Request $request)
+    public function fetchLiveMatches(Request $request)
     {
-        $matches = \App\Models\LocalSeniMatch::orderBy('match_date')
+        $arenaName = session('arena_name');
+        $matchType = session('match_type'); // 'seni' atau 'tanding'
+
+        $query = \App\Models\LocalSeniMatch::query();
+
+        if ($arenaName) {
+            $query->where('arena_name', $arenaName);
+        }
+
+        if ($matchType) {
+            $query->where('match_type', 'like', 'seni_%');
+        }
+
+         // ✅ Filter hanya match yang sedang berlangsung
+        $query->where('status', 'ongoing');
+
+        $matches = $query->orderBy('match_date')
             ->orderBy('match_time')
             ->get();
 
-        $grouped = $matches->groupBy([
-            fn ($match) => $match->category,
-            fn ($match) => $match->gender,
-            fn ($match) => $match->pool_name,
-        ]);
+        $groupedByArena = [];
 
-        $result = [];
+        foreach ($matches as $match) {
+            $arena = $match->arena_name ?? 'Tanpa Arena';
 
-        foreach ($grouped as $category => $byGender) {
-            foreach ($byGender as $gender => $byPool) {
-                $groupData = [
-                    'category' => $category,
-                    'gender' => $gender,
-                    'pools' => []
-                ];
-
-                // 🔃 Urutkan nama pool (kunci) ASC
-                $sortedPools = collect($byPool)->sortKeys();
-
-                foreach ($sortedPools as $poolName => $matchesInPool) {
-                    // 🔃 Urutkan pertandingan berdasarkan match_order
-                    $matchesInPool = $matchesInPool->sortBy('match_order');
-
-                    $poolData = [
-                        'name' => $poolName,
-                        'matches' => [],
-                    ];
-
-                    foreach ($matchesInPool as $match) {
-                        $poolData['matches'][] = [
-                            'id' => $match->id,
-                            'match_order' => $match->match_order,
-                            'match_type' => $match->match_type,
-                            'contingent' => [
-                                'name' => $match->contingent_name
-                            ],
-                            'final_score' => $match->final_score,
-                            'status' => $match->status,
-                            'team_member1' => ['name' => $match->participant_1],
-                            'team_member2' => ['name' => $match->participant_2],
-                            'team_member3' => ['name' => $match->participant_3],
-                            'pool' => [
-                                'age_category' => [
-                                    'name' => $match->age_category ?? '-'
-                                ]
-                            ]
-                        ];
-                    }
-
-                    $groupData['pools'][] = $poolData;
-                }
-
-                $result[] = $groupData;
+            if (!isset($groupedByArena[$arena])) {
+                $groupedByArena[$arena] = [];
             }
+
+            // Cari apakah kategori + gender sudah ada
+            $existingCategoryIndex = collect($groupedByArena[$arena])->search(function ($item) use ($match) {
+                return $item['category'] === $match->category && $item['gender'] === $match->gender;
+            });
+
+            if ($existingCategoryIndex === false) {
+                $groupedByArena[$arena][] = [
+                    'category' => $match->category,
+                    'gender' => $match->gender,
+                    'pools' => [],
+                ];
+                $existingCategoryIndex = count($groupedByArena[$arena]) - 1;
+            }
+
+            $categoryGroup =& $groupedByArena[$arena][$existingCategoryIndex];
+
+            // Cari pool
+            $existingPoolIndex = collect($categoryGroup['pools'])->search(function ($pool) use ($match) {
+                return $pool['name'] === $match->pool_name;
+            });
+
+            if ($existingPoolIndex === false) {
+                $categoryGroup['pools'][] = [
+                    'name' => $match->pool_name,
+                    'matches' => [],
+                ];
+                $existingPoolIndex = count($categoryGroup['pools']) - 1;
+            }
+
+            $categoryGroup['pools'][$existingPoolIndex]['matches'][] = [
+                'id' => $match->id,
+                'match_order' => $match->match_order,
+                'match_type' => $match->match_type,
+                'contingent' => ['name' => $match->contingent_name],
+                'final_score' => $match->final_score,
+                'status' => $match->status,
+                'team_member1' => ['name' => $match->participant_1],
+                'team_member2' => ['name' => $match->participant_2],
+                'team_member3' => ['name' => $match->participant_3],
+                'pool' => [
+                    'age_category' => [
+                        'name' => $match->age_category ?? '-'
+                    ]
+                ]
+            ];
         }
 
-        return response()->json($result);
+        return response()->json($groupedByArena);
     }
+
 
     public function index(Request $request)
 {

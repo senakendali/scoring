@@ -31,6 +31,7 @@ Route::get('/import-matches', function () {
 Route::prefix('matches')->group(function () {
     // Seni
     Route::get('/seni', [MatchController::class, 'seni']);
+     Route::get('/seni/live', [MatchController::class, 'seniLive']);
     Route::get('/seni/{match_id}', [MatchController::class, 'showSeni']);
     Route::get('/seni/judges/{match_id}', [MatchController::class, 'displaySeniJudge']);
     Route::get('/seni/display-arena/{match_id}', [MatchController::class, 'displaySeniArena']);
@@ -41,6 +42,7 @@ Route::prefix('matches')->group(function () {
 
     // Tanding
     Route::get('/tanding', [MatchController::class, 'index']);
+     Route::get('/tanding/live', [MatchController::class, 'tandingLive']);
     Route::get('/{match_id}', [MatchController::class, 'show']); 
     Route::get('/display-arena/{match_id}', [MatchController::class, 'displayArena']);
     Route::get('/judges/{match_id}', [MatchController::class, 'displayJudge']);
@@ -53,6 +55,7 @@ Route::prefix('matches')->group(function () {
 // API Routes (should typically be in api.php)
 Route::prefix('api')->group(function () {
     Route::get('/local-matches/seni', [LocalMatchSeniController::class, 'index']);
+    Route::get('/local-matches/seni/live', [LocalMatchSeniController::class, 'fetchLiveMatches']);
     Route::get('/local-matches/seni/{id}', [LocalMatchSeniController::class, 'show']);
     Route::patch('/local-seni-matches/{id}/disqualify', [LocalMatchSeniController::class, 'disqualify']);
     Route::patch('/local-seni-matches/{id}/finish', [SeniMatchSetupController::class, 'finish']);
@@ -79,6 +82,7 @@ Route::prefix('api')->group(function () {
     Route::get('/bracket', [LocalMatchController::class, 'getBracket']);
 
     Route::get('/local-matches', [LocalMatchController::class, 'index']);
+    Route::get('/local-matches/live', [LocalMatchController::class, 'fetchLiveMatches']);
     
     Route::get('/local-matches/tournaments', [LocalMatchController::class, 'getTournaments']);
     Route::get('/local-matches/arenas', [LocalMatchController::class, 'getArenas']);

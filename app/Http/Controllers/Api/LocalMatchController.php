@@ -50,6 +50,34 @@ class LocalMatchController extends Controller
         return response()->json($grouped);
     }
 
+    public function fetchLiveMatches(Request $request)
+    {
+        $arena = session('arena_name');
+
+        $query = LocalMatch::query();
+
+        if ($arena) {
+            $query->where('arena_name', $arena);
+        }
+
+        // ✅ Filter hanya match yang sedang berlangsung
+        $query->where('status', 'in_progress');
+
+        // Urutkan berdasarkan arena, pool, kelas, dan round_level
+        $matches = $query->orderBy('arena_name')
+            ->orderBy('pool_name')
+            ->orderBy('class_name')
+            ->orderBy('round_level')
+            ->orderBy('match_number')
+            ->get();
+
+        // Group by arena → pool
+        $grouped = $matches->groupBy(['arena_name', 'pool_name']);
+
+        return response()->json($grouped);
+    }
+
+
     public function getBracket(Request $request)
     {
         $tournament = $request->query('tournament');

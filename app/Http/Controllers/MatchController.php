@@ -15,9 +15,21 @@ class MatchController extends Controller
         ]);
     }
 
+    public function tandingLive(){
+        return view('pages.matches.tanding-live', [
+            'js' => 'matches/tanding-live.js'
+        ]);
+    }
+
     public function seni(){
         return view('pages.matches.seni.index', [
             'js' => 'matches/seni/index.js'
+        ]);
+    }
+
+    public function seniLive(){
+        return view('pages.matches.seni.live', [
+            'js' => 'matches/seni/seni-live.js'
         ]);
     }
 

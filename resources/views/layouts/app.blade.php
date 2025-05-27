@@ -33,7 +33,7 @@
             @endif
 
             
-            @if(session('role') && request()->segment(2) != 'display-arena')
+            @if(session('role') && (request()->segment(2) != 'display-arena' && request()->segment(3) != 'live'))
             <div class="dropdown ms-auto">
                 @php
                     $roleLabel = session('juri_number') 
