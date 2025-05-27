@@ -354,7 +354,8 @@ $(document).ready(function () {
                 const stddev = Math.sqrt(variance);
                 $("#standar-deviasi").text(stddev.toFixed(6));
 
-                const totalScore = mean - totalPenalty;
+                const totalScore = data.final_score ?? (mean - totalPenalty);
+
                 $("#total-score").text(totalScore.toFixed(6));
             });
         }, 1500);
@@ -413,7 +414,8 @@ $(document).ready(function () {
                 const stddev = Math.sqrt(variance);
 
                 $("#standar-deviasi").text(stddev.toFixed(6));
-                const totalScore = mean - totalPenalty;
+                const totalScore = data.final_score ?? (mean - totalPenalty);
+
                 $("#total-score").text(totalScore.toFixed(6));
             });
     }

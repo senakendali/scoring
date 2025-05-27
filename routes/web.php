@@ -70,6 +70,7 @@ Route::prefix('api')->group(function () {
     Route::post('/seni-scores', [LocalSeniScoreController::class, 'store']);
     // routes/api.php
     Route::post('/seni-penalties', [LocalSeniScoreController::class, 'storePenalties']);
+    Route::post('/recalculate-final-score/{match}', [LocalSeniScoreController::class, 'refreshFinalScore']);
     Route::post('/seni-additional-score', [LocalSeniScoreController::class, 'storeAdditionalScore']);
     Route::post('/seni-component-score', [LocalSeniScoreController::class, 'storeComponentScore']);
 

@@ -237,7 +237,12 @@ $(document).ready(function () {
             penalties: penalties
             },
             success: function (res) {
-            console.log("✅ Penalties submitted:", res);
+                console.log("✅ Penalties submitted:", res);
+                $.post(`/api/recalculate-final-score/${matchId}`, function (response) {
+                    console.log("🎯 Final score recalculated:", response.final_score);
+                }).fail(function (err) {
+                    console.error("❌ Gagal hitung ulang final score:", err);
+                });
             },
             error: function (err) {
             console.error("❌ Gagal submit penalties:", err);

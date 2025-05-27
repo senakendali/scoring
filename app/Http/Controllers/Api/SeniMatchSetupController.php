@@ -329,17 +329,34 @@ class SeniMatchSetupController extends Controller
             }
 
             $total = $baseScore + $additional + $componentTotal - $deduction;
-
             $finalScores[] = $total;
         }
 
+        // Ambil penalty SELALU, tidak tergantung skor juri
+        $totalPenalty = \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
+
+        \Log::debug('🧾 Penalty debug', [
+            'match_id' => $match->id,
+            'penalty_total' => $totalPenalty,
+            'raw_penalty_rows' => \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->get()
+        ]);
+
         if (count($finalScores) > 0) {
             $rawAverage = collect($finalScores)->avg();
-            $totalPenalty = \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
             $match->final_score = round($rawAverage - $totalPenalty, 6);
-           // $match->final_score = round(collect($scores)->avg() - $penalty, 6);
-
+        } else {
+            // Tidak ada skor dari juri, penalti tetap dihitung
+            $match->final_score = round(0 - $totalPenalty, 6);
         }
+
+        // Log untuk debugging
+        \Log::debug('🎯 FINAL SCORE CALCULATION', [
+            'match_id' => $match->id,
+            'finalScores' => $finalScores,
+            'rawAverage' => $rawAverage ?? null,
+            'penalty' => $totalPenalty,
+            'final_score' => $match->final_score,
+        ]);
 
         $match->save();
 
@@ -367,7 +384,6 @@ class SeniMatchSetupController extends Controller
             ]);
         }
 
-
         // Broadcast event selesai
         broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();
 
@@ -376,9 +392,6 @@ class SeniMatchSetupController extends Controller
             'final_score' => $match->final_score,
         ]);
     }
-
-
-
 
 
     public function changeToNextMatch_($currentId)

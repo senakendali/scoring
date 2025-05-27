@@ -105,7 +105,7 @@ $(document).ready(function () {
                 $("#starting-score").text($("#seni_base_score").val());
                 $("#deduction").text("-0.00");
                 
-                $(".wrong-move").prop("disabled", true); // matikan tombol wrong move
+                $(".wrong-move").prop("disabled", false); // matikan tombol wrong move
             }
         });
 

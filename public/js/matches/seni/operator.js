@@ -353,6 +353,9 @@ $(document).ready(function () {
                     .removeClass("stop btn-danger")
                     .addClass("start btn-success")
                     .html('<i class="bi bi-play-fill me-1"></i> START');
+                
+                $(".end-match").show();
+                $(".next-match").hide();
                 //timerEl.text(formatTime(duration));
             }).always(() => setButtonLoading(btn, false));
         });
