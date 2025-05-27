@@ -19,12 +19,6 @@ use App\Events\VerificationResulted;
 
 class LocalMatchController extends Controller
 {
-    private $live_server;
-
-    public function __construct()
-    {
-        $this->live_server = config('app_settings.data_source');
-    }
     // Menampilkan semua pertandingan
     public function index(Request $request)
     {
@@ -93,7 +87,6 @@ class LocalMatchController extends Controller
             'match_number' => $match->match_number,
             'class_name' => $match->class_name,
             'status' => $match->status,
-            'is_display_timer' => $match->is_display_timer,
             'round_level' => $match->round_level,
             'round_duration' => $match->round_duration,
             'blue' => [
@@ -114,26 +107,17 @@ class LocalMatchController extends Controller
     public function endMatch(Request $request, $id)
     {
         $match = LocalMatch::findOrFail($id);
-
-        $blueScore = \App\Models\LocalValidScore::where('local_match_id', $match->id)->where('corner', 'blue')->sum('point');
-        $redScore = \App\Models\LocalValidScore::where('local_match_id', $match->id)->where('corner', 'red')->sum('point');
-
-        $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $match->id)->where('corner', 'blue')->sum('point_change');
-        $redAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $match->id)->where('corner', 'red')->sum('point_change');
-
-        $totalBlue = $blueScore + $blueAdjustment;
-        $totalRed = $redScore + $redAdjustment;
-
+    
+        // ✅ Set status match ke finished
         $match->status = 'finished';
-        $match->participant_1_score = $totalBlue;
-        $match->participant_2_score = $totalRed;
-
+    
+        // ✅ Simpan hasil pemenang (jika dikirim)
         if ($request->filled('winner') && $request->filled('reason')) {
             $request->validate([
                 'winner' => 'in:red,blue,draw',
                 'reason' => 'string|max:255',
             ]);
-
+    
             if ($request->winner === 'draw') {
                 $match->winner_corner = null;
                 $match->winner_id = null;
@@ -146,94 +130,46 @@ class LocalMatchController extends Controller
                 $match->winner_name = $match->{$corner . '_name'};
                 $match->winner_contingent = $match->{$corner . '_contingent'};
             }
-
+    
             $match->win_reason = $request->reason;
         }
-
+    
         $match->save();
-
+    
+        // ✅ Tandai ronde yang masih aktif menjadi selesai
         $match->rounds()->where('status', 'in_progress')->update([
             'status' => 'finished',
             'end_time' => now(),
         ]);
-
-        $baseUrl = $this->live_server;
-        $client = new \GuzzleHttp\Client();
-
-        try {
-            $client->post($baseUrl . '/api/update-tanding-match-status', [
-                'json' => [
-                    'remote_match_id' => $match->remote_match_id,
-                    'status' => 'finished',
-                    'participant_1_score' => $totalBlue, // biru
-                    'participant_2_score' => $totalRed,  // merah
-                    'winner_id' => $match->winner_id,
-                    'winner_corner' => $match->winner_corner,
-                    'win_reason' => $match->win_reason,
-                ],
-                'timeout' => 5,
-            ]);
-
-            \Log::info('✅ Status pertandingan dikirim ke server pusat', [
-                'remote_match_id' => $match->remote_match_id,
-                'winner_id' => $match->winner_id,
-                'winner_corner' => $match->winner_corner,
-            ]);
-        } catch (\Throwable $e) {
-            \Log::warning('⚠️ Gagal kirim status finished ke server pusat', [
-                'remote_match_id' => $match->remote_match_id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
+    
+        // ✅ Masukkan pemenang ke pertandingan berikutnya (jika ada)
         if ($match->winner_corner && $match->winner_corner !== 'draw') {
             $nextMatches = LocalMatch::where(function ($query) use ($match) {
                 $query->where('parent_match_red_id', $match->id)
-                    ->orWhere('parent_match_blue_id', $match->id);
+                      ->orWhere('parent_match_blue_id', $match->id);
             })->get();
-
+    
             foreach ($nextMatches as $nextMatch) {
-                $slot = null;
-
                 if ($nextMatch->parent_match_red_id == $match->id) {
                     $nextMatch->red_id = $match->winner_id;
                     $nextMatch->red_name = $match->winner_name;
                     $nextMatch->red_contingent = $match->winner_contingent;
-                    $slot = 2; // merah = participant_2
                 }
-
+    
                 if ($nextMatch->parent_match_blue_id == $match->id) {
                     $nextMatch->blue_id = $match->winner_id;
                     $nextMatch->blue_name = $match->winner_name;
                     $nextMatch->blue_contingent = $match->winner_contingent;
-                    $slot = 1; // biru = participant_1
                 }
-
+    
                 $nextMatch->save();
-
-                if ($nextMatch->remote_match_id && $slot) {
-                    try {
-                        $client->post($baseUrl . '/api/update-next-match-slot', [
-                            'json' => [
-                                'remote_match_id' => $nextMatch->remote_match_id,
-                                'slot' => $slot,             // 1 = biru, 2 = merah
-                                'winner_id' => $match->winner_id,
-                            ],
-                            'timeout' => 5,
-                        ]);
-                    } catch (\Throwable $e) {
-                        \Log::warning('⚠️ Gagal update next match di server pusat', [
-                            'remote_match_id' => $nextMatch->remote_match_id,
-                            'slot' => $slot,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                }
             }
         }
-
+    
         return response()->json(['message' => 'Pertandingan diakhiri dan pemenang disimpan.']);
     }
+    
+
 
 
 

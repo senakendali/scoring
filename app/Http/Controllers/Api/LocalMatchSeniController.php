@@ -12,6 +12,12 @@ use Illuminate\Http\Request;
 
 class LocalMatchSeniController extends Controller
 {
+    private $live_server;
+
+    public function __construct()
+    {
+        $this->live_server = config('app_settings.data_source');
+    }
     public function index__(Request $request)
     {
         $matches = \App\Models\LocalSeniMatch::orderBy('match_date')
@@ -172,6 +178,7 @@ class LocalMatchSeniController extends Controller
             'contingent' => $match->contingent_name,
             'final_score' => $match->final_score,
             'gender' => $match->gender,
+            'is_display_timer' => $match->is_display_timer,
             'team_members' => array_filter([
                 $match->participant_1,
                 $match->participant_2,
@@ -188,6 +195,32 @@ class LocalMatchSeniController extends Controller
         $match->disqualification_reason = $request->input('reason', 'Diskualifikasi oleh juri');
         $match->status = 'finished';
         $match->save();
+
+        if ($match) {
+            // ✅ Kirim status ke server pusat
+            try {
+                $client = new \GuzzleHttp\Client();
+
+                $response = $client->post($this->live_server . '/api/update-seni-match-status', [
+                    'json' => [
+                        'remote_match_id' => $match->remote_match_id,
+                        'status' => 'finished',
+                    ],
+                    'timeout' => 5,
+                ]);
+
+                \Log::info('✅ Status pertandingan seni dikirim ke server pusat', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'status' => 'finished',
+                    'http_code' => $response->getStatusCode()
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('⚠️ Gagal kirim status ke server pusat', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
 
         // 🔁 Kirim broadcast sebagai match selesai
         broadcast(new SeniTimerFinished($match))->toOthers();

@@ -2,7 +2,22 @@ $(document).ready(function () {
     var url = window.location.origin;
     var matchId = $("#match-id").val();
 
+    const host = window.location.hostname;
+    const pusher = new Pusher('reverb', {
+        wsHost: host,
+        wsPort: 6001,
+        forceTLS: false,
+        disableStats: true,
+        enabledTransports: ['ws'],
+    });
+
     console.log("🟢 Recapitulation JS Ready, Match ID:", matchId);  
+
+    const globalChannel = pusher.subscribe('global.match');
+     globalChannel.bind('match.changed', function (data) {
+        console.log("🎯 Match changed:", data);
+        window.location.href = `/matches/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu
+    });
 
     fetchMatchData();
     loadRekapitulasi(matchId);
@@ -10,6 +25,8 @@ $(document).ready(function () {
     setInterval(function () {
         loadRekapitulasi(matchId);
     }, 2000);
+
+    
 
     // 🔥 Handle hide/show info saat scroll
     let lastScrollTop = 0;

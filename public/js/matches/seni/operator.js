@@ -65,6 +65,14 @@ $(document).ready(function () {
     function fetchMatch() {
         $(".loader-bar").show();
         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
+             if(data.is_display_timer != 0){
+               
+                $("#timer").show();
+            }else{
+                $("#display-timer").css('height', '0');
+                $("#timer").hide();
+            }
+            
             $("#match-id").val(data.id);
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
@@ -173,25 +181,6 @@ $(document).ready(function () {
         return `${min}:${sec}`;
     }
 
-
-    
-
-    /*$(".start").on("click", function () {
-        const matchId = $("#match-id").val(); // Ambil dari hidden input atau variabel
-    
-        if (!matchId) return;
-
-        const btn = $(this);
-        const duration = 600; // ⏱️ default 3 menit
-
-        setButtonLoading(btn, true);
-
-        $.post(`${url}/api/matches/seni/${matchId}/start`, {
-            duration: duration
-        }, function () {
-            setTimeout(fetchAndStartTimer, 500); // 🟢 panggil fungsi timer jalan
-        }).always(() => setButtonLoading(btn, false));
-    });*/
 
    let isRunning = false;
 

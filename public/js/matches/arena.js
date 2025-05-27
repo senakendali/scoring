@@ -503,6 +503,13 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
+            if(data.is_display_timer != 0){
+                $("#timer").show();
+                $(".timer").css('color', '#000000');
+            }else{
+                $("#display-timer").css('height', '20px');
+                $("#timer").hide();
+            }
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);

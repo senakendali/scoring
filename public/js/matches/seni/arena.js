@@ -217,6 +217,14 @@ $(document).ready(function () {
 
             const baseScore = ['tunggal', 'regu'].includes(category) ? 9.90 : 9.10;
 
+            if(data.is_display_timer != 0){
+                $("#timer").show();
+               
+            }else{
+               
+                $("#timer").hide();
+            }
+
             // Set UI
             $("#starting-score").text(baseScore.toFixed(2));
             $("#seni_base_score").val(baseScore.toFixed(2));
@@ -347,7 +355,7 @@ $(document).ready(function () {
                 $("#standar-deviasi").text(stddev.toFixed(6));
 
                 const totalScore = mean - totalPenalty;
-                $("#total-score").text(totalScore.toFixed(2));
+                $("#total-score").text(totalScore.toFixed(6));
             });
         }, 1500);
     }

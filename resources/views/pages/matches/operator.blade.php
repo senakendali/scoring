@@ -170,7 +170,7 @@
                             <option value="90">1.5 Menit</option>
                             <option value="120">2 Menit</option>
                             <option value="150">2.5 Menit</option>
-                            <option value="180" selected>3 Menit</option>
+                            <option value="180">3 Menit</option>
                             <option value="210">3.5 Menit</option>
                             <option value="240">4 Menit</option>
                             <option value="270">4.5 Menit</option>
@@ -182,8 +182,8 @@
                         <div class="round d-flex justify-content-center align-items-center">ROUND 2</div>
                         <div class="round d-flex justify-content-center align-items-center">ROUND 3</div>
                     </div>
-                    <div class="panel-content d-flex justify-content-center align-items-center">
-                        <div class="timer roboto-bold" id="timer">00:00</div>
+                    <div id="display-timer" class="panel-content d-flex justify-content-center align-items-center">
+                        <div class="timer roboto-bold" id="timer" style="color:#000; ">00:00</div>
                     </div>
                     <div class="panel-footer">
                         <div class="d-flex gap-2">
@@ -191,13 +191,16 @@
                             <button class="start btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-play-fill"></i> START</button>
                             <button class="reset btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-arrow-clockwise"></i> RESET</button>
                         </div>
+                        <div class="d-flex mt-2">
+                            <button class="stop-round btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-circle" style="margin-right: 4px; "></i> END ROUND</button>
+                        </div>
                         
 
                         <div class="d-flex mt-2">
                             <button class="end-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-fill"></i> END MATCH</button>
                         </div>
                         <div class="d-flex mt-2">
-                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none"><i class="bi bi-arrow-right-circle-fill"></i> NEXT MATCH</button>
+                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none"> NEXT MATCH</button>
                         </div>
                     </div>
                 </div>

@@ -63,10 +63,20 @@ $(document).ready(function () {
     function fetchMatch() {
         $(".loader-bar").show();
         $.get(`${url}/api/local-matches/${matchId}`, function (data) {
+           
+            if(data.is_display_timer != 0){
+                $(".timer").css('color', '#FFFFFF');
+                $("#timer").show();
+            }else{
+                $("#display-timer").css('height', '20px');
+                $("#timer").hide();
+            }
+           
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#match-stage").text("-");
+            $("#round-duration").val(data.round_duration);
 
             $("#blue-name").html(`
                 ${data.blue.name}<br>
@@ -190,8 +200,14 @@ $(document).ready(function () {
     }
 
     function setWinnerOptions(data) {
-        $("#option-red").text(`Sudut Merah - ${data.red.name} (${data.red.contingent})`);
         $("#option-blue").text(`Sudut Biru - ${data.blue.name} (${data.blue.contingent})`);
+        $("#option-red").text(`Sudut Merah - ${data.red.name} (${data.red.contingent})`);
+
+         $("#winner").empty().append(`
+            <option value="${data.blue.id}">Sudut Biru - ${data.blue.name} (${data.blue.contingent})</option>
+            <option value="${data.red.id}">Sudut Merah - ${data.red.name} (${data.red.contingent})</option>
+        `);
+        
     }
     
 
@@ -216,6 +232,39 @@ $(document).ready(function () {
             setTimeout(fetchAndStartTimer, 500);
         }).always(() => setButtonLoading(btn, false));
     });
+
+    $(".stop-round").on("click", function () {
+        if (!roundId) return;
+
+        const confirmStop = confirm("Yakin ingin menghentikan ronde ini sekarang?");
+        if (!confirmStop) return;
+
+        stopTimer(); // Berhentiin timer manual
+
+        $.post(`${url}/api/local-match-rounds/${roundId}/finish`, function () {
+            if (currentRoundNumber < totalRounds) {
+                // 🔥 Masih ada ronde berikutnya
+                $("#modal-round-number").text(currentRoundNumber);
+                const modal = new bootstrap.Modal(document.getElementById('nextRoundModal'));
+                modal.show();
+
+                $("#confirm-next-round").off("click").on("click", function () {
+                    modal.hide();
+                    moveToNextRound();
+                });
+
+            } else {
+                // 🔥 Ini ronde terakhir bro, langsung tampilkan modal PILIH PEMENANG
+                const winnerModal = new bootstrap.Modal(document.getElementById('selectWinnerModal'));
+                winnerModal.show();
+                $(".end-match").addClass("d-none");
+                $(".next-match").removeClass("d-none");
+            }
+        }).fail(function (xhr) {
+            console.error("❌ Gagal stop round:", xhr.responseJSON?.message || xhr.statusText);
+        });
+    });
+
     
 
     

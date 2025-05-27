@@ -100,19 +100,18 @@
                         </select>
                     </div>
                     
-                    <div class="panel-content d-flex justify-content-center align-items-center">
+                    <div id="display-timer" class="panel-content d-flex justify-content-center align-items-center">
                         <div class="timer roboto-bold" id="timer">00:00</div>
                     </div>
                     <div class="panel-footer">
                         <div class="d-flex gap-2">
                             <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0">PAUSE</button>
                             <button class="start btn btn-success d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-    <i class="bi bi-play-fill me-1"></i> START
-</button>
+                                <i class="bi bi-play-fill me-1"></i> START
+                            </button>
                             <button class="btn reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
                         </div>
                         
-
                         <div class="d-flex mt-2">
                             <button class="btn end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">DISQUALIFY</button>
                         </div>

@@ -20,15 +20,49 @@
 
 <!-- Modal Bracket -->
 <div class="container mt-5 text-white">
-    <h2 class="mb-4">Import Data Pertandingan</h2>
+    <input type="hidden" id="data_source" value="{{ $data_source }}">
+    <h2 class="mb-4">Import Data Pertandingan (Tanding)</h2>
 
     <form id="import-form">
         <div class="mb-3">
             <label for="tournament_name" class="form-label">Pilih Tournament</label>
-            <select id="tournament_name" name="tournament_name" class="form-select">
+            <select id="tournament_name_tanding" name="tournament_name" class="form-select">
                 <option value="">-- Pilih Tournament --</option>
             </select>
         </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="display_timer_tanding" name="is_display_timer" value="1">
+          <label class="form-check-label" for="display_timer_tanding">
+            Tampilkan Timer di Display
+          </label>
+        </div>
+
+
+       
+
+        
+
+        <button type="submit" class="btn btn-success">Sync Data dari Server</button>
+    </form>
+</div>
+
+<div class="container mt-5 text-white">
+    <h2 class="mb-4">Import Data Pertandingan (Seni)</h2>
+
+    <form id="import-form-seni">
+        <div class="mb-3">
+            <label for="tournament_name" class="form-label">Pilih Tournament</label>
+            <select id="tournament_name_seni" name="tournament_name" class="form-select">
+                <option value="">-- Pilih Tournament --</option>
+            </select>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="display_timer_seni" name="is_display_timer" value="1">
+          <label class="form-check-label" for="display_timer_seni">
+            Tampilkan Timer di Display
+          </label>
+        </div>
+
 
        
 

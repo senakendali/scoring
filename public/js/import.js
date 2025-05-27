@@ -6,36 +6,46 @@ function showAlert(message, title = 'Notifikasi') {
 }
 
 $(document).ready(function () {
-    const $tournamentSelect = $('#tournament_name');
+    const $tournamentSelectTanding = $('#tournament_name_tanding');
+    const $tournamentSelectSeni = $('#tournament_name_seni');
+    const dataSource = $('#data_source').val();
+
+    
     $(".loader-bar").show();
-    // 1. Load turnamen dari API pusat
+
+    // 1. Load turnamen dari API pusat dan isi ke dua select
     $.ajax({
-        url: 'http://127.0.0.1:8002/api/tournaments/all',
+        url: `${dataSource}/api/tournaments/all`,
         method: 'GET',
         success: function (data) {
-            $tournamentSelect.empty().append('<option value="">-- Pilih Tournament --</option>');
+            $tournamentSelectTanding.empty().append('<option value="">-- Pilih Tournament --</option>');
+            $tournamentSelectSeni.empty().append('<option value="">-- Pilih Tournament --</option>');
+
             $.each(data, function (i, tournament) {
-                $tournamentSelect.append(
-                    $('<option>', {
-                        value: tournament.slug,
-                        text: tournament.name
-                    })
-                );
+                const option = $('<option>', {
+                    value: tournament.slug,
+                    text: tournament.name
+                });
+                $tournamentSelectTanding.append(option.clone());
+                $tournamentSelectSeni.append(option.clone());
             });
+
             $(".loader-bar").hide();
         },
         error: function () {
-            $tournamentSelect.empty().append('<option value="">Gagal memuat turnamen</option>');
+            $tournamentSelectTanding.empty().append('<option value="">Gagal memuat turnamen</option>');
+            $tournamentSelectSeni.empty().append('<option value="">Gagal memuat turnamen</option>');
             showAlert("Gagal mengambil daftar turnamen dari server pusat.", "Gagal Load Turnamen");
             $(".loader-bar").hide();
         }
     });
 
-    // 2. Handle form submit untuk sync pertandingan
+    // 2. Submit Form Tanding
     $('#import-form').on('submit', function (e) {
         e.preventDefault();
         $(".loader-bar").show();
-        const slug = $tournamentSelect.val();
+
+        const slug = $tournamentSelectTanding.val();
         if (!slug) {
             showAlert("Silakan pilih turnamen terlebih dahulu.");
             $(".loader-bar").hide();
@@ -44,15 +54,13 @@ $(document).ready(function () {
 
         if (!confirm(`Yakin ingin mengimpor data pertandingan dari turnamen "${slug}"?`)) return;
 
-        // Ambil data pertandingan dari server pusat
-        $.get(`http://127.0.0.1:8002/api/sync/matches?tournament=${encodeURIComponent(slug)}`, function (matchData) {
+        $.get(`${dataSource}/api/sync/matches?tournament=${encodeURIComponent(slug)}`, function (matchData) {
             if (!Array.isArray(matchData) || matchData.length === 0) {
                 showAlert("Data pertandingan kosong.", "Tidak Ada Data");
                 $(".loader-bar").hide();
                 return;
             }
 
-            // Kirim ke API lokal
             $.ajax({
                 url: '/api/import-matches',
                 method: 'POST',
@@ -63,17 +71,62 @@ $(document).ready(function () {
                 data: JSON.stringify(matchData),
                 success: function () {
                     $(".loader-bar").hide();
-                    showAlert("Import pertandingan berhasil ✅", "Berhasil");
+                    showAlert("Import pertandingan tanding berhasil ✅", "Berhasil");
                 },
                 error: function (xhr) {
                     $(".loader-bar").hide();
                     console.error(xhr);
-                    showAlert("Gagal mengimpor data ke lokal.", "Gagal Simpan");
+                    showAlert("Gagal mengimpor data ke lokal (tanding).", "Gagal Simpan");
                 }
             });
         }).fail(function () {
             $(".loader-bar").hide();
-            showAlert("Gagal mengambil data dari server pusat.", "Gagal Sinkronisasi");
+            showAlert("Gagal mengambil data dari server pusat (tanding).", "Gagal Sinkronisasi");
+        });
+    });
+
+    // 3. Submit Form Seni
+    $('#import-form-seni').on('submit', function (e) {
+        e.preventDefault();
+        $(".loader-bar").show();
+
+        const slug = $tournamentSelectSeni.val();
+        if (!slug) {
+            showAlert("Silakan pilih turnamen terlebih dahulu.");
+            $(".loader-bar").hide();
+            return;
+        }
+
+        if (!confirm(`Yakin ingin mengimpor data pertandingan SENI dari turnamen "${slug}"?`)) return;
+       
+        $.get(`${dataSource}/api/sync/matches/seni?tournament=${encodeURIComponent(slug)}`, function (matchData) {
+            if (!Array.isArray(matchData) || matchData.length === 0) {
+                showAlert("Data pertandingan seni kosong.", "Tidak Ada Data");
+                $(".loader-bar").hide();
+                return;
+            }
+
+            $.ajax({
+                url: '/api/import-seni-matches',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                contentType: 'application/json',
+                data: JSON.stringify(matchData),
+                success: function () {
+                    $(".loader-bar").hide();
+                    showAlert("Import pertandingan seni berhasil ✅", "Berhasil");
+                },
+                error: function (xhr) {
+                    $(".loader-bar").hide();
+                    console.error(xhr);
+                    showAlert("Gagal mengimpor data ke lokal (seni).", "Gagal Simpan");
+                }
+            });
+        }).fail(function () {
+            $(".loader-bar").hide();
+            showAlert("Gagal mengambil data dari server pusat (seni).", "Gagal Sinkronisasi");
         });
     });
 });

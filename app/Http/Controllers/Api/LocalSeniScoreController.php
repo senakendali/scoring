@@ -13,6 +13,12 @@ use App\Models\MatchPersonnelAssignment;
 
 class LocalSeniScoreController extends Controller
 {
+     private $live_server;
+
+    public function __construct()
+    {
+        $this->live_server = config('app_settings.data_source');
+    }
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -175,11 +181,81 @@ class LocalSeniScoreController extends Controller
 
         $match = LocalSeniMatch::find($request->match_id);
 
-         event(new \App\Events\SeniScoreUpdated(
+        event(new \App\Events\SeniScoreUpdated(
             $match->id,
             $match->arena_name,
             $match->tournament_name
         ));
+
+        // ✅ Hitung skor terbaru setelah komponen disubmit
+        $juris = \App\Models\MatchPersonnelAssignment::where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->where('arena_name', $match->arena_name)
+            ->where('tournament_name', $match->tournament_name)
+            ->get();
+
+        $category = strtolower($match->category);
+        $baseScore = in_array($category, ['tunggal', 'regu']) ? 9.90 : 9.10;
+
+        $finalScores = [];
+
+        foreach ($juris as $juri) {
+            $deduction = \App\Models\LocalSeniScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->sum('deduction');
+
+            $final = \App\Models\LocalSeniFinalScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $component = \App\Models\LocalSeniComponentScore::where('local_match_id', $match->id)
+                ->where('judge_number', $juri->juri_number)
+                ->first();
+
+            $additional = $final?->kemantapan ?? 0;
+
+            $componentTotal = 0;
+            if ($component) {
+                $componentTotal += $component->attack_defense_technique ?? 0;
+                $componentTotal += $component->firmness_harmony ?? 0;
+                $componentTotal += $component->soulfulness ?? 0;
+            }
+
+            $total = $baseScore + $additional + $componentTotal - $deduction;
+            $finalScores[] = $total;
+        }
+
+        // ✅ Hitung rata-rata dikurangi penalti
+        if (count($finalScores) > 0) {
+            $rawAverage = collect($finalScores)->avg();
+            $totalPenalty = \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
+            $finalScore = round($rawAverage - $totalPenalty, 6);
+
+            // Kirim ke server pusat
+            try {
+                $client = new \GuzzleHttp\Client();
+
+                $client->post(config('services.server.url') . '/api/update-seni-match-status', [
+                    'json' => [
+                        'remote_match_id' => $match->remote_match_id,
+                        'status' => $match->status, // status ongoing
+                        'final_score' => $finalScore,
+                    ],
+                    'timeout' => 5,
+                ]);
+
+                \Log::info('✅ Update final score ke pusat (on component score input)', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'final_score' => $finalScore
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('⚠️ Gagal push final_score ke pusat saat submit komponen', [
+                    'match_id' => $match->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
 
 
         return response()->json(['message' => 'Component score saved.']);

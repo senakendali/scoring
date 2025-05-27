@@ -20,9 +20,10 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/import', function () {
+Route::get('/import-matches', function () {
     return view('pages/import', [
-        'js' => 'import.js'
+        'js' => 'import.js',
+        'data_source' => config('app_settings.data_source')
     ]);
 });
 
@@ -123,6 +124,8 @@ Route::prefix('api')->group(function () {
     });
 
     Route::post('/import-matches', [LocalImportController::class, 'store']);
+    Route::post('/import-seni-matches', [LocalImportController::class, 'storeSeni']);
+
 
    
     

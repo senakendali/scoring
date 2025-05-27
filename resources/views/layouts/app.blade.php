@@ -22,8 +22,12 @@
         <div class="container-fluid d-flex justify-content-between align-items-center">
            <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
 
+            @if(request()->segment(1) == 'import-matches')
+                <a href="{{ url('/') }}" class="btn btn-dark">Go to Matches</a>
+            @endif
+
             @if(request()->segment(2) == 'display-arena')
-                <div id="timer" class="timer arena roboto-bold">
+                <div id="timer" class="timer arena roboto-bold text-white">
                     00:00
                 </div>
             @endif

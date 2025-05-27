@@ -151,6 +151,7 @@ body{
 
     /* 🎯 Tambahin shadow di sini */
     box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+    text-align: center;
 
 
 }
@@ -176,6 +177,7 @@ body{
 
     /* 🎯 Tambahin shadow di sini */
     box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+    text-align: center;
 
 
 }
@@ -412,12 +414,12 @@ body{
 
 .match-panel .panel-header .round{
     background-color: #626262;
-    height: 100px;
+    height: 80px;
     color: #FFFFFF;
 }
 
 .match-panel .panel-header .round.active{
-    height: 100px;
+    height: 80px;
     background-color: #2a2a2a;
     color: #FFFFFF;
 }
@@ -462,6 +464,12 @@ body{
     padding: var(--base-padding);
     background-color: #2A2A2A;
     
+}
+
+.match-panel .panel-footer .stop-round{
+    width: 100%;
+    padding: var(--base-padding);
+    background-color: #626262;
 }
 
 .match-panel .panel-footer .end-match{

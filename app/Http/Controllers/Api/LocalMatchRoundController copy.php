@@ -17,12 +17,8 @@ use App\Events\ActiveMatchChanged;
 
 class LocalMatchRoundController extends Controller
 {
-    private $live_server;
+    private $live_server = 'http://127.0.0.1:8002';
 
-    public function __construct()
-    {
-        $this->live_server = config('app_settings.data_source');
-    }
     public function show($id)
     {
         $round = LocalMatchRound::findOrFail($id);
@@ -258,58 +254,33 @@ class LocalMatchRoundController extends Controller
         ]);
     }
 
+
+
+
     public function reset($id)
     {
         $round = LocalMatchRound::findOrFail($id);
-
-        // Reset data waktu & status ronde
+    
+        // Reset data waktu & status
         $round->start_time = null;
         $round->end_time = null;
         $round->status = 'not_started';
         $round->save();
-
-        // Reset status pertandingan lokal ke not_started
-        $match = \App\Models\LocalMatch::find($round->local_match_id);
-        if ($match) {
-            $match->status = 'not_started';
-            $match->is_active = false;
-            $match->save();
-
-            // ✅ Kirim status ke server pusat
-            try {
-                $client = new \GuzzleHttp\Client();
-                $baseUrl = $this->live_server;
-
-                $response = $client->post($baseUrl . '/api/update-tanding-match-status', [
-                    'json' => [
-                        'remote_match_id' => $match->remote_match_id,
-                        'status' => 'not_started',
-                    ],
-                    'timeout' => 5,
-                ]);
-
-                \Log::info('✅ Status reset match dikirim ke server pusat', [
-                    'remote_match_id' => $match->remote_match_id,
-                    'status' => 'not_started',
-                    'http_code' => $response->getStatusCode()
-                ]);
-            } catch (\Throwable $e) {
-                \Log::warning('⚠️ Gagal kirim status reset ke server pusat', [
-                    'remote_match_id' => $match->remote_match_id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-
-        // Hapus semua skor juri, valid, wasit
+    
+        // Hapus semua skor juri yang berkaitan
         \App\Models\LocalJudgeScore::where('round_id', $round->id)->delete();
+    
+        // Hapus semua tindakan wasit yang berkaitan
         \App\Models\LocalRefereeAction::where('round_id', $round->id)->delete();
-        \App\Models\LocalValidScore::where('round_id', $round->id)->delete();
 
+        // Hapus semua tindakan wasit yang berkaitan
+        \App\Models\LocalValidScore::where('round_id', $round->id)->delete();
+    
         // Broadcast timer reset
         broadcast(new \App\Events\TimerUpdated($round))->toOthers();
-
-        // Broadcast skor reset (semua ke 0)
+    
+        // Broadcast skor reset (biar UI client juga refresh ke 0)
+        //broadcast(new \App\Events\ScoreUpdated($round->local_match_id, 0, 0))->toOthers();
         broadcast(new \App\Events\ScoreUpdated(
             $round->local_match_id,
             $round->id,
@@ -318,10 +289,10 @@ class LocalMatchRoundController extends Controller
             0, // blue adjustment
             0  // red adjustment
         ))->toOthers();
-
+        
+    
         return response()->json(['message' => 'Ronde dan skor direset.']);
     }
-
     
 
     public function finish($id)

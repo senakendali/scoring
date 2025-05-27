@@ -22,6 +22,12 @@ use Illuminate\Support\Str;
 
 class SeniMatchSetupController extends Controller
 {
+    private $live_server;
+
+    public function __construct()
+    {
+        $this->live_server = config('app_settings.data_source');
+    }
     public function start(Request $request)
     {
         $request->validate([
@@ -78,6 +84,32 @@ class SeniMatchSetupController extends Controller
 
         // ✅ Ambil ulang agar data konsisten & format ISO ready
         $fresh = LocalSeniMatch::find($match->id);
+
+        if ($match) {
+            // ✅ Kirim status ke server pusat
+            try {
+                $client = new \GuzzleHttp\Client();
+
+                $response = $client->post($this->live_server . '/api/update-seni-match-status', [
+                    'json' => [
+                        'remote_match_id' => $match->remote_match_id,
+                        'status' => 'ongoing',
+                    ],
+                    'timeout' => 5,
+                ]);
+
+                \Log::info('✅ Status pertandingan seni dikirim ke server pusat', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'status' => 'ongoing',
+                    'http_code' => $response->getStatusCode()
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('⚠️ Gagal kirim status ke server pusat', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
 
         // ✅ Logging buat debug
         \Log::info("📦 [Seni] Match Dimulai", [
@@ -214,6 +246,32 @@ class SeniMatchSetupController extends Controller
         // (Opsional) kalau lu punya tabel skor akhir, hapus juga
         \App\Models\LocalSeniFinalScore::where('local_match_id', $match->id)->delete();
 
+        if ($match) {
+            // ✅ Kirim status ke server pusat
+            try {
+                $client = new \GuzzleHttp\Client();
+
+                $response = $client->post($this->live_server . '/api/update-seni-match-status', [
+                    'json' => [
+                        'remote_match_id' => $match->remote_match_id,
+                        'status' => 'not_started',
+                    ],
+                    'timeout' => 5,
+                ]);
+
+                \Log::info('✅ Status pertandingan seni dikirim ke server pusat', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'status' => 'not_started',
+                    'http_code' => $response->getStatusCode()
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('⚠️ Gagal kirim status ke server pusat', [
+                    'remote_match_id' => $match->remote_match_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
         // Broadcast timer update biar semua UI reset
         broadcast(new \App\Events\SeniTimerUpdated($match))->toOthers();
 
@@ -222,50 +280,7 @@ class SeniMatchSetupController extends Controller
         ]);
     }
 
-    public function finish_($id)
-    {
-        $match = \App\Models\LocalSeniMatch::findOrFail($id);
-
-        if ($match->status === 'finished') {
-            return response()->json(['message' => 'Pertandingan sudah selesai.'], 400);
-        }
-
-        $match->status = 'finished';
-        $match->end_time = now();
-
-        $startingScore = 9.75;
-
-        // Ambil semua skor juri untuk match ini
-        $deductions = \App\Models\LocalSeniScore::where('local_match_id', $match->id)->get();
-
-        // Hitung final score per juri: 9.75 - total_deduction (tanpa round)
-        $finalScores = $deductions
-            ->groupBy('judge_number')
-            ->map(function ($items) use ($startingScore) {
-                $totalDeduction = $items->sum('deduction');
-                return $startingScore - $totalDeduction;
-            })
-            ->values(); // buang key supaya .avg() konsisten
-
-        if ($finalScores->count() > 0) {
-            // Ambil total penalty umum
-            $totalPenalty = \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
-
-            // Hitung rata-rata nilai juri lalu kurangi penalty
-            $rawAverage = $finalScores->avg();
-            $match->final_score = round($rawAverage - $totalPenalty, 2);
-        }
-
-        $match->save();
-
-        // Broadcast event selesai
-        broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();
-
-        return response()->json([
-            'message' => 'Pertandingan selesai.',
-            'final_score' => $match->final_score,
-        ]);
-    }
+    
 
     public function finish($id)
     {
@@ -327,6 +342,31 @@ class SeniMatchSetupController extends Controller
         }
 
         $match->save();
+
+        try {
+            $client = new \GuzzleHttp\Client();
+
+            $response = $client->post($this->live_server . '/api/update-seni-match-status', [
+                'json' => [
+                    'remote_match_id' => $match->remote_match_id,
+                    'status' => 'finished',
+                    'final_score' => $match->final_score,
+                ],
+                'timeout' => 5,
+            ]);
+
+            \Log::info('✅ Final score dikirim ke server pusat', [
+                'remote_match_id' => $match->remote_match_id,
+                'final_score' => $match->final_score,
+                'http_code' => $response->getStatusCode()
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('⚠️ Gagal kirim final score ke server pusat', [
+                'remote_match_id' => $match->remote_match_id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
 
         // Broadcast event selesai
         broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();
