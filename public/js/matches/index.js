@@ -68,11 +68,18 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $('#match-tables').empty();
 
-        $.each(data, function (arenaName, matches) {
+        $.each(data, function (arenaName, pools) {
+            let matches = [];
+
+            // Gabung semua match dari setiap pool di arena ini
+            $.each(pools, function (poolName, poolMatches) {
+                matches = matches.concat(poolMatches);
+            });
+
             if (!matches.length) return;
 
-            // Urutkan berdasarkan nomor urut jadwal
-            matches.sort((a, b) => a.match_order - b.match_order);
+            // Urutkan berdasarkan match_number (atau match_order)
+            matches.sort((a, b) => a.match_number - b.match_number);
 
             let arenaSection = `<div class="mb-5">
                 <h4 class="text-white mb-3">${arenaName.toUpperCase()}</h4>
@@ -99,15 +106,15 @@ $(document).ready(function () {
             $.each(matches, function (index, match) {
                 arenaSection += `
                     <tr>
-                        <td>${match.match_order}</td>
+                        <td>${match.match_number}</td>
                         <td class="text-primary fw-bold">
                             ${match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD'}<br>
-                            <small>${match.round_level === 1 && match.blue_contingent == 'TBD' ? '-' : match.blue_contingent || 'TBD'}</small><br>
+                            <small>${match.blue_contingent || '-'}</small><br>
                             <small class="text-info">Score: ${match.participant_1_score ?? '-'}</small>
                         </td>
                         <td class="text-danger fw-bold">
                             ${match.round_level === 1 && match.red_name == 'TBD' ? 'BYE' : match.red_name || 'TBD'}<br>
-                            <small>${match.round_level === 1 && match.red_contingent == 'TBD' ? '-' : match.red_contingent || 'TBD'}</small><br>
+                            <small>${match.red_contingent || '-'}</small><br>
                             <small class="text-info">Score: ${match.participant_2_score ?? '-'}</small>
                         </td>
                         <td><div class="btn btn-success"><i class="bi bi-trophy"></i> ${match.winner_name ?? '-'}</div></td>
@@ -131,6 +138,7 @@ $(document).ready(function () {
             $('#match-tables').append(arenaSection);
             $(".loader-bar").hide();
         });
+
     });
 
 
