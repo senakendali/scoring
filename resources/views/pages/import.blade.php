@@ -36,12 +36,6 @@
             Tampilkan Timer di Display
           </label>
         </div>
-
-
-       
-
-        
-
         <button type="submit" class="btn btn-success">Sync Data dari Server</button>
     </form>
 </div>

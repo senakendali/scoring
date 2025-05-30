@@ -68,87 +68,46 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $('#match-tables').empty();
 
-        const roundLabels = {
-            1: "Penyisihan",
-            2: "Perempat Final",
-            3: "Semifinal",
-            4: "Final"
-        };
+        $.each(data, function (arenaName, matches) {
+            if (!matches.length) return;
 
-        $.each(data, function (arenaName, pools) {
+            // Urutkan berdasarkan nomor urut jadwal
+            matches.sort((a, b) => a.match_order - b.match_order);
+
             let arenaSection = `<div class="mb-5">
-                <h4 class="text-white mb-3">${arenaName.toUpperCase()}</h4>`;
+                <h4 class="text-white mb-3">${arenaName.toUpperCase()}</h4>
+                <table class="table table-dark">
+                    <thead>
+                        <tr>
+                            <th>No Partai</th>
+                            <th colspan="2" class="text-center">Peserta</th>
+                            <th>Pemenang</th>
+                            <th>Keterangan</th>
+                            ${isOperator || isKetua ? '<th class="text-nowrap">Action</th>' : ''}
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th class="text-center text-primary">Sudut Biru</th>
+                            <th class="text-center text-danger">Sudut Merah</th>
+                            <th></th>
+                            <th></th>
+                            ${isOperator || isKetua ? '<th></th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
-            $.each(pools, function (poolName, matches) {
-                if (matches.length === 0) return;
-
-                // Sort by round_level & match_number
-                matches.sort((a, b) => {
-                    if (a.round_level === b.round_level) {
-                        return a.match_number - b.match_number;
-                    }
-                    return a.round_level - b.round_level;
-                });
-
-                const maxRound = Math.max(...matches.map(m => m.round_level));
-                const roundLabels = getRoundLabels(maxRound); // kalau lu punya fungsi ini, kalau tidak hapus aja
-
-                let tableHtml = `
-                <div class="mb-4">
-                    
-                    <table class="table table-dark">
-                        <thead>
-                            <tr>
-                                <th colspan="7" class="text-warning text-uppercase">
-                                    ${poolName} – Kelas ${matches[0].class_name}
-                                </th>
-                            </tr>
-                            <tr>
-                                <th>No Partai</th>
-                                <th colspan="2" class="text-center">Peserta</th>
-                                <th>Pemenang</th>
-                                <th>Keterangan</th>
-                                ${isOperator || isKetua ? '<th class="text-nowrap">Action</th>' : ''}
-                            </tr>
-                            <tr>
-                                <th></th>
-                                <th class="text-center text-primary">Sudut Biru</th>
-                                <th class="text-center text-danger">Sudut Merah</th>
-                                <th></th>
-                                <th></th>
-                                ${isOperator || isKetua ? '<th></th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-                let lastRoundLevel = null;
-
-                $.each(matches, function (index, match) {
-                    if (match.round_level !== lastRoundLevel) {
-                        lastRoundLevel = match.round_level;
-                        tableHtml += `
-                            <tr>
-                                <td colspan="7" class="text-warning text-uppercase bg-black">
-                                    Babak ${roundLabels[match.round_level] || match.round_level}
-                                </td>
-                            </tr>`;
-                    }
-
-                    tableHtml += `
+            $.each(matches, function (index, match) {
+                arenaSection += `
                     <tr>
-                        <td>${match.match_number}</td>
+                        <td>${match.match_order}</td>
                         <td class="text-primary fw-bold">
                             ${match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD'}<br>
-                            <small>
-                                ${match.round_level === 1 && match.blue_contingent == 'TBD' ? '-' : match.blue_contingent || 'TBD'}
-                            </small><br>
+                            <small>${match.round_level === 1 && match.blue_contingent == 'TBD' ? '-' : match.blue_contingent || 'TBD'}</small><br>
                             <small class="text-info">Score: ${match.participant_1_score ?? '-'}</small>
                         </td>
                         <td class="text-danger fw-bold">
                             ${match.round_level === 1 && match.red_name == 'TBD' ? 'BYE' : match.red_name || 'TBD'}<br>
-                            <small>
-                                ${match.round_level === 1 && match.red_contingent == 'TBD' ? '-' : match.red_contingent || 'TBD'}
-                            </small><br>
+                            <small>${match.round_level === 1 && match.red_contingent == 'TBD' ? '-' : match.red_contingent || 'TBD'}</small><br>
                             <small class="text-info">Score: ${match.participant_2_score ?? '-'}</small>
                         </td>
                         <td><div class="btn btn-success"><i class="bi bi-trophy"></i> ${match.winner_name ?? '-'}</div></td>
@@ -166,17 +125,14 @@ $(document).ready(function () {
                                 </div>
                             </td>` : ''}
                     </tr>`;
-                });
-
-                tableHtml += `</tbody></table></div>`;
-                arenaSection += tableHtml;
             });
 
-            arenaSection += `</div>`;
+            arenaSection += `</tbody></table></div>`;
             $('#match-tables').append(arenaSection);
             $(".loader-bar").hide();
         });
     });
+
 
     
     
