@@ -525,7 +525,7 @@ $(document).ready(function () {
             const maxRound = Math.max(...data.rounds.map(r => r.round_number));
             const roundLabels = getRoundLabels(maxRound);
 
-            $("#stage").text(roundLabels[data.rounds[0].round_number] || `Babak ${data.rounds[0].round_number}`);
+            $("#stage").text(data.round_label);
     
            
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];

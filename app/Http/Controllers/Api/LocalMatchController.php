@@ -123,6 +123,7 @@ class LocalMatchController extends Controller
             'status' => $match->status,
             'is_display_timer' => $match->is_display_timer,
             'round_level' => $match->round_level,
+            'round_label' => $match->round_label,
             'round_duration' => $match->round_duration,
             'blue' => [
                 'name' => $match->blue_name,

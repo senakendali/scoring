@@ -87,12 +87,14 @@ $(document).ready(function () {
                     <thead>
                         <tr>
                             <th>No Partai</th>
+                            <th>Babak</th>
                             <th colspan="2" class="text-center">Peserta</th>
                             <th>Pemenang</th>
                             <th>Keterangan</th>
                             ${isOperator || isKetua ? '<th class="text-nowrap">Action</th>' : ''}
                         </tr>
                         <tr>
+                            <th></th>
                             <th></th>
                             <th class="text-center text-primary">Sudut Biru</th>
                             <th class="text-center text-danger">Sudut Merah</th>
@@ -107,6 +109,7 @@ $(document).ready(function () {
                 arenaSection += `
                     <tr>
                         <td>${match.match_number}</td>
+                        <td>${match.round_label}</td>
                         <td class="text-primary fw-bold">
                             ${match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD'}<br>
                             <small>${match.blue_contingent || '-'}</small><br>
