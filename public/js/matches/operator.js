@@ -203,10 +203,15 @@ $(document).ready(function () {
         $("#option-blue").text(`Sudut Biru - ${data.blue.name} (${data.blue.contingent})`);
         $("#option-red").text(`Sudut Merah - ${data.red.name} (${data.red.contingent})`);
 
+        
+
          $("#winner").empty().append(`
-            <option value="${data.blue.id}">Sudut Biru - ${data.blue.name} (${data.blue.contingent})</option>
-            <option value="${data.red.id}">Sudut Merah - ${data.red.name} (${data.red.contingent})</option>
+            <option value="blue">Sudut Biru - ${data.blue.name} (${data.blue.contingent})</option>
+            <option value="red">Sudut Merah - ${data.red.name} (${data.red.contingent})</option>
         `);
+
+        
+
         
     }
     
