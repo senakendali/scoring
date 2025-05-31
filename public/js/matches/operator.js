@@ -76,7 +76,7 @@ $(document).ready(function () {
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#match-stage").text("-");
-            $("#round-duration").val(data.round_duration);
+            $("#round-duration").val(300);
 
             $("#blue-name").html(`
                 ${data.blue.name}<br>
