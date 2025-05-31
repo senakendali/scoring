@@ -200,7 +200,7 @@
                             <button class="end-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-fill"></i> END MATCH</button>
                         </div>
                         <div class="d-flex mt-2">
-                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none"> NEXT MATCH</button>
+                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 mt-4"> NEXT MATCH</button>
                         </div>
                     </div>
                 </div>
