@@ -517,6 +517,15 @@ $(document).ready(function () {
     
 
     $(".next-match").on("click", function () {
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+
+        // Tampilkan spinner dan disable tombol
+        $btn.prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Loading...
+        `);
+
         $.post(`/api/local-seni-matches/${matchId}/next`, function (res) {
             if (res.new_match_id) {
                 window.location.href = `/matches/seni/${res.new_match_id}`;
@@ -524,13 +533,16 @@ $(document).ready(function () {
                 alert("Tidak ada pertandingan berikutnya.");
             }
         }).fail(function (xhr) {
-             // ✅ Set isi modal dan tampilkan
             $("#nextMatchModalBody").text("Tidak ada pertandingan berikutnya. Semua pertandingan telah selesai.");
             const modal = new bootstrap.Modal(document.getElementById('nextMatchModalInfo'));
             modal.show();
             console.error("❌ Gagal ganti match:", xhr.responseJSON?.message || xhr.statusText);
+        }).always(function () {
+            // Kembalikan tombol ke semula
+            $btn.prop("disabled", false).html('Redirecting to Next Match');
         });
     });
+
     
 
     let lastBlue = 0;

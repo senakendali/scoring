@@ -987,15 +987,22 @@ class LocalMatchController extends Controller
     }
 
     // Route: GET /api/local-matches/tournaments
-    public function getTournaments()
+   public function getTournaments()
     {
-        $tournaments = \DB::table('local_matches')
-            ->select('tournament_name')
+        $tanding = \DB::table('local_matches')
+            ->select('tournament_name');
+
+        $seni = \DB::table('local_seni_matches')
+            ->select('tournament_name');
+
+        $tournaments = $tanding
+            ->union($seni)
             ->distinct()
             ->pluck('tournament_name');
 
         return response()->json($tournaments);
     }
+
 
     // Route: GET /api/local-matches/arenas?tournament=Kejuaraan Nasional 2024
    public function getArenas(Request $request)

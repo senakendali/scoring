@@ -70,122 +70,120 @@ $(document).ready(function () {
 
         data.forEach(categoryGroup => {
             const categoryLabel = `${categoryGroup.category} - ${categoryGroup.gender === 'male' ? 'PUTRA' : 'PUTRI'}`;
-            let groupHtml = `<h4 class="text-uppercase text-primary mb-3">${categoryLabel}</h4>`;
 
-            categoryGroup.pools.forEach(pool => {
-                const poolName = pool.name;
-                const ageCategory = pool.matches[0]?.pool?.age_category?.name?.toUpperCase() || '-';
-
-                let tableHtml = `
-                    <div class="mb-5">
-                        <table class="table table-dark mt-4">
-                            <thead>
-                               <tr>
-                                    <th colspan="6" class="table-header text-uppercase">
-                                        <span>${poolName}</span>
-                                        
-                                    </th>
-                                    <th class="table-header text-end">
-                                        <button class="btn btn-sm btn-outline-info btn-view-rank" data-pool="${poolName}" data-matches='${JSON.stringify(pool.matches)}'>
-                                            Lihat Peringkat
-                                        </button>
-                                    </th>
-                                </tr>
-
-                                <tr>
-                                    <th colspan="7" class="table-header text-start text-uppercase">${ageCategory}</th>
-                                </tr>
-                                <tr class="table-sub-header">
-                                    <th>Match</th>
-                                    <th>Kontingen</th>
-                                    <th colspan="3">Peserta</th>
-                                    <th>Score</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+            // 🔁 Loop per kategori usia (sudah diproses di backend)
+            categoryGroup.age_categories.forEach(ageGroup => {
+                const ageCategory = ageGroup.age_category || 'TANPA USIA';
+                let groupHtml = `
+                    <h4 class="text-uppercase text-primary mb-2">${categoryLabel}</h4>
+                    <h5 class="text-uppercase text-secondary mb-3">${ageCategory.toUpperCase()}</h5>
                 `;
 
-                pool.matches.forEach(match => {
-                    tableHtml += `
-                        <tr>
-                            <td>${match.match_order}</td>
-                            <td>${match.contingent?.name || '-'}</td>
+                ageGroup.pools.forEach(pool => {
+                    const poolName = pool.name;
+
+                    let tableHtml = `
+                        <div class="mb-5">
+                            <table class="table table-dark mt-2">
+                                <thead>
+                                    <tr>
+                                        <th colspan="6" class="table-header text-uppercase">
+                                            <span>${poolName}</span>
+                                        </th>
+                                        <th class="table-header text-end">
+                                            <button class="btn btn-sm btn-outline-info btn-view-rank" data-pool="${poolName}" data-matches='${JSON.stringify(pool.matches)}'>
+                                                Lihat Peringkat
+                                            </button>
+                                        </th>
+                                    </tr>
+                                    <tr class="table-sub-header">
+                                        <th>Match</th>
+                                        <th>Kontingen</th>
+                                        <th colspan="3">Peserta</th>
+                                        <th>Score</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                     `;
 
-                    if (match.match_type === 'seni_tunggal' || match.match_type === 'solo_kreatif') {
+                    pool.matches.forEach(match => {
                         tableHtml += `
-                            <td>${match.team_member1?.name || '-'}</td>
-                            <td colspan="2">-</td>
+                            <tr>
+                                <td>${match.match_order}</td>
+                                <td>${match.contingent?.name || '-'}</td>
                         `;
-                    } else if (match.match_type === 'seni_ganda') {
-                        tableHtml += `
-                            <td>${match.team_member1?.name || '-'}</td>
-                            <td>${match.team_member2?.name || '-'}</td>
-                            <td>-</td>
-                        `;
-                    } else if (match.match_type === 'seni_regu') {
-                        tableHtml += `
-                            <td>${match.team_member1?.name || '-'}</td>
-                            <td>${match.team_member2?.name || '-'}</td>
-                            <td>${match.team_member3?.name || '-'}</td>
-                        `;
-                    }
 
-                   const scoreValue = parseFloat(match.final_score);
-                    const scoreText = match.status === 'finished' && !isNaN(scoreValue)
-                        ? scoreValue.toFixed(6)
-                        : '-';
+                        if (match.match_type === 'seni_tunggal' || match.match_type === 'solo_kreatif') {
+                            tableHtml += `
+                                <td>${match.team_member1?.name || '-'}</td>
+                                <td colspan="2">-</td>
+                            `;
+                        } else if (match.match_type === 'seni_ganda') {
+                            tableHtml += `
+                                <td>${match.team_member1?.name || '-'}</td>
+                                <td>${match.team_member2?.name || '-'}</td>
+                                <td>-</td>
+                            `;
+                        } else if (match.match_type === 'seni_regu') {
+                            tableHtml += `
+                                <td>${match.team_member1?.name || '-'}</td>
+                                <td>${match.team_member2?.name || '-'}</td>
+                                <td>${match.team_member3?.name || '-'}</td>
+                            `;
+                        }
 
-                    tableHtml += `<td>${scoreText}</td>`;
+                        const scoreValue = parseFloat(match.final_score);
+                        const scoreText = match.status === 'finished' && !isNaN(scoreValue)
+                            ? scoreValue.toFixed(6)
+                            : '-';
 
+                        tableHtml += `<td>${scoreText}</td>`;
 
-                    if (match.status === 'finished') {
-                        // ✅ Semua bisa akses tombol Recap
-                        tableHtml += `
-                            <td>
-                                <button 
-                                    class="btn btn-sm btn-outline-warning btn-recap-match"
-                                    data-id="${match.id}">
-                                    Recap
-                                </button>
-                            </td>
-                        `;
-                    } else if (isOperator) {
-                        // ✅ Masuk hanya untuk operator
-                        tableHtml += `
-                            <td>
-                                <button 
-                                    class="btn btn-sm btn-success btn-enter-match"
-                                    data-id="${match.id}"
-                                    data-arena="${arenaName}"
-                                    data-tournament="${tournament}">
-                                    Masuk
-                                </button>
-                            </td>
-                        `;
-                    } else {
-                        // ❌ Selain operator dan belum selesai → kosong
-                        tableHtml += `<td>-</td>`;
-                    }
+                        if (match.status === 'finished') {
+                            tableHtml += `
+                                <td>
+                                    <button class="btn btn-sm btn-outline-warning btn-recap-match" data-id="${match.id}">
+                                        Recap
+                                    </button>
+                                </td>
+                            `;
+                        } else if (isOperator) {
+                            tableHtml += `
+                                <td>
+                                    <button 
+                                        class="btn btn-sm btn-success btn-enter-match"
+                                        data-id="${match.id}"
+                                        data-arena="${arenaName}"
+                                        data-tournament="${tournament}">
+                                        Masuk
+                                    </button>
+                                </td>
+                            `;
+                        } else {
+                            tableHtml += `<td>-</td>`;
+                        }
 
-                    tableHtml += `</tr>`;
+                        tableHtml += `</tr>`;
+                    });
+
+                    tableHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    groupHtml += tableHtml;
                 });
 
-                tableHtml += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                groupHtml += tableHtml;
+                $('#match-tables').append(groupHtml);
             });
-
-            $('#match-tables').append(groupHtml);
         });
 
         $(".loader-bar").hide();
     });
+
+
 
 
     $(document).on("click", ".btn-view-rank", function () {
@@ -235,11 +233,20 @@ $(document).ready(function () {
     // Event klik tombol Masuk
     $(document).on("click", ".btn-enter-match", function (e) {
         e.preventDefault();
-    
-        const matchId = $(this).data("id");
-        const arena = $(this).data("arena");
-        const tournament = $(this).data("tournament");
-    
+
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+
+        const matchId = $btn.data("id");
+        const arena = $btn.data("arena");
+        const tournament = $btn.data("tournament");
+
+        // Tampilkan loader dan disable tombol
+        $btn.prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Loading...
+        `);
+
         fetch("/api/matches/seni/start", {
             method: "POST",
             headers: {
@@ -251,8 +258,20 @@ $(document).ready(function () {
                 arena_name: arena,
                 tournament_name: tournament
             })
+        })
+        .then(response => {
+            // ✅ Optional: Tambahkan redirect atau modal jika perlu
+            console.log("✅ Match started");
+        })
+        .catch(err => {
+            console.error("❌ Gagal mulai match:", err);
+        })
+        .finally(() => {
+            // Kembalikan tombol ke semula
+            $btn.prop("disabled", false).html(originalHtml);
         });
     });
+
 
     function slugify(text) {
         return text.toString().toLowerCase()

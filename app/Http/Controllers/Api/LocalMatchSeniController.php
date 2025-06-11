@@ -99,8 +99,122 @@ class LocalMatchSeniController extends Controller
         return response()->json($groupedByArena);
     }
 
+  public function index(Request $request)
+{
+    $arenaName = session('arena_name');
+    $matchType = session('match_type'); // 'seni' atau 'tanding'
 
-    public function index(Request $request)
+    $query = \App\Models\LocalSeniMatch::query();
+
+    if ($arenaName) {
+        $query->where('arena_name', $arenaName);
+    }
+
+    if ($matchType) {
+        $query->where('match_type', 'like', 'seni_%');
+    }
+
+    // Ambil semua match dan urutkan global
+    $matches = $query->orderBy('match_order')->get();
+
+    // Format: [group_key => [first_order, group_data]]
+    $groupedMap = [];
+
+    foreach ($matches as $match) {
+        $groupKey = $match->category . '|' . $match->gender . '|' . ($match->age_category ?? '-');
+        $poolName = $match->pool_name;
+
+        if (!isset($groupedMap[$groupKey])) {
+            $groupedMap[$groupKey] = [
+                'first_order' => $match->match_order,
+                'data' => [
+                    'category' => $match->category,
+                    'gender' => $match->gender,
+                    'age_categories' => []
+                ]
+            ];
+        }
+
+        $group = &$groupedMap[$groupKey]['data'];
+
+        if (!isset($group['age_categories'][$match->age_category])) {
+            $group['age_categories'][$match->age_category] = [
+                'age_category' => $match->age_category,
+                'pools' => []
+            ];
+        }
+
+        $age = &$group['age_categories'][$match->age_category];
+
+        if (!isset($age['pools'][$poolName])) {
+            $age['pools'][$poolName] = [
+                'name' => $poolName,
+                'matches' => []
+            ];
+        }
+
+        $age['pools'][$poolName]['matches'][] = [
+            'id' => $match->id,
+            'match_order' => $match->match_order,
+            'match_type' => $match->match_type,
+            'contingent' => ['name' => $match->contingent_name],
+            'final_score' => $match->final_score,
+            'status' => $match->status,
+            'team_member1' => ['name' => $match->participant_1],
+            'team_member2' => ['name' => $match->participant_2],
+            'team_member3' => ['name' => $match->participant_3],
+            'pool' => [
+                'age_category' => ['name' => $match->age_category ?? '-']
+            ]
+        ];
+    }
+
+    // Urutkan berdasarkan match_order pertama dari tiap group
+    usort($groupedMap, fn($a, $b) => $a['first_order'] <=> $b['first_order']);
+
+    // Build result
+    $result = [];
+
+    foreach ($groupedMap as $item) {
+        $group = $item['data'];
+
+        // Reindex and sort inside
+        $ageCategories = [];
+
+        foreach ($group['age_categories'] as $ac) {
+            // Urutkan matches di dalam tiap pool
+            foreach ($ac['pools'] as &$pool) {
+                usort($pool['matches'], fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+            }
+
+            $ac['pools'] = array_values($ac['pools']);
+            $ageCategories[] = $ac;
+        }
+
+        $result[] = [
+            'category' => $group['category'],
+            'gender' => $group['gender'],
+            'age_categories' => $ageCategories
+        ];
+    }
+
+    return response()->json($result);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public function index___asli(Request $request)
 {
     $arenaName = session('arena_name');
     $matchType = session('match_type'); // 'seni' atau 'tanding'
