@@ -91,7 +91,7 @@ $(document).ready(function () {
                                             <span>${poolName}</span>
                                         </th>
                                         <th class="table-header text-end">
-                                            <button class="btn btn-sm btn-outline-info btn-view-rank" data-pool="${poolName}" data-matches='${JSON.stringify(pool.matches)}'>
+                                            <button class="btn btn-sm btn-outline-info btn-view-rank" data-category="${categoryLabel}" data-age="${ageCategory}" data-pool="${poolName}" data-matches='${JSON.stringify(pool.matches)}'>
                                                 Lihat Peringkat
                                             </button>
                                         </th>
@@ -190,10 +190,13 @@ $(document).ready(function () {
         const rawMatches = $(this).data("matches");
         const matches = Array.isArray(rawMatches) ? rawMatches : JSON.parse(rawMatches);
 
+        const category = $(this).data("category") || '';
+        const age = $(this).data("age") || '';
+        const pool = $(this).data("pool") || '';
+
         const sorted = matches
             .filter(m => m.status === 'finished' && !isNaN(parseFloat(m.final_score)))
-            .sort((a, b) => parseFloat(b.final_score) - parseFloat(a.final_score))
-            .slice(0, 3);
+            .sort((a, b) => parseFloat(b.final_score) - parseFloat(a.final_score));
 
         const $list = $("#ranking-list");
         $list.empty();
@@ -207,7 +210,7 @@ $(document).ready(function () {
                 const contingent = match.contingent?.name || '-';
 
                 $list.append(`
-                    <li class="list-group-item bg-dark text-white d-flex justify-content-between">
+                    <li class="list-group-item bg-dark text-white text-start">
                         <strong>#${idx + 1}</strong> ${peserta} (${contingent})<br>
                         <small>${parseFloat(match.final_score).toFixed(6)}</small>
                     </li>
@@ -215,9 +218,20 @@ $(document).ready(function () {
             });
         }
 
+        // 👇 Set judul sesuai kategori
+        const title = `${category} ${age} ${pool}`;
+        $("#rankingModalLabel").text('Ranking Peserta ' + title).addClass('text-uppercase');
+
+        // Tampilkan modal fullscreen
         const modal = new bootstrap.Modal(document.getElementById("rankingModal"));
         modal.show();
     });
+
+
+
+
+
+
 
 
     // ✅ Handler tombol Recap
