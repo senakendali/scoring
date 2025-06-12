@@ -528,7 +528,7 @@ public function index_hampir(Request $request)
         return response()->json($result);
     }
 
-    public function createPoolFinalMatch(Request $request)
+   public function createPoolFinalMatch(Request $request)
 {
     try {
         $request->validate([
@@ -541,8 +541,10 @@ public function index_hampir(Request $request)
 
         $winners = collect($request->winners);
 
-        // Ambil match_order tertinggi dari seluruh data
-        $currentMaxOrder = 34;
+        // Ambil match_order tertinggi global (pastikan tipe data INT atau cast dulu)
+        $currentMaxOrder = DB::table('local_seni_matches')
+            ->select(DB::raw('MAX(CAST(match_order AS UNSIGNED)) as max_order'))
+            ->value('max_order') ?? 0;
 
         foreach ($winners as $index => $winner) {
             $category = $winner['category'];
@@ -561,14 +563,12 @@ public function index_hampir(Request $request)
 
             $data = $this->getParticipantDataFromLocalMatch($winner['member_id']);
 
-            if (!$data) {
-                continue; // skip kalau datanya tidak ditemukan
-            }
+            if (!$data) continue;
 
-            $arena = $data->arena_name ?? 'Arena Final';
+            $arena = $data->arena_name ?? session('arena_name') ?? 'Arena Final';
             $tournament = $data->tournament_name ?? 'UNKNOWN TOURNAMENT';
 
-            $matchOrder = $currentMaxOrder + $index + 1; // pastikan lanjut dari match_order terakhir
+            $currentMaxOrder++; // Increment sebelum insert
 
             DB::table('local_seni_matches')->insert([
                 'remote_match_id' => null,
@@ -582,7 +582,7 @@ public function index_hampir(Request $request)
                 'match_date' => now()->format('Y-m-d'),
                 'match_time' => now()->addMinutes(30)->format('H:i:00'),
                 'pool_name' => $poolName,
-                'match_order' => $matchOrder,
+                'match_order' => $currentMaxOrder,
 
                 'category' => $category,
                 'match_type' => $matchType,
@@ -613,6 +613,8 @@ public function index_hampir(Request $request)
         ], 500);
     }
 }
+
+
 
 private function getParticipantDataFromLocalMatch($memberId)
 {
