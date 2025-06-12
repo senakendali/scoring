@@ -221,8 +221,8 @@ $(document).ready(function () {
                 $("#timer").show();
                
             }else{
-               
-                $("#timer").hide();
+                /* perbaiki ini */
+                $("#timer").show();
             }
 
             // Set UI

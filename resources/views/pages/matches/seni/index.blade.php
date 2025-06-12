@@ -51,10 +51,6 @@
   </div>
 </div>
 
-
-
-
-
 <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
 <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
 <input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">

@@ -69,8 +69,9 @@ $(document).ready(function () {
                
                 $("#timer").show();
             }else{
-                $("#display-timer").css('height', '0');
-                $("#timer").hide();
+                /* perbaiki ini */
+                /*$("#display-timer").css('height', '0');*/
+                $("#timer").show();
             }
             
             $("#match-id").val(data.id);
