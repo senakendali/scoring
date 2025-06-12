@@ -9,6 +9,9 @@ use App\Events\SeniTimerUpdated;
 use App\Events\SeniTimerFinished;
 use App\Models\LocalSeniMatch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
 
 class LocalMatchSeniController extends Controller
 {
@@ -98,6 +101,124 @@ class LocalMatchSeniController extends Controller
 
         return response()->json($groupedByArena);
     }
+
+    
+
+public function index_hampir(Request $request)
+{
+    $arenaName = session('arena_name');
+    $matchType = session('match_type'); // 'seni' atau 'tanding'
+
+    $query = \App\Models\LocalSeniMatch::query();
+
+    if ($arenaName) {
+        $query->where('arena_name', $arenaName);
+    }
+
+    if ($matchType) {
+        $query->where('match_type', 'like', 'seni_%');
+    }
+
+    // Ambil semua match dan urutkan global
+    $matches = $query->orderBy('match_order')->get();
+
+    // Format: [group_key => [first_order, group_data]]
+    $groupedMap = [];
+
+    foreach ($matches as $match) {
+        $groupKey = $match->category . '|' . $match->gender . '|' . ($match->age_category ?? '-');
+        $poolName = $match->pool_name;
+
+        if (!isset($groupedMap[$groupKey])) {
+            $groupedMap[$groupKey] = [
+                'first_order' => $match->match_order,
+                'data' => [
+                    'category' => $match->category,
+                    'gender' => $match->gender,
+                    'age_categories' => []
+                ]
+            ];
+        }
+
+        $group = &$groupedMap[$groupKey]['data'];
+
+        if (!isset($group['age_categories'][$match->age_category])) {
+            $group['age_categories'][$match->age_category] = [
+                'age_category' => $match->age_category,
+                'pools' => []
+            ];
+        }
+
+        $age = &$group['age_categories'][$match->age_category];
+
+        if (!isset($age['pools'][$poolName])) {
+            $age['pools'][$poolName] = [
+                'name' => $poolName,
+                'matches' => []
+            ];
+        }
+
+        $age['pools'][$poolName]['matches'][] = [
+            'id' => $match->id,
+            'match_order' => $match->match_order,
+            'match_type' => $match->match_type,
+            'contingent' => ['name' => $match->contingent_name],
+            'final_score' => $match->final_score,
+            'status' => $match->status,
+            'team_member1' => ['name' => $match->participant_1],
+            'team_member2' => ['name' => $match->participant_2],
+            'team_member3' => ['name' => $match->participant_3],
+            'pool' => [
+                'age_category' => ['name' => $match->age_category ?? '-']
+            ]
+        ];
+    }
+
+    // Urutkan berdasarkan match_order pertama dari tiap group
+    usort($groupedMap, fn($a, $b) => $a['first_order'] <=> $b['first_order']);
+
+    // Build result
+    $result = [];
+
+    foreach ($groupedMap as $item) {
+        $group = $item['data'];
+
+        // Reindex and sort inside
+        $ageCategories = [];
+
+        foreach ($group['age_categories'] as $ac) {
+            // Urutkan pools: taruh pool final di akhir
+            $pools = $ac['pools'];
+            uksort($pools, function ($a, $b) {
+                $aFinal = Str::contains(Str::lower($a), 'final');
+                $bFinal = Str::contains(Str::lower($b), 'final');
+
+                if ($aFinal && !$bFinal) return 1;
+                if (!$aFinal && $bFinal) return -1;
+                return strnatcasecmp($a, $b); // pakai natural order supaya Pool 10 > Pool 2
+            });
+
+            foreach ($pools as &$pool) {
+                usort($pool['matches'], fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+            }
+
+            $ac['pools'] = array_values($pools);
+            $ageCategories[] = $ac;
+        }
+
+        $result[] = [
+            'category' => $group['category'],
+            'gender' => $group['gender'],
+            'age_categories' => $ageCategories
+        ];
+    }
+
+    return response()->json($result);
+}
+
+
+
+
 
   public function index(Request $request)
 {
@@ -363,6 +484,173 @@ class LocalMatchSeniController extends Controller
             'disqualified' => true
         ]);
     }
+
+    public function getPoolWinners()
+    {
+        $matches = \App\Models\LocalSeniMatch::all();
+
+        $grouped = $matches->groupBy(function ($match) {
+            return $match->pool_name . '|' . $match->category . '|' . $match->gender . '|' . $match->age_category;
+        });
+
+        $result = [];
+
+        foreach ($grouped as $key => $group) {
+            [$poolName, $category, $gender, $ageCategory] = explode('|', $key);
+
+            $participants = [];
+
+            foreach ($group as $match) {
+                $peserta = [
+                    ['id' => $match->remote_team_member_1, 'name' => $match->participant_1, 'contingent' => $match->contingent_name],
+                    ['id' => $match->remote_team_member_2, 'name' => $match->participant_2, 'contingent' => $match->contingent_name],
+                    ['id' => $match->remote_team_member_3, 'name' => $match->participant_3, 'contingent' => $match->contingent_name],
+                ];
+
+                foreach ($peserta as $p) {
+                    if ($p['id'] && !collect($participants)->contains('id', $p['id'])) {
+                        $participants[] = $p;
+                    }
+                }
+            }
+
+            $result[] = [
+                'pool_id' => null,
+                'pool_name' => $poolName,
+                'category' => $category,
+                'match_type' => $group->first()->match_type,
+                'gender' => $gender,
+                'age_category' => $ageCategory,
+                'participants' => $participants
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    public function createPoolFinalMatch(Request $request)
+{
+    try {
+        $request->validate([
+            'winners' => 'required|array|min:1',
+            'winners.*.member_id' => 'required|integer',
+            'winners.*.category' => 'required|string',
+            'winners.*.gender' => 'required|string',
+            'winners.*.age_category' => 'required|string',
+        ]);
+
+        $winners = collect($request->winners);
+
+        // Ambil match_order tertinggi dari seluruh data
+        $currentMaxOrder = 34;
+
+        foreach ($winners as $index => $winner) {
+            $category = $winner['category'];
+            $gender = $winner['gender'];
+            $ageCategory = $winner['age_category'];
+
+            $matchTypeMap = [
+                'Tunggal' => 'seni_tunggal',
+                'Ganda' => 'seni_ganda',
+                'Regu' => 'seni_regu',
+                'Solo Kreatif' => 'solo_kreatif'
+            ];
+
+            $matchType = $matchTypeMap[$category] ?? 'seni_tunggal';
+            $poolName = "Pool Final - $category - $ageCategory - $gender";
+
+            $data = $this->getParticipantDataFromLocalMatch($winner['member_id']);
+
+            if (!$data) {
+                continue; // skip kalau datanya tidak ditemukan
+            }
+
+            $arena = $data->arena_name ?? 'Arena Final';
+            $tournament = $data->tournament_name ?? 'UNKNOWN TOURNAMENT';
+
+            $matchOrder = $currentMaxOrder + $index + 1; // pastikan lanjut dari match_order terakhir
+
+            DB::table('local_seni_matches')->insert([
+                'remote_match_id' => null,
+                'remote_contingent_id' => $data->remote_contingent_id,
+                'remote_team_member_1' => $data->remote_team_member_1,
+                'remote_team_member_2' => $data->remote_team_member_2,
+                'remote_team_member_3' => $data->remote_team_member_3,
+
+                'tournament_name' => $tournament,
+                'arena_name' => $arena,
+                'match_date' => now()->format('Y-m-d'),
+                'match_time' => now()->addMinutes(30)->format('H:i:00'),
+                'pool_name' => $poolName,
+                'match_order' => $matchOrder,
+
+                'category' => $category,
+                'match_type' => $matchType,
+                'gender' => $gender,
+                'contingent_name' => $data->contingent_name,
+
+                'participant_1' => $data->participant_1,
+                'participant_2' => $data->participant_2,
+                'participant_3' => $data->participant_3,
+
+                'age_category' => $ageCategory,
+                'final_score' => null,
+                'is_display_timer' => 0,
+                'status' => 'not_started',
+                'duration' => 180,
+                'disqualified' => 'no',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json(['message' => 'Match berhasil dibuat.']);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => 'Internal Server Error: ' . $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
+        ], 500);
+    }
+}
+
+private function getParticipantDataFromLocalMatch($memberId)
+{
+    return DB::table('local_seni_matches')
+        ->where(function ($q) use ($memberId) {
+            $q->where('remote_team_member_1', $memberId)
+              ->orWhere('remote_team_member_2', $memberId)
+              ->orWhere('remote_team_member_3', $memberId);
+        })
+        ->orderByDesc('id')
+        ->first([
+            'remote_contingent_id',
+            'remote_team_member_1',
+            'remote_team_member_2',
+            'remote_team_member_3',
+            'participant_1',
+            'participant_2',
+            'participant_3',
+            'contingent_name',
+            'arena_name',
+            'tournament_name'
+        ]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }

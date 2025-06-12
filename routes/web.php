@@ -131,6 +131,11 @@ Route::prefix('api')->group(function () {
     Route::post('/import-matches', [LocalImportController::class, 'store']);
     Route::post('/import-seni-matches', [LocalImportController::class, 'storeSeni']);
 
+    Route::get('/local-seni-matches/pool-winners', [LocalMatchSeniController::class, 'getPoolWinners']);
+
+    Route::post('/local-seni-matches/create-pool-final-match', [LocalMatchSeniController::class, 'createPoolFinalMatch']);
+
+
 
    
     

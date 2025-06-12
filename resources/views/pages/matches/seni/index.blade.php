@@ -34,6 +34,24 @@
   </div>
 </div>
 
+<div class="modal fade" id="modal-final-match" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Pilih Juara Tiap Pool</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="final-match-body">
+        <!-- Diisi lewat jQuery -->
+      </div>
+      <div class="modal-footer">
+        <button id="submit-final-match" class="btn btn-success">Buat Match</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 
 
@@ -45,6 +63,13 @@
 <div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
 @if(session('role') === 'operator')
 <div class="container-fluid">
+    <div class="row mt-4">
+      <div class="col-lg-12 d-flex justify-content-end">
+        <button id="btn-create-match-final" class="btn btn-primary mb-4">
+            Buat Match Antar Juara Pool
+        </button>
+      </div>
+    </div>
     <div class="row">
         <div class="col-12">
         <div class="content">

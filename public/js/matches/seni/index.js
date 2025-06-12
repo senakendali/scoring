@@ -28,6 +28,11 @@ $(document).ready(function () {
     }
 
     typeWriter();
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
 
 
     
@@ -182,6 +187,72 @@ $(document).ready(function () {
 
         $(".loader-bar").hide();
     });
+
+    $('#btn-create-match-final').on('click', function () {
+        $('#final-match-body').html('Loading...');
+
+        $.get('/api/local-seni-matches/pool-winners', function (res) {
+            let html = '';
+
+            res.forEach(pool => {
+                const options = pool.participants.map(p => `
+                    <option value="${p.id}">${p.name} - ${p.contingent}</option>
+                `).join('');
+
+                html += `
+                    <div class="mb-3">
+                        <label class="form-label">${pool.pool_name} (${pool.category} - ${pool.gender.toUpperCase()} - ${pool.age_category})</label>
+                        <select class="form-select winner-select" data-pool-id="${pool.pool_id}" data-category="${pool.category}" data-gender="${pool.gender}" data-age="${pool.age_category}">
+                            <option value="">-- Pilih Juara Pool --</option>
+                            ${options}
+                        </select>
+                    </div>
+                `;
+            });
+
+            $('#final-match-body').html(html);
+            $('#modal-final-match').modal('show');
+        });
+    });
+
+    $('#submit-final-match').on('click', function () {
+        const selected = [];
+
+        $('.winner-select').each(function () {
+            const poolId = $(this).data('pool-id');
+            const memberId = $(this).val();
+
+            if (memberId) {
+                selected.push({
+                    pool_id: poolId,
+                    member_id: memberId,
+                    category: $(this).data('category'),
+                    gender: $(this).data('gender'),
+                    age_category: $(this).data('age'),
+                });
+            }
+        });
+
+        if (selected.length < 2) {
+            alert('Minimal pilih 2 juara pool untuk membuat match.');
+            return;
+        }
+
+        $.ajax({
+            url: '/api/local-seni-matches/create-pool-final-match',
+            method: 'POST',
+            data: { winners: selected },
+            success: function (res) {
+                alert('Match berhasil dibuat!');
+                location.reload();
+            },
+            error: function () {
+                alert('Gagal membuat match.');
+            }
+        });
+    });
+
+
 
 
 
