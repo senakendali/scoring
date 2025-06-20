@@ -208,7 +208,7 @@ body{
     transform: translateX(-50%);
    
     min-height: 80px;
-    min-width: 600px;
+    min-width: 750px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -518,6 +518,10 @@ body{
     flex-direction: column;
     height: calc(100vh - 180px);
     overflow: hidden;
+}
+
+.display-arena .name{
+    font-size: 18px;
 }
 
 

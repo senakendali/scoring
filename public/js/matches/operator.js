@@ -224,19 +224,22 @@ $(document).ready(function () {
     $(".start").on("click", function () {
         if (!roundId) return;
         const btn = $(this);
-    
+
+        // ✅ Ubah caption jadi "Ongoing"
+        btn.html(`<i class="bi bi-clock-history me-1"></i> ONGOING`);
+
         // ✅ Ambil durasi dari dropdown
         duration = parseInt($('#round-duration').val() || 180);
 
-        
-    
         setButtonLoading(btn, true);
+
         $.post(`${url}/api/local-match-rounds/${roundId}/start`, {
-            duration: duration 
+            duration: duration
         }, function () {
             setTimeout(fetchAndStartTimer, 500);
         }).always(() => setButtonLoading(btn, false));
     });
+
 
     $(".stop-round").on("click", function () {
         if (!roundId) return;
@@ -361,6 +364,8 @@ $(document).ready(function () {
                 stopTimer();
                 //timerEl.text("03:00");
                 timerEl.text(formatTime(duration));
+
+                 $(".start").html(`<i class="bi bi-play-fill"></i> START`);
             }).always(() => setButtonLoading(btn, false));
         });
     });

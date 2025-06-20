@@ -103,6 +103,9 @@ Route::prefix('api')->group(function () {
     Route::post('/local-judge-scores', [LocalMatchController::class, 'submitPoint']);
     Route::get('local-matches/{id}/judge-recap', [LocalMatchController::class, 'judgeRecap']);
     Route::post('/local-referee-actions', [LocalMatchController::class, 'refereeAction']);
+    // routes/api.php
+    Route::post('/local-referee-actions/remove-jatuhan', [LocalMatchController::class, 'removeJatuhan']);
+
     Route::post('/local-referee-actions/cancel', [LocalMatchController::class, 'cancelRefereeAction']);
 
 

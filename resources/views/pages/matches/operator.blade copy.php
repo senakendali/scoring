@@ -186,44 +186,23 @@
                         <div class="timer roboto-bold" id="timer" style="color:#000; ">00:00</div>
                     </div>
                     <div class="panel-footer">
-    <div class="d-flex gap-2">
-        <div class="w-100">
-            <button class="pause btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                <i class="bi bi-pause-fill me-2"></i> PAUSE
-            </button>
-        </div>
-        <div class="w-100">
-            <button class="start btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                <i class="bi bi-play-fill me-2"></i> START
-            </button>
-        </div>
-        <div class="w-100">
-            <button class="stop-round btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                <i class="bi bi-stop-circle me-2"></i> END ROUND
-            </button>
-        </div>
-    </div>
+                        <div class="d-flex gap-2">
+                            <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-pause-fill"></i> PAUSE</button>
+                            <button class="start btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-play-fill"></i> START</button>
+                            <button class="reset btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-arrow-clockwise"></i> RESET</button>
+                        </div>
+                        <div class="d-flex mt-2">
+                            <button class="stop-round btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-circle" style="margin-right: 4px; "></i> END ROUND</button>
+                        </div>
+                        
 
-    <div class="d-flex gap-2 mt-2">
-        <div class="w-100">
-            <button class="reset btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                <i class="bi bi-arrow-clockwise me-2"></i> RESET
-            </button>
-        </div>
-        <div class="w-100">
-            <button class="end-match btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                <i class="bi bi-stop-fill me-2"></i> END MATCH
-            </button>
-        </div>
-        <div class="w-100">
-            <button class="next-match btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                NEXT MATCH
-            </button>
-        </div>
-    </div>
-</div>
-
-
+                        <div class="d-flex mt-2">
+                            <button class="end-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-fill"></i> END MATCH</button>
+                        </div>
+                        <div class="d-flex mt-2">
+                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 mt-4"> NEXT MATCH</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

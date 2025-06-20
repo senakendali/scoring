@@ -97,7 +97,7 @@ class LocalMatchRoundController extends Controller
             $match->save();
 
             // ✅ Kirim status ke server pusat
-            try {
+            /*try {
                 $client = new \GuzzleHttp\Client();
 
                 $response = $client->post($this->live_server . '/api/update-tanding-match-status', [
@@ -118,14 +118,10 @@ class LocalMatchRoundController extends Controller
                     'remote_match_id' => $match->remote_match_id,
                     'error' => $e->getMessage()
                 ]);
-            }
+            }*/
         }
 
-        \Log::info('🔔 Mengirim event timer.started', [
-            'channel' => 'match.' . $match->id,
-            'start_time' => $round->start_time,
-            'duration' => $duration,
-        ]);
+       
 
         broadcast(new \App\Events\TimerStarted($match->id, [
             'start_time' => $round->start_time->toIso8601String(),
@@ -180,40 +176,7 @@ class LocalMatchRoundController extends Controller
 
 
 
-    public function changeToNextMatch__($currentId)
-    {
-        // Matikan semua match aktif
-        LocalMatch::where('is_active', true)->update(['is_active' => false]);
-
-        // Ambil match sekarang
-        $currentMatch = LocalMatch::find($currentId);
-        if (!$currentMatch) {
-            return response()->json(['message' => 'Current match not found'], 404);
-        }
-
-        // Cari match selanjutnya di pool yang sama dan arena yang sama
-        $nextMatch = LocalMatch::where('id', '>', $currentId)
-            ->where('pool_name', $currentMatch->pool_name)
-            ->where('arena_name', $currentMatch->arena_name)
-            ->orderBy('id')
-            ->first();
-
-        if ($nextMatch) {
-            $nextMatch->is_active = true;
-            $nextMatch->save();
-
-            broadcast(new ActiveMatchChanged($nextMatch->id))->toOthers();
-
-            return response()->json([
-                'message' => 'Match switched',
-                'new_match_id' => $nextMatch->id
-            ]);
-        }
-
-        return response()->json([
-            'message' => 'No next match available in the same pool'
-        ], 404);
-    }
+    
 
 
 
@@ -237,31 +200,7 @@ class LocalMatchRoundController extends Controller
         return response()->json(['message' => 'Ronde dipause.', 'end_time' => $round->end_time]);
     }
 
-    public function resume__($id)
-    {
-        $round = LocalMatchRound::findOrFail($id);
-
-        if ($round->status !== 'paused') {
-            return response()->json(['message' => 'Ronde tidak dalam keadaan pause.'], 400);
-        }
-
-        $start = $round->start_time instanceof Carbon ? $round->start_time : Carbon::parse($round->start_time);
-        $end = $round->end_time instanceof Carbon ? $round->end_time : Carbon::parse($round->end_time);
-
-        $elapsed = $start->diffInSeconds($end);
-
-        $round->start_time = now()->subSeconds($elapsed);
-        $round->end_time = null;
-        $round->status = 'in_progress';
-        $round->save();
-
-        broadcast(new \App\Events\TimerUpdated($round))->toOthers(); // ⬅️ broadcast Reverb
-        return response()->json([
-            'message' => 'Ronde dilanjutkan',
-            'start_time' => $round->start_time,
-            'now' => now(),
-        ]);
-    }
+    
 
     public function resume($id)
     {
@@ -313,7 +252,7 @@ class LocalMatchRoundController extends Controller
             $match->save();
 
             // ✅ Kirim status ke server pusat
-            try {
+           /* try {
                 $client = new \GuzzleHttp\Client();
                 $baseUrl = $this->live_server;
 
@@ -335,7 +274,7 @@ class LocalMatchRoundController extends Controller
                     'remote_match_id' => $match->remote_match_id,
                     'error' => $e->getMessage()
                 ]);
-            }
+            }*/
         }
 
         // Hapus semua skor juri, valid, wasit

@@ -41,7 +41,7 @@ $(document).ready(function () {
     });
 
     // 2. Submit Form Tanding
-    $('#import-form').on('submit', function (e) {
+   $('#import-form').on('submit', function (e) {
         e.preventDefault();
         $(".loader-bar").show();
 
@@ -54,12 +54,21 @@ $(document).ready(function () {
 
         if (!confirm(`Yakin ingin mengimpor data pertandingan dari turnamen "${slug}"?`)) return;
 
+        // Ambil nilai dari checkbox
+        const isDisplayTimer = $('#display_timer_tanding').is(':checked') ? 1 : 0;
+
         $.get(`${dataSource}/api/sync/matches?tournament=${encodeURIComponent(slug)}`, function (matchData) {
             if (!Array.isArray(matchData) || matchData.length === 0) {
                 showAlert("Data pertandingan kosong.", "Tidak Ada Data");
                 $(".loader-bar").hide();
                 return;
             }
+
+            // Inject nilai checkbox ke semua item
+            matchData = matchData.map(item => ({
+                ...item,
+                is_display_timer: isDisplayTimer
+            }));
 
             $.ajax({
                 url: '/api/import-matches',
@@ -85,6 +94,7 @@ $(document).ready(function () {
         });
     });
 
+
     // 3. Submit Form Seni
     $('#import-form-seni').on('submit', function (e) {
         e.preventDefault();
@@ -98,13 +108,22 @@ $(document).ready(function () {
         }
 
         if (!confirm(`Yakin ingin mengimpor data pertandingan SENI dari turnamen "${slug}"?`)) return;
-       
+
+        // Ambil nilai checkbox untuk tampilan timer
+        const isDisplayTimer = $('#display_timer_seni').is(':checked') ? 1 : 0;
+
         $.get(`${dataSource}/api/sync/matches/seni?tournament=${encodeURIComponent(slug)}`, function (matchData) {
             if (!Array.isArray(matchData) || matchData.length === 0) {
                 showAlert("Data pertandingan seni kosong.", "Tidak Ada Data");
                 $(".loader-bar").hide();
                 return;
             }
+
+            // Inject flag is_display_timer ke setiap item
+            matchData = matchData.map(item => ({
+                ...item,
+                is_display_timer: isDisplayTimer
+            }));
 
             $.ajax({
                 url: '/api/import-seni-matches',
@@ -129,4 +148,5 @@ $(document).ready(function () {
             showAlert("Gagal mengambil data dari server pusat (seni).", "Gagal Sinkronisasi");
         });
     });
+
 });

@@ -55,17 +55,17 @@
         </div-->
         <div class="match-item">
             <div class="blue d-flex">
-                <div id="blue-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
+                <div id="blue-name" class="display-arena name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
                     -
                 </div>
                 
             </div>
-            <div id="current-round" class="round d-flex justify-content-center align-items-center roboto-bold">
+            <div id="current-round" class="display-arena round d-flex justify-content-center align-items-center roboto-bold">
                 -
             </div>
             <div class="red d-flex">
                
-                <div id="red-name" class="name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
+                <div id="red-name" class="display-arena name d-flex flex-column w-100 roboto-bold justify-content-center align-items-center">
                     - 
                 </div>
             

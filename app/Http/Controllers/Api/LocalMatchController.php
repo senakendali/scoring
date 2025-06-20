@@ -834,6 +834,52 @@ class LocalMatchController extends Controller
         return response()->json(['message' => 'Tindakan wasit berhasil disimpan']);
     }
 
+    public function removeJatuhan(Request $request)
+    {
+        $data = $request->validate([
+            'local_match_id' => 'required|exists:local_matches,id',
+            'round_id' => 'required|exists:local_match_rounds,id',
+            'corner' => 'required|in:red,blue',
+        ]);
+
+        // 🔥 Hapus semua jatuhan untuk sudut & ronde ini
+        \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', $data['corner'])
+            ->where('action', 'jatuhan')
+            ->delete();
+
+        // 🔢 Hitung ulang skor
+        $blueScore = \App\Models\LocalValidScore::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'blue')
+            ->sum('point');
+
+        $redScore = \App\Models\LocalValidScore::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'red')
+            ->sum('point');
+
+        $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'blue')
+            ->sum('point_change');
+
+        $redAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'red')
+            ->sum('point_change');
+
+        // 🔊 Broadcast skor terbaru
+        broadcast(new \App\Events\ScoreUpdated(
+            $data['local_match_id'],
+            $data['round_id'],
+            $blueScore + $blueAdjustment,
+            $redScore + $redAdjustment,
+            $blueAdjustment,
+            $redAdjustment
+        ))->toOthers();
+
+        return response()->json(['message' => 'Jatuhan berhasil dihapus dan skor diperbarui']);
+    }
+
+
     public function cancelRefereeAction(Request $request)
     {
         $data = $request->validate([

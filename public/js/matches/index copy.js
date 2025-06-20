@@ -147,17 +147,11 @@ $(document).ready(function () {
     // Event klik tombol Masuk
     $(document).on("click", ".btn-enter-match", function (e) {
         e.preventDefault();
-
-        const $btn = $(this);
-        const originalHtml = $btn.html();
-        
-        // Tampilkan loader
-        $btn.prop("disabled", true).html(`<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading...`);
-
-        const matchId = $btn.data("id");
-        const arena = $btn.data("arena");
-        const tournament = $btn.data("tournament");
-
+    
+        const matchId = $(this).data("id");
+        const arena = $(this).data("arena");
+        const tournament = $(this).data("tournament");
+    
         fetch("/api/matches/start", {
             method: "POST",
             headers: {
@@ -169,21 +163,8 @@ $(document).ready(function () {
                 arena_name: arena,
                 tournament_name: tournament
             })
-        })
-        .then(res => {
-            // Kembalikan tombol ke semula setelah request selesai
-            $btn.html(originalHtml).prop("disabled", false);
-
-            // Tambahkan logic redirect atau update UI di sini
-            console.log("Match started");
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            $btn.html(originalHtml).prop("disabled", false);
-            alert("Gagal memulai pertandingan!");
         });
     });
-
 
     // === Handler untuk tombol View Bracket ===
     $(document).on("click", ".btn-view-bracket", function () {

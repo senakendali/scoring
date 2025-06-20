@@ -101,6 +101,7 @@ class LocalImportController extends Controller
 
             foreach ($data as $match) {
                 $insert = [
+                    'match_date' => $match['scheduled_date'],
                     'tournament_name' => $match['tournament_name'] ?? '-',
                     'remote_match_id' => $match['match_id'],
                     'arena_name' => $match['arena_name'] ?? '-',
@@ -113,7 +114,7 @@ class LocalImportController extends Controller
                     'match_number' => $match['match_number'] ?? 0,
                     'round_duration' => $match['round_duration'] ?? 180, // default 180 detik
                     'status' => 'not_started',
-                    'is_display_timer' => filter_var($match['is_display_timer'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'is_display_timer' => isset($match['is_display_timer']) && $match['is_display_timer'] == '1' ? 1 : 0,
 
                     'red_id' => $match['red_id'] ?? null,
                     'red_name' => $match['red_name'] ?? 'TBD',

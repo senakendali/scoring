@@ -76,7 +76,7 @@ $(document).ready(function () {
             $(".button-item").prop("disabled", true);
         } else if (data.status === 'finished') {
             $("#current-round").text("FINISHED");
-            $(".button-item").prop("disabled", true);
+            //$(".button-item").prop("disabled", true);
         } else if (data.status === 'not_started') {
             $("#current-round").text(`ROUND ${currentRoundNumber}`);
         }

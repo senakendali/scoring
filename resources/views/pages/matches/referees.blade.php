@@ -98,8 +98,9 @@
                            
                         </div>
                     </div>
-                    <div class="score-items">
+                    <div class="score-items d-flex gap-2">
                         <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="blue">Jatuhan</div>
+                        <div class="drop text-white" data-action="hapus-jatuhan" data-point="3" data-corner="blue">Hapus Jatuhan</div>
                     </div>
                    
                 </div>
@@ -149,8 +150,9 @@
                            
                         </div>
                     </div>
-                    <div class="score-items">
+                    <div class="score-items d-flex gap-2">
                         <div class="drop text-white" data-action="jatuhan" data-point="3" data-corner="red">Jatuhan</div>
+                        <div class="drop text-white" data-action="hapus-jatuhan" data-point="3" data-corner="red">Hapus Jatuhan</div>
                     </div>
                     
                 </div>

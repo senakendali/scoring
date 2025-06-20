@@ -56,9 +56,7 @@
 
     <div class="arena-main-container d-flex flex-column overflow-auto bg-dark ">
    
-        <div id="judges-preview" class="d-flex seni-judges">
-            
-        </div>
+        
         <div class="d-flex bg-success seni-judges">
             <div class="flex-fill judge-score-detail">
                 <div class="judge-title fw-bold">
@@ -94,6 +92,9 @@
                     00:00
                 </div>
             </div>
+            
+        </div>
+        <div id="judges-preview" class="d-flex seni-judges">
             
         </div>
         

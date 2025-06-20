@@ -86,7 +86,7 @@ $(document).ready(function () {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
             resetRefereeActions();
-            $(".item, .drop").prop("disabled", true).addClass("disabled");
+            //$(".item, .drop").prop("disabled", true).addClass("disabled");
         } else if (data.status === 'not_started') {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
@@ -268,6 +268,28 @@ $(document).ready(function () {
             return;
         }
 
+        // 🔁 HAPUS JATUHAN
+        if (action === 'hapus-jatuhan') {
+            $.ajax({
+                url: "/api/local-referee-actions/remove-jatuhan",
+                method: "POST",
+                data: {
+                    local_match_id: matchId,
+                    round_id: roundId,
+                    corner: corner,
+                },
+                success: function (res) {
+                    console.log("🧹 Jatuhan berhasil dihapus:", res);
+                },
+                error: function (xhr) {
+                    console.error("❌ Gagal hapus jatuhan:", xhr.responseJSON?.message || xhr.statusText);
+                }
+            });
+
+            return;
+        }
+
+
         // 🔄 Aksi biasa (toggle)
         if ($btn.hasClass("active")) {
             $btn.removeClass("active");
@@ -324,7 +346,7 @@ $(document).ready(function () {
 
     function resetRefereeActions() {
         $(".item, .drop").removeClass('active');
-        $(".item, .drop").prop("disabled", true).addClass("disabled");
+        //$(".item, .drop").prop("disabled", true).addClass("disabled");
     }
     
     
