@@ -112,6 +112,7 @@ body{
     font-size: 25px;
     background: linear-gradient(to bottom, #2a2a2a, #000000);
     min-height: 80px;
+    width: 750px;
     /*min-width: 600px;*/
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;

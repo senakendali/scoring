@@ -155,7 +155,7 @@ $(document).ready(function () {
             $("#participant-3").text('-').hide();
 
             // ✅ Tampilkan peserta sesuai match_type
-            if (data.match_type === 'seni_tunggal') {
+            if (data.match_type === 'seni_tunggal' || data.match_type === 'solo_kreatif') {
                 $("#participant-1").text(data.team_members[0] || '-').show();
             } else if (data.match_type === 'seni_ganda') {
                 $("#participant-1").text(data.team_members[0] || '-').show();
