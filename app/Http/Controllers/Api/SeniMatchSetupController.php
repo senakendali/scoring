@@ -85,7 +85,7 @@ class SeniMatchSetupController extends Controller
         // ✅ Ambil ulang agar data konsisten & format ISO ready
         $fresh = LocalSeniMatch::find($match->id);
 
-        if ($match) {
+        /*if ($match) {
             // ✅ Kirim status ke server pusat
             try {
                 $client = new \GuzzleHttp\Client();
@@ -109,7 +109,7 @@ class SeniMatchSetupController extends Controller
                     'error' => $e->getMessage()
                 ]);
             }
-        }
+        }*/
 
         // ✅ Logging buat debug
         \Log::info("📦 [Seni] Match Dimulai", [
@@ -246,7 +246,7 @@ class SeniMatchSetupController extends Controller
         // (Opsional) kalau lu punya tabel skor akhir, hapus juga
         \App\Models\LocalSeniFinalScore::where('local_match_id', $match->id)->delete();
 
-        if ($match) {
+        /*if ($match) {
             // ✅ Kirim status ke server pusat
             try {
                 $client = new \GuzzleHttp\Client();
@@ -270,7 +270,7 @@ class SeniMatchSetupController extends Controller
                     'error' => $e->getMessage()
                 ]);
             }
-        }
+        }*/
 
         // Broadcast timer update biar semua UI reset
         broadcast(new \App\Events\SeniTimerUpdated($match))->toOthers();
@@ -360,6 +360,8 @@ class SeniMatchSetupController extends Controller
 
         $match->save();
 
+        /*
+        //Push ke server live
         try {
             $client = new \GuzzleHttp\Client();
 
@@ -382,7 +384,7 @@ class SeniMatchSetupController extends Controller
                 'remote_match_id' => $match->remote_match_id,
                 'error' => $e->getMessage()
             ]);
-        }
+        }*/
 
         // Broadcast event selesai
         broadcast(new \App\Events\SeniTimerFinished($match))->toOthers();

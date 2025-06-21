@@ -186,7 +186,7 @@ class LocalMatchController extends Controller
             'end_time' => now(),
         ]);
 
-        $baseUrl = $this->live_server;
+        /*$baseUrl = $this->live_server;
         $client = new \GuzzleHttp\Client();
 
         try {
@@ -213,7 +213,7 @@ class LocalMatchController extends Controller
                 'remote_match_id' => $match->remote_match_id,
                 'error' => $e->getMessage(),
             ]);
-        }
+        }*/
 
         if ($match->winner_corner && $match->winner_corner !== 'draw') {
             $nextMatches = LocalMatch::where(function ($query) use ($match) {
