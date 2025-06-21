@@ -193,9 +193,12 @@
             </button>
         </div>
         <div class="w-100">
-            <button class="start btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                <i class="bi bi-play-fill me-2"></i> START
-            </button>
+           <button class="start btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+            <i class="bi bi-play-fill me-2"></i>
+            <span class="label">START</span>
+          </button>
+
+            
         </div>
         <div class="w-100">
             <button class="stop-round btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">

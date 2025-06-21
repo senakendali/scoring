@@ -1,0 +1,26 @@
+/* === Figtree === */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/figtree/Figtree-Regular.woff2') format('woff2');
+}
+
+/* === Roboto === */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/roboto/roboto-v48-latin-regular.woff2') format('woff2');
+}
+
+/* === Urbanist === */
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/urbanist/Urbanist-Regular.woff2') format('woff2');
+}

@@ -226,7 +226,7 @@ $(document).ready(function () {
         const btn = $(this);
 
         // ✅ Ubah caption jadi "Ongoing"
-        btn.html(`<i class="bi bi-clock-history me-1"></i> ONGOING`);
+        btn.html(`<i class="bi bi-clock-history me-1"></i> <span class="label">ONGOING</span>`);
 
         // ✅ Ambil durasi dari dropdown
         duration = parseInt($('#round-duration').val() || 180);
@@ -248,6 +248,7 @@ $(document).ready(function () {
         if (!confirmStop) return;
 
         stopTimer(); // Berhentiin timer manual
+       
 
         $.post(`${url}/api/local-match-rounds/${roundId}/finish`, function () {
             if (currentRoundNumber < totalRounds) {
@@ -260,6 +261,9 @@ $(document).ready(function () {
                     modal.hide();
                     moveToNextRound();
                 });
+                $(".start i").attr("class", "bi bi-play-fill me-2");
+                $(".start .label").text("START");
+
 
             } else {
                 // 🔥 Ini ronde terakhir bro, langsung tampilkan modal PILIH PEMENANG
@@ -267,6 +271,9 @@ $(document).ready(function () {
                 winnerModal.show();
                 $(".end-match").addClass("d-none");
                 $(".next-match").removeClass("d-none");
+                $(".start i").attr("class", "bi bi-play-fill me-2");
+                $(".start .label").text("START");
+
             }
         }).fail(function (xhr) {
             console.error("❌ Gagal stop round:", xhr.responseJSON?.message || xhr.statusText);
@@ -365,7 +372,9 @@ $(document).ready(function () {
                 //timerEl.text("03:00");
                 timerEl.text(formatTime(duration));
 
-                 $(".start").html(`<i class="bi bi-play-fill"></i> START`);
+                $(".start i").attr("class", "bi bi-play-fill me-2");
+                $(".start .label").text("START");
+
             }).always(() => setButtonLoading(btn, false));
         });
     });

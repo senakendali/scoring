@@ -115,7 +115,14 @@ $(document).ready(function () {
                             <small>${match.red_contingent || '-'}</small><br>
                             <small class="text-info">Score: ${match.participant_2_score ?? '-'}</small>
                         </td>
-                        <td><div class="btn btn-success"><i class="bi bi-trophy"></i> ${match.winner_name ?? '-'}</div></td>
+                        <td>
+                        ${
+                            match.winner_name
+                            ? `<div class="btn btn-success"><i class="bi bi-trophy"></i> ${match.winner_name}</div>`
+                            : `<div>-</div>`
+                        }
+                        </td>
+
                         <td>${match.status}</td>
                         ${isOperator || isKetua ? `
                             <td class="text-nowrap">
