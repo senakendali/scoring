@@ -119,8 +119,9 @@ class LocalMatchSeniController extends Controller
 
     $matches = $query->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))->get();
 
-    // STRUKTUR BARU: [category][gender][age_category][pool_name] => matches
-    $grouped = [];
+    // Bangun map group berdasarkan kategori
+    $groupedMap = [];
+    $matchGroupMap = [];
 
     foreach ($matches as $match) {
         $category = ucwords(strtolower(trim($match->category ?? '-')));
@@ -128,7 +129,32 @@ class LocalMatchSeniController extends Controller
         $ageCategory = ucwords(strtolower(trim($match->age_category ?? 'Tanpa Usia')));
         $poolName = trim($match->pool_name ?? '-');
 
-        $grouped[$category][$gender][$ageCategory][$poolName][] = [
+        $groupKey = $category . '|' . $gender . '|' . $ageCategory;
+        $matchGroupMap[$match->id] = $groupKey;
+
+        if (!isset($groupedMap[$groupKey])) {
+            $groupedMap[$groupKey] = [
+                'category' => $category,
+                'gender' => $gender,
+                'age_categories' => []
+            ];
+        }
+
+        if (!isset($groupedMap[$groupKey]['age_categories'][$ageCategory])) {
+            $groupedMap[$groupKey]['age_categories'][$ageCategory] = [
+                'age_category' => $ageCategory,
+                'pools' => []
+            ];
+        }
+
+        if (!isset($groupedMap[$groupKey]['age_categories'][$ageCategory]['pools'][$poolName])) {
+            $groupedMap[$groupKey]['age_categories'][$ageCategory]['pools'][$poolName] = [
+                'name' => $poolName,
+                'matches' => []
+            ];
+        }
+
+        $groupedMap[$groupKey]['age_categories'][$ageCategory]['pools'][$poolName]['matches'][] = [
             'id' => $match->id,
             'match_order' => (int) $match->match_order,
             'match_type' => $match->match_type,
@@ -144,41 +170,48 @@ class LocalMatchSeniController extends Controller
         ];
     }
 
-    // Build result
+    // Bikin response berdasarkan urutan match_order dari $matches
     $result = [];
+    $used = [];
 
-    foreach ($grouped as $category => $genders) {
-        foreach ($genders as $gender => $ageCategories) {
-            $ageGroup = [];
+    foreach ($matches as $match) {
+        $groupKey = $matchGroupMap[$match->id];
 
-            foreach ($ageCategories as $ageCategory => $pools) {
-                $poolGroup = [];
+        if (in_array($groupKey, $used)) continue;
+        $used[] = $groupKey;
 
-                foreach ($pools as $poolName => $matches) {
-                    usort($matches, fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+        $group = $groupedMap[$groupKey];
 
-                    $poolGroup[] = [
-                        'name' => $poolName,
-                        'matches' => $matches
-                    ];
-                }
+        $ageCategories = [];
 
-                $ageGroup[] = [
-                    'age_category' => $ageCategory,
-                    'pools' => $poolGroup
-                ];
+        foreach ($group['age_categories'] as $ageCategory => $ageData) {
+            $pools = [];
+
+            foreach ($ageData['pools'] as $pool) {
+                usort($pool['matches'], fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+                $pools[] = $pool;
             }
 
-            $result[] = [
-                'category' => $category,
-                'gender' => $gender,
-                'age_categories' => $ageGroup
+            $ageCategories[] = [
+                'age_category' => $ageCategory,
+                'pools' => $pools
             ];
         }
+
+        $result[] = [
+            'category' => $group['category'],
+            'gender' => $group['gender'],
+            'age_categories' => $ageCategories
+        ];
     }
 
     return response()->json($result);
 }
+
+
+
+
+
 
 
 
