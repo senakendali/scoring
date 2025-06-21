@@ -150,6 +150,7 @@ class LocalSeniScoreController extends Controller
     $match->final_score = $finalScore;
     $match->save();
 
+    /*
     \Log::info('🛰 [KEMANTAPAN] Kirim ke pusat', [
         'remote_id' => $match->remote_match_id,
         'final_score' => $finalScore,
@@ -180,7 +181,7 @@ class LocalSeniScoreController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
-    }
+    }*/
 
     // ✅ Broadcast update skor ke frontend
     event(new \App\Events\SeniScoreUpdated(
@@ -440,7 +441,7 @@ class LocalSeniScoreController extends Controller
         : round(0 - $totalPenalty, 6);
 
     // ✅ Kirim ke server pusat
-    \Log::info('🛰 Kirim ke pusat', [
+    /*\Log::info('🛰 Kirim ke pusat', [
         'id' => $match->id,
         'remote_id' => $match->remote_match_id,
         'local_final_score' => $finalScore,
@@ -470,7 +471,7 @@ class LocalSeniScoreController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
-    }
+    }*/
 
     return response()->json(['message' => 'Component score saved.']);
 }
