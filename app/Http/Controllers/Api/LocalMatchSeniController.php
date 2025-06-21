@@ -103,6 +103,87 @@ class LocalMatchSeniController extends Controller
     }
 
     public function index(Request $request)
+{
+    $arenaName = session('arena_name');
+    $matchType = session('match_type'); // 'seni' atau 'tanding'
+
+    $query = \App\Models\LocalSeniMatch::query();
+
+    if ($arenaName) {
+        $query->where('arena_name', $arenaName);
+    }
+
+    if ($matchType === 'seni') {
+        $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+    }
+
+    $matches = $query->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))->get();
+
+    // STRUKTUR BARU: [category][gender][age_category][pool_name] => matches
+    $grouped = [];
+
+    foreach ($matches as $match) {
+        $category = ucwords(strtolower(trim($match->category ?? '-')));
+        $gender = strtolower(trim($match->gender ?? '-'));
+        $ageCategory = ucwords(strtolower(trim($match->age_category ?? 'Tanpa Usia')));
+        $poolName = trim($match->pool_name ?? '-');
+
+        $grouped[$category][$gender][$ageCategory][$poolName][] = [
+            'id' => $match->id,
+            'match_order' => (int) $match->match_order,
+            'match_type' => $match->match_type,
+            'contingent' => ['name' => $match->contingent_name],
+            'final_score' => $match->final_score,
+            'status' => $match->status,
+            'team_member1' => ['name' => $match->participant_1],
+            'team_member2' => ['name' => $match->participant_2],
+            'team_member3' => ['name' => $match->participant_3],
+            'pool' => [
+                'age_category' => ['name' => $ageCategory]
+            ]
+        ];
+    }
+
+    // Build result
+    $result = [];
+
+    foreach ($grouped as $category => $genders) {
+        foreach ($genders as $gender => $ageCategories) {
+            $ageGroup = [];
+
+            foreach ($ageCategories as $ageCategory => $pools) {
+                $poolGroup = [];
+
+                foreach ($pools as $poolName => $matches) {
+                    usort($matches, fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+
+                    $poolGroup[] = [
+                        'name' => $poolName,
+                        'matches' => $matches
+                    ];
+                }
+
+                $ageGroup[] = [
+                    'age_category' => $ageCategory,
+                    'pools' => $poolGroup
+                ];
+            }
+
+            $result[] = [
+                'category' => $category,
+                'gender' => $gender,
+                'age_categories' => $ageGroup
+            ];
+        }
+    }
+
+    return response()->json($result);
+}
+
+
+
+
+    public function index_gokil(Request $request)
     {
         $arenaName = session('arena_name');
         $matchType = session('match_type'); // 'seni' atau 'tanding'
@@ -113,9 +194,14 @@ class LocalMatchSeniController extends Controller
             $query->where('arena_name', $arenaName);
         }
 
-        if ($matchType) {
+        /*if ($matchType) {
             $query->where('match_type', 'like', 'seni_%');
+        }*/
+
+        if ($matchType === 'seni') {
+            $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
         }
+
 
         // Urutkan berdasarkan match_order sebagai angka
         $matches = $query->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))->get();
