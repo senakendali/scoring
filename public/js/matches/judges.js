@@ -259,7 +259,7 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
-            $("#tournament-name").text(data.tournament_name);
+             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#blue-name").html(`
