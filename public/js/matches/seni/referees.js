@@ -181,7 +181,7 @@ $(document).ready(function () {
     function fetchMatchData() {
          $(".loader-bar").show();
          $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
-            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim()).css("font-size", "17px");
           
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
