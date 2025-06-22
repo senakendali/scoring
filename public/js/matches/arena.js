@@ -517,11 +517,17 @@ $(document).ready(function () {
             $("#blue-name").html(`
                 ${data.blue.name}<br>
                 <small>${data.blue.contingent}</small>
-            `).css('font-size', '23px');
+            `).css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
             $("#red-name").html(`
                 ${data.red.name}<br>
                 <small>${data.red.contingent}</small>
-            `).css('font-size', '23px');
+            `).css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
 
             const maxRound = Math.max(...data.rounds.map(r => r.round_number));
             const roundLabels = getRoundLabels(maxRound);
@@ -531,7 +537,10 @@ $(document).ready(function () {
            
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;
-            $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`);
+            $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`) .css({
+        'font-size': '23px',
+        'font-weight': 'bold'
+    });
             $(".loader-bar").hide();
         });
     }

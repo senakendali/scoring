@@ -249,14 +249,32 @@ $(document).ready(function () {
 
             // ✅ Tampilkan peserta sesuai match_type
             if (data.match_type === 'seni_tunggal' || data.match_type === 'solo_kreatif') {
-                $("#participant-1").text(data.team_members[0] || '-').show().css('font-size', '23px');
+                $("#participant-1").text(data.team_members[0] || '-').show().css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
             } else if (data.match_type === 'seni_ganda') {
-                $("#participant-1").text(data.team_members[0] || '-').show().css('font-size', '23px');
-                $("#participant-2").text(data.team_members[1] || '-').show().css('font-size', '23px');
+                $("#participant-1").text(data.team_members[0] || '-').show() .css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
+                $("#participant-2").text(data.team_members[1] || '-').show() .css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
             } else if (data.match_type === 'seni_regu') {
-                $("#participant-1").text(data.team_members[0] || '-').show().css('font-size', '23px');
-                $("#participant-2").text(data.team_members[1] || '-').show().css('font-size', '23px');
-                $("#participant-3").text(data.team_members[2] || '-').show().css('font-size', '23px');
+                $("#participant-1").text(data.team_members[0] || '-').show() .css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
+                $("#participant-2").text(data.team_members[1] || '-').show() .css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
+                $("#participant-3").text(data.team_members[2] || '-').show() .css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
             }
 
              pollSeniJudgeScores(matchId, tournament, arena);
