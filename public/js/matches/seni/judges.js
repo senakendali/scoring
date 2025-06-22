@@ -392,7 +392,7 @@ $(document).ready(function () {
             }
 
             $("#match-id").val(data.id);
-            $("#tournament-name").text(data.tournament_name);
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
             $("#age-category").text(data.age_category);
