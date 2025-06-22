@@ -222,7 +222,7 @@ $(document).ready(function () {
                
             }else{
                 /* perbaiki ini */
-                $("#timer").show();
+                $("#timer").hide();
             }
 
             // Set UI

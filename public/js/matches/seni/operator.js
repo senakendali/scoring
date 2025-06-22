@@ -70,8 +70,8 @@ $(document).ready(function () {
                 $("#timer").show();
             }else{
                 /* perbaiki ini */
-                /*$("#display-timer").css('height', '0');*/
-                $("#timer").show();
+                $("#display-timer").css('height', '0');
+                $("#timer").hide();
             }
             
             $("#match-id").val(data.id);
