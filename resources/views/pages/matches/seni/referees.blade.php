@@ -61,7 +61,7 @@
    <div class="arena-main-container d-flex flex-column bg-dark" style="height: 100vh; overflow: hidden;">
 
         <div class="table-responsive w-100 h-100">
-            <table class="mytable table table-dark w-100 h-100 mb-0">
+            <table class="mytable table table-sm table-dark w-100 h-100 mb-0">
                 <thead>
                     <tr>
                     <th style="width: 50%">PENALTY</th>

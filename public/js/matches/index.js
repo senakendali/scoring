@@ -63,13 +63,13 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $('#match-tables').empty();
 
-        $('#match-tables').before(`
+        /*$('#match-tables').before(`
             <div class="mb-3 text-end">
                 <button class="btn btn-primary" id="show-winners-btn">
                     <i class="bi bi-star-fill"></i> Lihat Pemenang Tertinggi
                 </button>
             </div>
-        `);
+        `);*/
 
 
         $.each(data, function (arenaName, pools) {
