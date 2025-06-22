@@ -415,12 +415,12 @@ body{
 
 .match-panel .panel-header .round{
     background-color: #626262;
-    height: 80px;
+    height: 50px;
     color: #FFFFFF;
 }
 
 .match-panel .panel-header .round.active{
-    height: 80px;
+    height: 50px;
     background-color: #2a2a2a;
     color: #FFFFFF;
 }
@@ -449,18 +449,21 @@ body{
 }
 
 .match-panel .panel-footer .reset{
+    height: 50px;
     width: 50%;
     padding: var(--base-padding);
     background-color: #626262;
 }
 
 .match-panel .panel-footer .pause{
+    height: 50px;
     width: 50%;
     padding: var(--base-padding);
     background-color: #626262;
 }
 
 .match-panel .panel-footer .start{
+    height: 50px;
     width: 50%;
     padding: var(--base-padding);
     background-color: #2A2A2A;
@@ -468,18 +471,21 @@ body{
 }
 
 .match-panel .panel-footer .stop-round{
+    height: 50px;
     width: 100%;
     padding: var(--base-padding);
     background-color: #626262;
 }
 
 .match-panel .panel-footer .end-match{
+    height: 50px;
     width: 100%;
     padding: var(--base-padding);
     background-color: #D32F2F;
 }
 
 .match-panel .panel-footer .next-match{
+    height: 50px;
     width: 100%;
     padding: var(--base-padding);
     background-color: var(--secondary-color);

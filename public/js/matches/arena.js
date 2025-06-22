@@ -538,9 +538,9 @@ $(document).ready(function () {
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;
             $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`) .css({
-        'font-size': '23px',
-        'font-weight': 'bold'
-    });
+                'font-size': '23px',
+                'font-weight': 'bold'
+            });
             $(".loader-bar").hide();
         });
     }
