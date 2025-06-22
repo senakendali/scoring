@@ -238,7 +238,10 @@ $(document).ready(function () {
             $("#age-category").text(data.age_category);
             $("#gender").text(data.category + "  " + (data.gender === 'male' ? 'PUTRA' : 'PUTRI'));
 
-            $("#contingent-name").text(data.contingent);
+            $("#contingent-name").text(data.contingent).css({
+                    'font-size': '23px',
+                    'font-weight': 'bold'
+                });
 
 
 
