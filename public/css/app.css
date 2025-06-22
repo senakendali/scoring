@@ -1834,7 +1834,7 @@ th, td {
 }
 
 .mytable {
-  height: 100%;
+  /*height: 100%;*/
   table-layout: fixed; /* ⛔ Hindari auto-lebar kolom yang bikin scroll */
 }
 
