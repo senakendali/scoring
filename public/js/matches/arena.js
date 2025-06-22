@@ -510,17 +510,18 @@ $(document).ready(function () {
                 $("#display-timer").css('height', '20px');
                 $("#timer").hide();
             }
-            $("#tournament-name").text(data.tournament_name);
+            //$("#tournament-name").text(data.tournament_name);
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#blue-name").html(`
                 ${data.blue.name}<br>
                 <small>${data.blue.contingent}</small>
-            `);
+            `).css('font-size', '23px');
             $("#red-name").html(`
                 ${data.red.name}<br>
                 <small>${data.red.contingent}</small>
-            `);
+            `).css('font-size', '23px');
 
             const maxRound = Math.max(...data.rounds.map(r => r.round_number));
             const roundLabels = getRoundLabels(maxRound);

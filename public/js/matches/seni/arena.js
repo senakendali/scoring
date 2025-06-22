@@ -230,7 +230,8 @@ $(document).ready(function () {
             $("#seni_base_score").val(baseScore.toFixed(2));
             startingScore = baseScore;
 
-            $("#tournament-name").text(data.tournament_name);
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
+
           
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
@@ -248,14 +249,14 @@ $(document).ready(function () {
 
             // ✅ Tampilkan peserta sesuai match_type
             if (data.match_type === 'seni_tunggal' || data.match_type === 'solo_kreatif') {
-                $("#participant-1").text(data.team_members[0] || '-').show();
+                $("#participant-1").text(data.team_members[0] || '-').show().css('font-size', '23px');
             } else if (data.match_type === 'seni_ganda') {
-                $("#participant-1").text(data.team_members[0] || '-').show();
-                $("#participant-2").text(data.team_members[1] || '-').show();
+                $("#participant-1").text(data.team_members[0] || '-').show().css('font-size', '23px');
+                $("#participant-2").text(data.team_members[1] || '-').show().css('font-size', '23px');
             } else if (data.match_type === 'seni_regu') {
-                $("#participant-1").text(data.team_members[0] || '-').show();
-                $("#participant-2").text(data.team_members[1] || '-').show();
-                $("#participant-3").text(data.team_members[2] || '-').show();
+                $("#participant-1").text(data.team_members[0] || '-').show().css('font-size', '23px');
+                $("#participant-2").text(data.team_members[1] || '-').show().css('font-size', '23px');
+                $("#participant-3").text(data.team_members[2] || '-').show().css('font-size', '23px');
             }
 
              pollSeniJudgeScores(matchId, tournament, arena);
