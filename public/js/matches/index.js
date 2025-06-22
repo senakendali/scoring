@@ -63,6 +63,15 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $('#match-tables').empty();
 
+        $('#match-tables').before(`
+            <div class="mb-3 text-end">
+                <button class="btn btn-primary" id="show-winners-btn">
+                    <i class="bi bi-star-fill"></i> Lihat Pemenang Tertinggi
+                </button>
+            </div>
+        `);
+
+
         $.each(data, function (arenaName, pools) {
             let matches = [];
 
@@ -145,6 +154,46 @@ $(document).ready(function () {
         });
 
     });
+
+    let allWinners = []; // simpan di luar .each untuk global
+
+    // di dalam $.each(matches, function...) setelah if (!matches.length) return;
+    matches.forEach(match => {
+        if (match.winner_name) {
+            let winnerScore = match.winner_corner === 'blue'
+                ? (match.participant_1_score ?? 0)
+                : (match.participant_2_score ?? 0);
+
+            allWinners.push({
+                match_number: match.match_number,
+                winner_name: match.winner_name,
+                contingent: match.winner_contingent,
+                score: winnerScore,
+                arena: match.arena_name
+            });
+        }
+    });
+
+    // setelah render selesai
+    $('#show-winners-btn').off('click').on('click', function () {
+        let sorted = allWinners.sort((a, b) => b.score - a.score);
+
+        $('#winner-list').empty();
+        sorted.forEach((w, i) => {
+            $('#winner-list').append(`
+                <tr>
+                    <td>${w.match_number}</td>
+                    <td>${w.winner_name}</td>
+                    <td>${w.contingent || '-'}</td>
+                    <td><span class="badge bg-success">${w.score}</span></td>
+                    <td>${w.arena}</td>
+                </tr>
+            `);
+        });
+
+        new bootstrap.Modal(document.getElementById('winnerModal')).show();
+    });
+
 
 
     

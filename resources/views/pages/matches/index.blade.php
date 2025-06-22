@@ -20,6 +20,32 @@
   </div>
 </div>
 
+<div class="modal fade" id="winnerModal" tabindex="-1" aria-labelledby="winnerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="winnerModalLabel">Daftar Pemenang</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-dark table-striped">
+          <thead>
+            <tr>
+              <th>No Partai</th>
+              <th>Pemenang</th>
+              <th>Kontingen</th>
+              <th>Score</th>
+              <th>Arena</th>
+            </tr>
+          </thead>
+          <tbody id="winner-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
 <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
