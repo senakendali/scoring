@@ -94,7 +94,7 @@
        
        
         <div id="mode_one" class="d-flex flex-column flex-grow-1 overflow-auto" style="min-height: 0; padding-bottom: 1.5rem;">
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2" style="height:170px;">
               <div class="flex-fill d-flex flex-column gap-2 judges-seni-score">
                   <div id="starting-score" class="starting-score d-flex align-items-center justify-content-center">
                       -
