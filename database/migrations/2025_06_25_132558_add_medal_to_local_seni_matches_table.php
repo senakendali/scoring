@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('local_seni_matches', function (Blueprint $table) {
-            $table->date('match_date')->nullable()->after('id');
+            $table->enum('medal', ['emas', 'perak', 'perunggu'])->nullable()->after('final_score');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('local_seni_matches', function (Blueprint $table) {
-            $table->dropColumn('match_date');
+            $table->dropColumn('medal');
         });
     }
 };

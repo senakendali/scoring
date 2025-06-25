@@ -208,6 +208,141 @@ class LocalMatchSeniController extends Controller
     return response()->json($result);
 }
 
+    public function fetchMatchForAdmin(Request $request)
+    {
+        $arenaName = session('arena_name');
+        $matchType = session('match_type'); // 'seni' atau 'tanding'
+
+        $query = \App\Models\LocalSeniMatch::query();
+
+        if ($arenaName) {
+            $query->where('arena_name', $arenaName);
+        }
+
+        if ($matchType === 'seni') {
+            $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+        }
+
+        $matches = $query->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))->get();
+
+        $groupedArena = [];
+
+        foreach ($matches as $match) {
+            $arena = $match->arena_name ?? 'UNKNOWN ARENA';
+
+            $category = ucwords(strtolower(trim($match->category ?? '-')));
+            $gender = strtolower(trim($match->gender ?? '-'));
+            $ageCategory = ucwords(strtolower(trim($match->age_category ?? 'Tanpa Usia')));
+            $poolName = trim($match->pool_name ?? '-');
+
+            $groupKey = $category . '|' . $gender . '|' . $ageCategory;
+
+            if (!isset($groupedArena[$arena])) {
+                $groupedArena[$arena] = [];
+            }
+
+            if (!isset($groupedArena[$arena][$groupKey])) {
+                $groupedArena[$arena][$groupKey] = [
+                    'category' => $category,
+                    'gender' => $gender,
+                    'age_categories' => []
+                ];
+            }
+
+            if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory])) {
+                $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory] = [
+                    'age_category' => $ageCategory,
+                    'pools' => []
+                ];
+            }
+
+            if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName])) {
+                $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName] = [
+                    'name' => $poolName,
+                    'matches' => []
+                ];
+            }
+
+            $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName]['matches'][] = [
+                'id' => $match->id,
+                'match_order' => (int) $match->match_order,
+                'match_type' => $match->match_type,
+                'contingent' => ['name' => $match->contingent_name],
+                'final_score' => $match->final_score,
+                'medal' => $match->medal,
+                'status' => $match->status,
+                'team_member1' => ['name' => $match->participant_1],
+                'team_member2' => ['name' => $match->participant_2],
+                'team_member3' => ['name' => $match->participant_3],
+                'pool' => [
+                    'age_category' => ['name' => $ageCategory]
+                ]
+            ];
+        }
+
+        // Final struktur response per arena
+        $finalResult = [];
+
+        foreach ($groupedArena as $arena => $groupedMap) {
+            $groupedList = [];
+
+            foreach ($groupedMap as $groupKey => $group) {
+                $ageCategories = [];
+
+                foreach ($group['age_categories'] as $ageCategory => $ageData) {
+                    $pools = [];
+
+                    foreach ($ageData['pools'] as $pool) {
+                        usort($pool['matches'], fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+                        $pools[] = $pool;
+                    }
+
+                    $ageCategories[] = [
+                        'age_category' => $ageCategory,
+                        'pools' => $pools
+                    ];
+                }
+
+                $groupedList[] = [
+                    'category' => $group['category'],
+                    'gender' => $group['gender'],
+                    'age_categories' => $ageCategories
+                ];
+            }
+
+            $finalResult[$arena] = $groupedList;
+        }
+
+        return response()->json($finalResult);
+    }
+
+    public function setMedal(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'medal' => 'required|in:emas,perak,perunggu'
+        ]);
+
+        $match = LocalSeniMatch::find($id);
+
+        if (! $match) {
+            return response()->json([
+                'message' => 'Pertandingan tidak ditemukan.'
+            ], 404);
+        }
+
+        $match->medal = $validated['medal'];
+        $match->save();
+
+        return response()->json([
+            'message' => 'Medali berhasil disimpan.',
+            'data' => [
+                'id' => $match->id,
+                'medal' => $match->medal,
+            ]
+        ]);
+    }
+
+
 
 
 

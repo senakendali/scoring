@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\LocalImportController;
 use App\Http\Controllers\Api\LocalMatchSeniController;
 use App\Http\Controllers\Api\SeniMatchSetupController;
 use App\Http\Controllers\Api\LocalSeniScoreController;
+use App\Http\Controllers\Api\RecapController;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -17,6 +18,12 @@ use Illuminate\Support\Facades\Auth;
 Route::get('/', function () {
     return view('pages/setup', [
         'js' => 'setup.js'
+    ]);
+});
+
+Route::get('/dashboard', function () {
+    return view('pages/dashboard', [
+        'js' => 'dashboard.js'
     ]);
 });
 
@@ -29,9 +36,11 @@ Route::get('/import-matches', function () {
 
 // Match Routes
 Route::prefix('matches')->group(function () {
+    
     // Seni
     Route::get('/seni', [MatchController::class, 'seni']);
-     Route::get('/seni/live', [MatchController::class, 'seniLive']);
+    Route::get('/seni/admin', [MatchController::class, 'seniAdmin']);
+    Route::get('/seni/live', [MatchController::class, 'seniLive']);
     Route::get('/seni/{match_id}', [MatchController::class, 'showSeni']);
     Route::get('/seni/judges/{match_id}', [MatchController::class, 'displaySeniJudge']);
     Route::get('/seni/display-arena/{match_id}', [MatchController::class, 'displaySeniArena']);
@@ -42,7 +51,8 @@ Route::prefix('matches')->group(function () {
 
     // Tanding
     Route::get('/tanding', [MatchController::class, 'index']);
-     Route::get('/tanding/live', [MatchController::class, 'tandingLive']);
+    Route::get('/tanding/admin', [MatchController::class, 'indexAdmin']);
+    Route::get('/tanding/live', [MatchController::class, 'tandingLive']);
     Route::get('/{match_id}', [MatchController::class, 'show']); 
     Route::get('/display-arena/{match_id}', [MatchController::class, 'displayArena']);
     Route::get('/judges/{match_id}', [MatchController::class, 'displayJudge']);
@@ -54,6 +64,13 @@ Route::prefix('matches')->group(function () {
 
 // API Routes (should typically be in api.php)
 Route::prefix('api')->group(function () {
+    /*
+    List match for admin 
+    */
+    Route::get('/local-matches/admin', [LocalMatchController::class, 'fetchMatchForAdmin']);
+    Route::get('/local-matches/seni/admin', [LocalMatchSeniController::class, 'fetchMatchForAdmin']);
+    Route::post('/seni-matches/{id}/set-medal', [LocalMatchSeniController::class, 'setMedal']);
+
     Route::get('/local-matches/seni', [LocalMatchSeniController::class, 'index']);
     Route::get('/local-matches/seni/live', [LocalMatchSeniController::class, 'fetchLiveMatches']);
     Route::get('/local-matches/seni/{id}', [LocalMatchSeniController::class, 'show']);
@@ -82,6 +99,7 @@ Route::prefix('api')->group(function () {
     Route::get('/bracket', [LocalMatchController::class, 'getBracket']);
 
     Route::get('/local-matches', [LocalMatchController::class, 'index']);
+    
     Route::get('/local-matches/live', [LocalMatchController::class, 'fetchLiveMatches']);
     
     Route::get('/local-matches/tournaments', [LocalMatchController::class, 'getTournaments']);
@@ -137,6 +155,11 @@ Route::prefix('api')->group(function () {
     Route::get('/local-seni-matches/pool-winners', [LocalMatchSeniController::class, 'getPoolWinners']);
 
     Route::post('/local-seni-matches/create-pool-final-match', [LocalMatchSeniController::class, 'createPoolFinalMatch']);
+
+
+    // Recap
+    Route::get('/medal-recap', [RecapController::class, 'medalRecap']);
+
 
 
 

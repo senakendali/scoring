@@ -31,7 +31,11 @@
             @endif
 
             
+
+            
             @if(session('role') && (request()->segment(2) != 'display-arena' && request()->segment(3) != 'live'))
+             <!-- ⏬ Navigasi ditambahkan di sini -->
+            
             <div class="dropdown ms-auto">
                 @php
                     $roleLabel = session('juri_number') 
@@ -42,10 +46,18 @@
                     {{ $roleLabel }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end text-small" aria-labelledby="userInfoDropdown">
-                    @if(session('arena_name'))
+                    @if(session('role') !== 'admin' && session('arena_name'))
                         <li><span class="dropdown-item-text"><strong>Arena:</strong> {{ session('arena_name') }}</span></li>
                     @endif
-                    
+
+                    @if(session('role') === 'admin')
+                        <li><a class="dropdown-item" href="{{ url('/dashboard') }}"><i class="bi bi-house"></i> Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/import-matches') }}"><i class="bi bi-upload"></i> Import Matches</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/matches/tanding/admin') }}"><i class="bi bi-trophy"></i> Match Tanding</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/matches/seni/admin') }}"><i class="bi bi-trophy"></i> Match Seni</a></li>
+                        
+                    @endif
+
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form action="/logout" method="POST" class="px-3 m-0">
@@ -54,6 +66,7 @@
                         </form>
                     </li>
                 </ul>
+
             </div>
             @endif
         </div>
@@ -94,32 +107,6 @@
 
    
     </script>
-
-
-
-
-
-
-
-
-
-
-   
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
 
     
     @if(isset($js))

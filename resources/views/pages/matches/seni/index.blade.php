@@ -57,7 +57,7 @@
 <input type="hidden" id="session-role" value="{{ session('role') }}">
 <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
 <div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
-@if(session('role') === 'operator')
+@if(session('role') === 'operator' || session('role') === 'admin')
 <div class="container-fluid">
     <div class="row mt-4">
       <div class="col-lg-12 d-flex justify-content-end">

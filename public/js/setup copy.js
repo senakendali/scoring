@@ -132,48 +132,27 @@ $(document).ready(function () {
     $("#match-setup-form").on("submit", function (e) {
         e.preventDefault();
         $(".loader-bar").show();
-
+    
         const $submitBtn = $(this).find('button[type="submit"]');
         $submitBtn.prop("disabled", true).text("Memproses");
-
-        // Ambil mode
-        const mode = $(this).find('input[name="mode"]').val() || 'user';
-
-        const formData = {
+    
+       const formData = {
             tournament_name: $("#tournament_name").val(),
             arena_name: $("#arena_name").val(),
             match_type: $("#match_type").val(),
             seni_category: $("#match_type").val() === "seni" ? $("#seni_category").val() : null,
             role: $("#role").val(),
             juri_number: $("#juri_number").val() || null,
-            mode: mode,
         };
 
-        // ✅ Validasi: jika admin, hanya butuh tournament_name
-        if (mode === 'admin') {
-            if (!formData.tournament_name) {
-                $(".loader-bar").hide();
-                showAlert("Pilih turnamen terlebih dahulu.", "Peringatan");
-                $submitBtn.prop("disabled", false).text("Masuk");
-                return;
-            }
-        } else {
-            // ✅ Validasi normal (user)
-            if (!formData.tournament_name || !formData.arena_name || !formData.match_type || !formData.role) {
-                $(".loader-bar").hide();
-                showAlert("Lengkapi semua isian terlebih dahulu.", "Peringatan");
-                $submitBtn.prop("disabled", false).text("Masuk");
-                return;
-            }
-
-            if (formData.role === 'juri' && !formData.juri_number) {
-                $(".loader-bar").hide();
-                showAlert("Nomor juri wajib diisi.", "Peringatan");
-                $submitBtn.prop("disabled", false).text("Masuk");
-                return;
-            }
+    
+        if (!formData.tournament_name || !formData.arena_name || !formData.match_type || !formData.role) {
+            $(".loader-bar").hide();
+            showAlert("Lengkapi semua isian terlebih dahulu.", "Peringatan");
+            $submitBtn.prop("disabled", false).text("Masuk"); // enable lagi
+            return;
         }
-
+    
         fetch('/api/match-personnel-assignments', {
             method: "POST",
             headers: {
@@ -182,44 +161,38 @@ $(document).ready(function () {
             },
             body: JSON.stringify(formData),
         })
-        .then(res => {
-            $(".loader-bar").hide();
-            if (!res.ok) throw res;
-            return res.json();
-        })
-        .then(data => {
-            $(".loader-bar").hide();
-            console.log("✅ Active Juri saved", data);
-            showAlert("Data berhasil disimpan, redirect ke interface sesuai role & arena.", "Informasi");
-            setTimeout(() => {
-                // Admin → redirect ke dashboard
-                if (mode === 'admin') {
-                    window.location.href = "/dashboard";
-                    return;
-                }
+            .then(res => {
+                $(".loader-bar").hide();
+                if (!res.ok) throw res;
+                return res.json();
+            })
+            .then(data => {
+                $(".loader-bar").hide();
+                console.log("✅ Active Juri saved", data);
+                showAlert("Data berhasil disimpan, redirect ke interface sesuai role & arena.", "Informasi");
+                setTimeout(() => {
+                    const matchType = formData.match_type;
+                    const redirectBase = '/matches';
 
-                const matchType = formData.match_type;
-                const redirectBase = '/matches';
+                    if (matchType === 'seni') {
+                        window.location.href = `${redirectBase}/seni`;
+                    } else {
+                        window.location.href = `${redirectBase}/tanding`;
+                    }
+                }, 1000);
 
-                if (matchType === 'seni') {
-                    window.location.href = `${redirectBase}/seni`;
-                } else {
-                    window.location.href = `${redirectBase}/tanding`;
+            })
+            .catch(async err => {
+                $(".loader-bar").hide();
+                let message = "Gagal menyimpan data, coba lagi.";
+                if (err.json) {
+                    const json = await err.json();
+                    message = json.message || message;
                 }
-            }, 1000);
-        })
-        .catch(async err => {
-            $(".loader-bar").hide();
-            let message = "Gagal menyimpan data, coba lagi.";
-            if (err.json) {
-                const json = await err.json();
-                message = json.message || message;
-            }
-            console.error("❌ Gagal menyimpan:", err);
-            showAlert(message, "Peringatan");
-            $submitBtn.prop("disabled", false).text("Masuk");
-        });
+                console.error("❌ Gagal menyimpan:", err);
+                showAlert(message, "Peringatan");
+                $submitBtn.prop("disabled", false).text("Masuk"); // enable lagi
+            });
     });
-
     
 });

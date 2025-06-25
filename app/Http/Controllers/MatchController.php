@@ -15,6 +15,19 @@ class MatchController extends Controller
         ]);
     }
 
+    public function indexAdmin(){
+        return view('pages.index_admin', [
+            'js' => 'index_admin.js'
+        ]);
+    }
+
+    
+    public function seniAdmin(){
+        return view('pages.seni_admin', [
+            'js' => 'seni_admin.js'
+        ]);
+    }
+
     public function tandingLive(){
         return view('pages.matches.tanding-live', [
             'js' => 'matches/tanding-live.js'
