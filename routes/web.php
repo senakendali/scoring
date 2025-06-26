@@ -34,6 +34,11 @@ Route::get('/import-matches', function () {
     ]);
 });
 
+// Export PDF
+Route::get('/medal-recap/export-pdf/{ageCategory}', [RecapController::class, 'exportPDF']);
+Route::get('/medal-recap/export-pdf-all', [RecapController::class, 'exportAllPDF']);
+
+
 // Match Routes
 Route::prefix('matches')->group(function () {
     
@@ -70,6 +75,9 @@ Route::prefix('api')->group(function () {
     Route::get('/local-matches/admin', [LocalMatchController::class, 'fetchMatchForAdmin']);
     Route::get('/local-matches/seni/admin', [LocalMatchSeniController::class, 'fetchMatchForAdmin']);
     Route::post('/seni-matches/{id}/set-medal', [LocalMatchSeniController::class, 'setMedal']);
+
+    
+
 
     Route::get('/local-matches/seni', [LocalMatchSeniController::class, 'index']);
     Route::get('/local-matches/seni/live', [LocalMatchSeniController::class, 'fetchLiveMatches']);

@@ -190,7 +190,7 @@ $(document).ready(function () {
         .then(data => {
             $(".loader-bar").hide();
             console.log("✅ Active Juri saved", data);
-            showAlert("Data berhasil disimpan, redirect ke interface sesuai role & arena.", "Informasi");
+            showAlert("Data berhasil disimpan, redirect ke interface sesuai role", "Informasi");
             setTimeout(() => {
                 // Admin → redirect ke dashboard
                 if (mode === 'admin') {

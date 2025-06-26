@@ -17,10 +17,9 @@
 </div>
 
 <div class="container mt-5 text-white d-flex justify-content-center">
-    <button class="btn btn-primary me-2" id="mode-admin"><i class="bi bi-key-fill"></i> Masuk Sebagai Administrator</button>
-    <button class="btn btn-success" id="mode-user"> <i class="bi bi-person-fill"></i> Masuk Sebagai User</button>
+    <button class="btn btn-outline-primary me-2" id="mode-admin"><i class="bi bi-person-badge"></i> Masuk Sebagai Administrator</button>
+    <button class="btn btn-outline-success" id="mode-user"> <i class="bi bi-person-fill"></i> Masuk Sebagai Perangkat Pertandingan</button>
 </div>
-
 
 <div class="container mt-4 text-white" id="match-setup-wrapper" style="display: none;">
     <form id="match-setup-form">
@@ -31,7 +30,6 @@
                 <option value="">-- Pilih Turnamen --</option>
             </select>
         </div>
-
         <!-- Elemen khusus User -->
         <div id="user-fields" style="display: none;">
             <div class="mb-3">
@@ -42,7 +40,6 @@
                     <option value="seni">Seni</option>
                 </select>
             </div>
-
             <div class="mb-3">
                 <label for="role" class="form-label">Masuk Sebagai</label>
                 <select id="role" name="role" class="form-select">
@@ -54,7 +51,6 @@
                     <option value="penonton">Penonton (Big Screen)</option>
                 </select>
             </div>
-
             <div id="seni-category-wrapper" class="mb-3" style="display: none;">
                 <label for="seni_category" class="form-label">Kategori Seni</label>
                 <select class="form-select" id="seni_category" name="seni_category">
@@ -65,12 +61,10 @@
                     <option value="solo_kreatif">Solo Kreatif</option>
                 </select>
             </div>
-
             <div class="mb-3 d-none" id="juri-number-group">
                 <label for="juri_number" class="form-label">Nomor Juri</label>
                 <select id="juri_number" name="juri_number" class="form-select"></select>
             </div>
-
             <div class="mb-3">
                 <label for="arena_name" class="form-label">Pilih Arena</label>
                 <select id="arena_name" name="arena_name" class="form-select">
@@ -78,7 +72,6 @@
                 </select>
             </div>
         </div>
-
         <button type="submit" class="btn btn-success">Masuk</button>
     </form>
 </div>

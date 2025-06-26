@@ -95,7 +95,7 @@ $(document).ready(function () {
                             <th colspan="2" class="text-center">Peserta</th>
                             <th>Pemenang</th>
                             <th>Keterangan</th>
-                            ${isOperator || isKetua ? '<th class="text-nowrap">Action</th>' : ''}
+                            <th class="text-nowrap">Action</th>
                         </tr>
                         <tr>
                             <th></th>
@@ -104,7 +104,7 @@ $(document).ready(function () {
                             <th class="text-center text-danger">Sudut Merah</th>
                             <th></th>
                             <th></th>
-                            ${isOperator || isKetua ? '<th></th>' : ''}
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -133,18 +133,14 @@ $(document).ready(function () {
                         </td>
 
                         <td>${match.status}</td>
-                        ${isOperator || isKetua ? `
+                        
                             <td class="text-nowrap">
                                 <div class="d-flex gap-1">
-                                    <a href="#" class="btn btn-outline-success btn-enter-match"
-                                        data-id="${match.id}" data-arena="${match.arena_name}" data-tournament="${match.tournament_name}">
-                                        Masuk
-                                    </a>
                                     ${match.status === 'finished' && match.winner_name ? `
                                         <a href="/matches/${match.id}/recap" class="btn btn-outline-warning btn-sm btn-recap-match">Rekap</a>
                                     ` : ''}
                                 </div>
-                            </td>` : ''}
+                            </td>
                     </tr>`;
             });
 

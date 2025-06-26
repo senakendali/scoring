@@ -20,9 +20,6 @@
         <div class="container-fluid d-flex justify-content-between align-items-center">
            <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
 
-            @if(request()->segment(1) == 'import-matches')
-                <a href="{{ url('/') }}" class="btn btn-dark">Go to Matches</a>
-            @endif
 
             @if(request()->segment(2) == 'display-arena')
                 <div id="timer" class="timer arena roboto-bold text-white">
@@ -51,7 +48,9 @@
                     @endif
 
                     @if(session('role') === 'admin')
+                        
                         <li><a class="dropdown-item" href="{{ url('/dashboard') }}"><i class="bi bi-house"></i> Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/') }}"><i class="bi bi-award"></i></i> Go to Setup</a></li>
                         <li><a class="dropdown-item" href="{{ url('/import-matches') }}"><i class="bi bi-upload"></i> Import Matches</a></li>
                         <li><a class="dropdown-item" href="{{ url('/matches/tanding/admin') }}"><i class="bi bi-trophy"></i> Match Tanding</a></li>
                         <li><a class="dropdown-item" href="{{ url('/matches/seni/admin') }}"><i class="bi bi-trophy"></i> Match Seni</a></li>

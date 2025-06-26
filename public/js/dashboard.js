@@ -1,19 +1,27 @@
 $(document).ready(function () {
     var url = window.location.origin;
 
+    $('#export-all').on('click', function () {
+        window.open(`${url}/medal-recap/export-pdf-all`, '_blank');
+    });
+
+
     $.get(url + "/api/medal-recap", function (data) {
         $('#recap-tables').empty();
 
         $.each(data, function (ageCategory, rows) {
             let table = `
             <div class="mb-5">
-                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0 text-white">PEROLEHAN MEDALI ${ageCategory.toUpperCase()}</h5>
+                    <button class="btn btn-danger btn-sm export-btn" data-category="${ageCategory}">
+                        <i class="bi bi-file-earmark-pdf-fill"></i> Export
+                    </button>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-dark table-bordered">
                         <thead>
-                            <tr>
-                                <th colspan="7" class="text-white mb-3">PEROLEHAN MENDALI ${ageCategory.toUpperCase()}</tr>
-                            </tr>
                             <tr>
                                 <th>No</th>
                                 <th>Contingent Name</th>
@@ -36,7 +44,6 @@ $(document).ready(function () {
                         <td class="text-secondary fw-bold">${row.perak ? row.perak : '-'}</td>
                         <td class="text-info fw-bold">${row.perunggu ? row.perunggu : '-'}</td>
                         <td>${row.total ? row.total : '-'}</td>
-
                         <td>${row.keterangan ?? '-'}</td>
                     </tr>
                 `;
@@ -45,7 +52,14 @@ $(document).ready(function () {
             table += `</tbody></table></div></div>`;
             $('#recap-tables').append(table);
         });
+
+        // 🧠 Bind event untuk export
+        $('.export-btn').on('click', function () {
+            const ageCategory = $(this).data('category');
+            window.open(`${url}/medal-recap/export-pdf/${encodeURIComponent(ageCategory)}`, '_blank');
+        });
     });
+
 
 
 
