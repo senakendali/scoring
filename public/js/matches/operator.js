@@ -146,7 +146,7 @@ $(document).ready(function () {
 
                 li.on("click", function () {
                     const selectedId = $(this).data("id");
-                    $.post(`${url}/api/matches/${selectedId}/change`, function (res) {
+                    /*$.post(`${url}/api/matches/${selectedId}/change`, function (res) {
                         if (res.new_match_id) {
                             window.location.href = `/matches/${res.new_match_id}`;
                         } else {
@@ -154,9 +154,12 @@ $(document).ready(function () {
                         }
                     }).fail(function (xhr) {
                         console.error("❌ Gagal ganti match:", xhr.responseJSON?.message || xhr.statusText);
-                    });
+                    });*/
+
+                    
 
                     $("#matchListModal").modal("hide");
+                    window.location.href = `/matches/${selectedId}`;
                 });
 
                 matchList.append(li);

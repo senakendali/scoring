@@ -137,7 +137,7 @@ $(document).ready(function () {
 
                 li.on("click", function () {
                     const selectedId = $(this).data("id");
-                    $.post(`/api/local-seni-matches/${selectedId}/change`, function (res) {
+                    /*$.post(`/api/local-seni-matches/${selectedId}/change`, function (res) {
                         if (res.new_match_id) {
                             window.location.href = `/matches/seni/${res.new_match_id}`;
                         } else {
@@ -151,9 +151,12 @@ $(document).ready(function () {
                     }).always(function () {
                         // Kembalikan tombol ke semula
                         $btn.prop("disabled", false).html('Redirecting to Next Match');
-                    });
+                    });*/
+
+                    
 
                     $("#matchListModal").modal("hide");
+                    window.location.href = `/matches/seni/${selectedId}`;
                 });
 
                 matchList.append(li);
