@@ -57,7 +57,7 @@ Route::prefix('matches')->group(function () {
     // Tanding
     Route::get('/tanding', [MatchController::class, 'index']);
     Route::get('/tanding/admin', [MatchController::class, 'indexAdmin']);
-    Route::get('/tanding/live', [MatchController::class, 'tandingLive']);
+    Route::get('/live', [MatchController::class, 'tandingLive']);
     Route::get('/{match_id}', [MatchController::class, 'show']); 
     Route::get('/display-arena/{match_id}', [MatchController::class, 'displayArena']);
     Route::get('/judges/{match_id}', [MatchController::class, 'displayJudge']);

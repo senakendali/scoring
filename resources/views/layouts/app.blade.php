@@ -97,6 +97,11 @@
                             <i class="bi bi-trophy"></i> Match Seni
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('matches/live') ? 'active' : '' }}" href="{{ url('/matches/live') }}">
+                            <i class="bi bi-tv"></i> Live Match
+                        </a>
+                    </li>
   
                 </ul>
             </div>
