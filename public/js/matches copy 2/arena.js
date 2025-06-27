@@ -1,10 +1,7 @@
 $(document).ready(function () {
-    var url = window.location.origin;
     let matchId = parseInt($("#match-id").val());
 
-    let currentArena = null;
-
-    const preloadImages = {
+   const preloadImages = {
         kick: new Image(),
         punch: new Image()
     };
@@ -514,7 +511,6 @@ $(document).ready(function () {
                 $("#timer").hide();
             }
             //$("#tournament-name").text(data.tournament_name);
-            currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
@@ -545,52 +541,9 @@ $(document).ready(function () {
                 'font-size': '23px',
                 'font-weight': 'bold'
             });
-
-            $("#blue-score").text(data.blue.score);
-            $("#red-score").text(data.red.score);
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        if (!currentArena) return;
-
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        // Fetch dan tampilkan modal SETELAH data siap
-        $.get(`${url}/api/local-matches`, function (groupedMatches) {
-            const arenaMatches = [];
-            $.each(groupedMatches[currentArena], function (poolName, matches) {
-                arenaMatches.push(...matches);
-            });
-
-            arenaMatches.sort((a, b) => a.match_number - b.match_number);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_number}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-
-                    $("#matchListModal").modal("hide");
-
-                    // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/display-arena/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            // ✅ Modal baru ditampilkan setelah data selesai di-append
-            $("#matchListModal").modal("show");
-        });
-    });
 
     
 });

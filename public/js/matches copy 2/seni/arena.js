@@ -12,9 +12,6 @@ $(document).ready(function () {
 
     const tournamentSlug = slugify(tournament);
     const arenaSlug = slugify(arena);
-
-    let currentArena = null;
-
     
 
     $.ajaxSetup({
@@ -233,8 +230,6 @@ $(document).ready(function () {
             $("#seni_base_score").val(baseScore.toFixed(2));
             startingScore = baseScore;
 
-            currentArena = data.arena_name;
-
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
 
           
@@ -289,47 +284,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        $.get(`${url}/api/local-matches/seni`, function (data) {
-            const arenaMatches = [];
-
-            data.forEach(categoryGroup => {
-                categoryGroup.age_categories.forEach(ageGroup => {
-                    ageGroup.pools.forEach(pool => {
-                        arenaMatches.push(...pool.matches);
-                    });
-                });
-            });
-
-            arenaMatches.sort((a, b) => a.match_order - b.match_order);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_order}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-                    
-
-                    $("#matchListModal").modal("hide");
-
-                    window.location.href = `${url}/matches/seni/display-arena/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            $("#matchListModal").modal("show");
-        });
-    });
 
     function renderSeniJudges(juriCount, baseScore = 9.90) {
         const $container = $("#judges-preview");

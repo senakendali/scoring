@@ -137,6 +137,31 @@ class LocalMatchRoundController extends Controller
         ]);
     }
 
+    public function changeToMatch($matchId)
+    {
+        // Matikan semua match aktif
+        LocalMatch::where('is_active', true)->update(['is_active' => false]);
+
+        // Ambil match berdasarkan ID yang dipilih
+        $match = LocalMatch::find($matchId);
+        if (!$match) {
+            return response()->json(['message' => 'Match not found'], 404);
+        }
+
+        // Aktifkan match tersebut
+        $match->is_active = true;
+        $match->save();
+
+        // Broadcast ke semua listener
+        broadcast(new ActiveMatchChanged($match->id))->toOthers();
+
+        return response()->json([
+            'message' => 'Match switched',
+            'new_match_id' => $match->id
+        ]);
+    }
+
+
     public function changeToNextMatch($currentId)
     {
         // Matikan semua match aktif

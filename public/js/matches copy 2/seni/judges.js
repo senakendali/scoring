@@ -13,7 +13,6 @@ $(document).ready(function () {
     let additionalScore = 0.00;
     let totalDeduction = 0;
     let hasClickedPlus = false;
-    let currentArena = null;
 
     $.ajaxSetup({
         headers: {
@@ -393,8 +392,6 @@ $(document).ready(function () {
             }
 
             $("#match-id").val(data.id);
-            currentArena = data.arena_name;
-            
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
@@ -425,47 +422,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }  
-
-    $("#match-code").on("click", function () {
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        $.get(`${url}/api/local-matches/seni`, function (data) {
-            const arenaMatches = [];
-
-            data.forEach(categoryGroup => {
-                categoryGroup.age_categories.forEach(ageGroup => {
-                    ageGroup.pools.forEach(pool => {
-                        arenaMatches.push(...pool.matches);
-                    });
-                });
-            });
-
-            arenaMatches.sort((a, b) => a.match_order - b.match_order);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_order}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-                    
-
-                    $("#matchListModal").modal("hide");
-
-                    window.location.href = `${url}/matches/seni/judges/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            $("#matchListModal").modal("show");
-        });
-    });
     
     
 });

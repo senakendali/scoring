@@ -94,6 +94,7 @@ Route::prefix('api')->group(function () {
     Route::post('/matches/seni/{id}/resume', [SeniMatchSetupController::class, 'resume']);
     Route::post('/matches/seni/{id}/reset', [SeniMatchSetupController::class, 'reset']);
     Route::post('/local-seni-matches/{id}/next', [SeniMatchSetupController::class, 'changeToNextMatch']);
+    Route::post('/local-seni-matches/{id}/change', [SeniMatchSetupController::class, 'changeToMatch']);
 
     Route::post('/seni-scores', [LocalSeniScoreController::class, 'store']);
     // routes/api.php
@@ -124,6 +125,7 @@ Route::prefix('api')->group(function () {
     Route::post('/local-match-rounds/{id}/reset', [LocalMatchRoundController::class, 'reset']);
     Route::post('/local-match-rounds/{id}/finish', [LocalMatchRoundController::class, 'finish']);
     Route::post('/matches/{id}/next', [LocalMatchRoundController::class, 'changeToNextMatch']);
+    Route::post('/matches/{id}/change', [LocalMatchRoundController::class, 'changeToMatch']);
 
 
     Route::post('/local-judge-scores', [LocalMatchController::class, 'submitPoint']);

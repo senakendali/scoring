@@ -1,8 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
     let matchId = parseInt($("#match-id").val());
-
-    let currentArena = null;
    
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
@@ -89,7 +86,7 @@ $(document).ready(function () {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
             resetRefereeActions();
-            //$(".item, .drop").prop("disabled", true).addClass("disabled");
+            $(".item, .drop").prop("disabled", true).addClass("disabled");
         } else if (data.status === 'not_started') {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
@@ -113,7 +110,37 @@ $(document).ready(function () {
         $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
         $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
     
-        
+        // 🔥 Tambahkan logika ganti background sesuai pemenang
+        /*if (blueScore > redScore) {
+            $("#blue-score").css({
+                backgroundColor: "#4E25FF", // Biru background
+                color: "#FFFFFF",             // Teks putih
+            });
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"              // Teks merah biasa
+            });
+        } else if (redScore > blueScore) {
+            $("#red-score").css({
+                backgroundColor: "#D32F2F",   // Merah background
+                color: "#FFFFFF",              // Teks putih
+            });
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"              // Teks biru biasa
+                
+            });
+        } else {
+            // Kalau imbang
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+        }*/
     });
 
     let waitingModalInstance = null;
@@ -176,36 +203,20 @@ $(document).ready(function () {
             let redPercent = totalVotes ? (redVotes / totalVotes * 100).toFixed(0) : 0;
             let invalidPercent = totalVotes ? (invalidVotes / totalVotes * 100).toFixed(0) : 0;
 
-            // Generate description
-            let actionLabel = e.type === 'jatuhan' ? 'Jatuhan' : 'Hukuman';
-            let cornerLabel = e.corner === 'blue' ? 'sudut Biru' : 'sudut Merah';
-            let titleText = `${actionLabel} untuk ${cornerLabel}`;
-
-            // 🔷 Ganti warna modal sesuai corner
-            let modalEl = document.getElementById('verificationResultModal');
-            modalEl.classList.remove('bg-blue', 'bg-red');
-            if (e.corner === 'blue') {
-                modalEl.classList.add('bg-blue');
-            } else {
-                modalEl.classList.add('bg-red');
-            }
-
-
             // Generate HTML progress bar
             let resultHtml = `
-                <div class="text-center fw-bold mb-3">${titleText}</div>
                 <div class="text-start mb-2">Biru (${blueVotes} vote)</div>
-                <div class="progress mb-3" style="height: 50px;">
+                <div class="progress mb-3" style="height: 20px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: ${bluePercent}%;">${bluePercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Merah (${redVotes} vote)</div>
-                <div class="progress mb-3" style="height: 50px;">
+                <div class="progress mb-3" style="height: 20px;">
                 <div class="progress-bar bg-danger" role="progressbar" style="width: ${redPercent}%;">${redPercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Tidak Sah (${invalidVotes} vote)</div>
-                <div class="progress mb-2" style="height: 50px;">
+                <div class="progress mb-2" style="height: 20px;">
                 <div class="progress-bar bg-secondary" role="progressbar" style="width: ${invalidPercent}%;">${invalidPercent}%</div>
                 </div>
             `;
@@ -232,124 +243,50 @@ $(document).ready(function () {
     
 
     $(".item[data-action], .drop[data-action]").on("click", function () {
-        const $btn = $(this);
-        const action = $btn.data("action");
-        const point = $btn.data("point");
-        const corner = $btn.data("corner");
-
-        // 🔁 DROP boleh diklik berkali-kali
-        if (action === 'drop') {
-            $.post("/api/local-referee-actions", {
-                local_match_id: matchId,
+        const action = $(this).data("action");
+        const point = $(this).data("point");
+        const corner = $(this).data("corner");
+    
+        console.log(`🟢 Aksi: ${action}, Corner: ${corner}, Point: ${point}`);
+    
+        $(this).addClass("active");
+    
+        if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
+            // 🔥 Kalau butuh verifikasi, panggil API verifikasi
+            $.post("/api/request-verification", {
+                match_id: matchId,
                 round_id: roundId,
-                action: action,
-                point_change: point,
+                type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
                 corner: corner,
-            }).done(function (res) {
-                console.log("✅ Drop action sent", res);
-            }).fail(function (xhr) {
-                console.error("❌ Gagal kirim drop:", xhr.responseJSON?.message || xhr.statusText);
-            });
-
-            return;
-        }
-
-        // 🔁 JATUHAN juga bisa diklik berkali-kali
-        if (action === 'jatuhan') {
-            $.post("/api/local-referee-actions", {
-                local_match_id: matchId,
-                round_id: roundId,
-                action: action,
-                point_change: point,
-                corner: corner,
-            }).done(function (res) {
-                console.log("✅ Jatuhan action sent", res);
-            }).fail(function (xhr) {
-                console.error("❌ Gagal kirim jatuhan:", xhr.responseJSON?.message || xhr.statusText);
-            });
-
-            return;
-        }
-
-        // 🔁 HAPUS JATUHAN
-        if (action === 'hapus-jatuhan') {
-            $.ajax({
-                url: "/api/local-referee-actions/remove-jatuhan",
-                method: "POST",
-                data: {
-                    local_match_id: matchId,
-                    round_id: roundId,
-                    corner: corner,
-                },
-                success: function (res) {
-                    console.log("🧹 Jatuhan berhasil dihapus:", res);
-                },
-                error: function (xhr) {
-                    console.error("❌ Gagal hapus jatuhan:", xhr.responseJSON?.message || xhr.statusText);
-                }
-            });
-
-            return;
-        }
-
-
-        // 🔄 Aksi biasa (toggle)
-        if ($btn.hasClass("active")) {
-            $btn.removeClass("active");
-
-            $.ajax({
-                url: "/api/local-referee-actions/cancel",
-                method: "POST",
-                data: {
-                    match_id: matchId,
-                    round_id: roundId,
-                    action: action,
-                    corner: corner
-                },
-                success: function (res) {
-                    console.log("🧹 Undo berhasil:", res);
-                },
-                error: function (xhr) {
-                    console.error("❌ Gagal undo:", xhr.responseJSON?.message || xhr.statusText);
-                }
+            })
+            .done(function (res) {
+                console.log("✅ Verification request sent", res);
+            })
+            .fail(function (xhr) {
+                console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
             });
         } else {
-            $btn.addClass("active");
-
-            if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
-                $.post("/api/request-verification", {
-                    match_id: matchId,
-                    round_id: roundId,
-                    type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
-                    corner: corner,
-                }).done(function (res) {
-                    console.log("✅ Verification request sent", res);
-                }).fail(function (xhr) {
-                    console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
-                });
-            } else {
-                $.post("/api/local-referee-actions", {
-                    local_match_id: matchId,
-                    round_id: roundId,
-                    action: action,
-                    point_change: point,
-                    corner: corner,
-                }).done(function (res) {
-                    console.log("✅ Referee action sent", res);
-                }).fail(function (xhr) {
-                    console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
-                });
-            }
+            // ✅ Kalau bukan verifikasi, tetap kirim action biasa
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            })
+            .done(function (res) {
+                console.log("✅ Referee action sent", res);
+            })
+            .fail(function (xhr) {
+                console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
+            });
         }
     });
-
-
-
         
 
     function resetRefereeActions() {
         $(".item, .drop").removeClass('active');
-        //$(".item, .drop").prop("disabled", true).addClass("disabled");
+        $(".item, .drop").prop("disabled", true).addClass("disabled");
     }
     
     
@@ -383,7 +320,6 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
-            currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
@@ -401,7 +337,7 @@ $(document).ready(function () {
             const maxRound = Math.max(...data.rounds.map(r => r.round_number));
             const roundLabels = getRoundLabels(maxRound);
 
-            $("#stage").text(data.round_label);
+            $("#stage").text(roundLabels[data.rounds[0].round_number] || `Babak ${data.rounds[0].round_number}`);
   
 
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
@@ -410,46 +346,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        if (!currentArena) return;
-
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        // Fetch dan tampilkan modal SETELAH data siap
-        $.get(`${url}/api/local-matches`, function (groupedMatches) {
-            const arenaMatches = [];
-            $.each(groupedMatches[currentArena], function (poolName, matches) {
-                arenaMatches.push(...matches);
-            });
-
-            arenaMatches.sort((a, b) => a.match_number - b.match_number);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_number}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-
-                    $("#matchListModal").modal("hide");
-
-                    // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/referees/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            // ✅ Modal baru ditampilkan setelah data selesai di-append
-            $("#matchListModal").modal("show");
-        });
-    });
 
     
 });

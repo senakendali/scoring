@@ -19,9 +19,25 @@
   </div>
 </div>
 
+<div class="modal fade" id="matchListModal" tabindex="-1" aria-labelledby="matchListModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-sm">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="matchListModalLabel">Daftar Partai</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-2">
+        <ul class="list-group list-group-flush" id="match-list">
+          <!-- Isi list di JS -->
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="fix-match-info dark" id="tournament-name">-</div>
 <div class="fix-match-detail">
-    <div class="detail-item" id="match-code">-</div>
+    <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
 </div>

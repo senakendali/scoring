@@ -395,58 +395,91 @@ class SeniMatchSetupController extends Controller
         ]);
     }
 
-   public function changeToNextMatch($currentId)
-{
-    $currentMatch = \App\Models\LocalSeniMatch::findOrFail($currentId);
+    public function changeToMatch($id)
+    {
+        $match = \App\Models\LocalSeniMatch::findOrFail($id);
 
-    // ✅ Ambil semua match di arena yang sama dan URUT berdasarkan match_order dari DB
-    $matches = \App\Models\LocalSeniMatch::where('arena_name', $currentMatch->arena_name)
-        ->orderByRaw('CAST(match_order AS UNSIGNED) ASC')
-        ->get();
+        // Jika match yang diklik sudah berstatus "ongoing", tidak perlu pindah
+        if ($match->status === 'ongoing') {
+            return response()->json([
+                'message' => 'Sudah di pertandingan ini.',
+                'new_match_id' => $match->id,
+            ]);
+        }
 
-    // Debug log
-    
+        // Reset semua pertandingan lain di arena ini ke status not_started
+       \App\Models\LocalSeniMatch::where('arena_name', $match->arena_name)
+        ->where('id', '!=', $match->id)
+        ->where('status', '!=', 'finished')
+        ->update(['status' => 'not_started']);
 
-    // Cari index match sekarang
-    $index = $matches->search(fn($m) => $m->id === $currentMatch->id);
 
-    if ($index === false) {
-        \Log::warning('⚠️ Match sekarang tidak ditemukan dalam daftar hasil query.', [
-            'current_id' => $currentMatch->id,
-        ]);
-        return response()->json(['message' => 'Match sekarang tidak ditemukan.'], 404);
-    }
+        // Set pertandingan yang diklik menjadi ongoing
+        $match->status = 'ongoing';
+        $match->save();
 
-    // Cari match berikutnya (setelah current)
-    $nextMatch = $matches->slice($index + 1)->first(fn($m) =>
-        $m->status !== 'finished' && $m->disqualified !== 'yes'
-    );
-
-    // Kalau tidak ada di bawahnya, cari dari awal sampai current
-    if (!$nextMatch) {
-        $nextMatch = $matches->slice(0, $index)->first(fn($m) =>
-            $m->status !== 'finished' && $m->disqualified !== 'yes'
-        );
-    }
-
-    // Kalau ketemu, update status dan broadcast
-    if ($nextMatch) {
-        $nextMatch->status = 'ongoing';
-        $nextMatch->save();
-
-        broadcast(new \App\Events\SeniActiveMatchChanged($nextMatch->id))->toOthers();
+        // Broadcast ke frontend
+        broadcast(new \App\Events\SeniActiveMatchChanged($match->id))->toOthers();
 
         return response()->json([
-            'message' => 'Match switched',
-            'new_match_id' => $nextMatch->id
+            'message' => 'Berhasil pindah pertandingan.',
+            'new_match_id' => $match->id
         ]);
     }
 
-    // Kalau semua match udah selesai
-    return response()->json([
-        'message' => 'No next match available'
-    ], 404);
-}
+
+   public function changeToNextMatch($currentId)
+    {
+        $currentMatch = \App\Models\LocalSeniMatch::findOrFail($currentId);
+
+        // ✅ Ambil semua match di arena yang sama dan URUT berdasarkan match_order dari DB
+        $matches = \App\Models\LocalSeniMatch::where('arena_name', $currentMatch->arena_name)
+            ->orderByRaw('CAST(match_order AS UNSIGNED) ASC')
+            ->get();
+
+        // Debug log
+        
+
+        // Cari index match sekarang
+        $index = $matches->search(fn($m) => $m->id === $currentMatch->id);
+
+        if ($index === false) {
+            \Log::warning('⚠️ Match sekarang tidak ditemukan dalam daftar hasil query.', [
+                'current_id' => $currentMatch->id,
+            ]);
+            return response()->json(['message' => 'Match sekarang tidak ditemukan.'], 404);
+        }
+
+        // Cari match berikutnya (setelah current)
+        $nextMatch = $matches->slice($index + 1)->first(fn($m) =>
+            $m->status !== 'finished' && $m->disqualified !== 'yes'
+        );
+
+        // Kalau tidak ada di bawahnya, cari dari awal sampai current
+        if (!$nextMatch) {
+            $nextMatch = $matches->slice(0, $index)->first(fn($m) =>
+                $m->status !== 'finished' && $m->disqualified !== 'yes'
+            );
+        }
+
+        // Kalau ketemu, update status dan broadcast
+        if ($nextMatch) {
+            $nextMatch->status = 'ongoing';
+            $nextMatch->save();
+
+            broadcast(new \App\Events\SeniActiveMatchChanged($nextMatch->id))->toOthers();
+
+            return response()->json([
+                'message' => 'Match switched',
+                'new_match_id' => $nextMatch->id
+            ]);
+        }
+
+        // Kalau semua match udah selesai
+        return response()->json([
+            'message' => 'No next match available'
+        ], 404);
+    }
 
 
 

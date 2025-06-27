@@ -12,7 +12,6 @@ $(document).ready(function () {
     let allRounds = [];
     let elapsed = 0;
     let isPaused = false;
-    let currentArena = null;
 
     $.ajaxSetup({
         headers: {
@@ -61,14 +60,9 @@ $(document).ready(function () {
         }
     }
 
-    fetchMatch();
-    
     function fetchMatch() {
         $(".loader-bar").show();
         $.get(`${url}/api/local-matches/${matchId}`, function (data) {
-
-            
-
            
             if(data.is_display_timer != 0){
                 $(".timer").css('color', '#FFFFFF');
@@ -77,7 +71,7 @@ $(document).ready(function () {
                 $("#display-timer").css('height', '20px');
                 $("#timer").hide();
             }
-            currentArena = data.arena_name;
+           
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
@@ -116,58 +110,10 @@ $(document).ready(function () {
             }
 
             setWinnerOptions(data); 
-
+            
             $(".loader-bar").hide();
         });
     }
-
-   $("#match-code").on("click", function () {
-        if (!currentArena) return;
-
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        // Fetch dan tampilkan modal SETELAH data siap
-        $.get(`${url}/api/local-matches`, function (groupedMatches) {
-            const arenaMatches = [];
-            $.each(groupedMatches[currentArena], function (poolName, matches) {
-                arenaMatches.push(...matches);
-            });
-
-            arenaMatches.sort((a, b) => a.match_number - b.match_number);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_number}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-                    $.post(`${url}/api/matches/${selectedId}/change`, function (res) {
-                        if (res.new_match_id) {
-                            window.location.href = `/matches/${res.new_match_id}`;
-                        } else {
-                            alert("Tidak bisa pindah pertandingan.");
-                        }
-                    }).fail(function (xhr) {
-                        console.error("❌ Gagal ganti match:", xhr.responseJSON?.message || xhr.statusText);
-                    });
-
-                    $("#matchListModal").modal("hide");
-                });
-
-                matchList.append(li);
-            });
-
-            // ✅ Modal baru ditampilkan setelah data selesai di-append
-            $("#matchListModal").modal("show");
-        });
-    });
-
-
 
     function fetchAndStartTimer() {
         if (!roundId) return;
@@ -594,5 +540,5 @@ $(document).ready(function () {
     
 
 
-    //fetchMatch();
+    fetchMatch();
 });

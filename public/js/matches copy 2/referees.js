@@ -1,8 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
     let matchId = parseInt($("#match-id").val());
-
-    let currentArena = null;
    
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
@@ -383,7 +380,6 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
-            currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
@@ -410,46 +406,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        if (!currentArena) return;
-
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        // Fetch dan tampilkan modal SETELAH data siap
-        $.get(`${url}/api/local-matches`, function (groupedMatches) {
-            const arenaMatches = [];
-            $.each(groupedMatches[currentArena], function (poolName, matches) {
-                arenaMatches.push(...matches);
-            });
-
-            arenaMatches.sort((a, b) => a.match_number - b.match_number);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_number}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-
-                    $("#matchListModal").modal("hide");
-
-                    // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/referees/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            // ✅ Modal baru ditampilkan setelah data selesai di-append
-            $("#matchListModal").modal("show");
-        });
-    });
 
     
 });

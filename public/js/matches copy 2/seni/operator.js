@@ -12,8 +12,6 @@ $(document).ready(function () {
     let allRounds = [];
     let elapsed = 0;
     let isPaused = false;
-
-    let currentArena = null;
     
 
 
@@ -77,9 +75,6 @@ $(document).ready(function () {
             }
             
             $("#match-id").val(data.id);
-
-            currentArena = data.arena_name;
-           
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
@@ -109,61 +104,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        $.get(`${url}/api/local-matches/seni`, function (data) {
-            const arenaMatches = [];
-
-            data.forEach(categoryGroup => {
-                categoryGroup.age_categories.forEach(ageGroup => {
-                    ageGroup.pools.forEach(pool => {
-                        arenaMatches.push(...pool.matches);
-                    });
-                });
-            });
-
-            arenaMatches.sort((a, b) => a.match_order - b.match_order);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_order}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-                    $.post(`/api/local-seni-matches/${selectedId}/change`, function (res) {
-                        if (res.new_match_id) {
-                            window.location.href = `/matches/seni/${res.new_match_id}`;
-                        } else {
-                            alert("Tidak ada pertandingan berikutnya.");
-                        }
-                    }).fail(function (xhr) {
-                        $("#nextMatchModalBody").text("Tidak ada pertandingan berikutnya. Semua pertandingan telah selesai.");
-                        const modal = new bootstrap.Modal(document.getElementById('nextMatchModalInfo'));
-                        modal.show();
-                        console.error("❌ Gagal ganti match:", xhr.responseJSON?.message || xhr.statusText);
-                    }).always(function () {
-                        // Kembalikan tombol ke semula
-                        $btn.prop("disabled", false).html('Redirecting to Next Match');
-                    });
-
-                    $("#matchListModal").modal("hide");
-                });
-
-                matchList.append(li);
-            });
-
-            $("#matchListModal").modal("show");
-        });
-    });
-
-
 
 
     function fetchAndStartTimer() {
@@ -241,8 +181,6 @@ $(document).ready(function () {
         const sec = (seconds % 60).toString().padStart(2, '0');
         return `${min}:${sec}`;
     }
-
-    fetchMatch();
 
 
    let isRunning = false;
@@ -630,5 +568,5 @@ $(document).ready(function () {
     
 
 
-    
+    fetchMatch();
 });

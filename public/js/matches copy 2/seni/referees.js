@@ -1,7 +1,6 @@
 $(document).ready(function () {
     const url = window.location.origin;
     let matchId = parseInt($("#match-id").val());
-    let currentArena = null;
    
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
@@ -182,7 +181,6 @@ $(document).ready(function () {
     function fetchMatchData() {
          $(".loader-bar").show();
          $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
-            currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim()).css("font-size", "17px");
           
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
@@ -213,47 +211,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        $.get(`${url}/api/local-matches/seni`, function (data) {
-            const arenaMatches = [];
-
-            data.forEach(categoryGroup => {
-                categoryGroup.age_categories.forEach(ageGroup => {
-                    ageGroup.pools.forEach(pool => {
-                        arenaMatches.push(...pool.matches);
-                    });
-                });
-            });
-
-            arenaMatches.sort((a, b) => a.match_order - b.match_order);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_order}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-                    
-
-                    $("#matchListModal").modal("hide");
-
-                    window.location.href = `${url}/matches/seni/referees/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            $("#matchListModal").modal("show");
-        });
-    });
 
     function submitPenalties() {
         const matchId = $("#match-id").val();         // hidden input

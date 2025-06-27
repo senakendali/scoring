@@ -1,12 +1,9 @@
 $(document).ready(function () {
-    const url = window.location.origin;
     let currentRoundNumber = 1;
 
     let matchId = parseInt($("#match-id").val());
     let roundId = null;
     let judgeNumber = $("#judge-number").val();
-
-    let currentArena = null;
 
     let lastBlue = 0;
     let lastRed = 0;
@@ -262,8 +259,7 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
-            currentArena = data.arena_name;
-            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
+             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#blue-name").html(`
@@ -288,46 +284,6 @@ $(document).ready(function () {
             $(".loader-bar").hide();
         });
     }
-
-    $("#match-code").on("click", function () {
-        if (!currentArena) return;
-
-        const matchList = $("#match-list");
-        matchList.empty();
-
-        // Fetch dan tampilkan modal SETELAH data siap
-        $.get(`${url}/api/local-matches`, function (groupedMatches) {
-            const arenaMatches = [];
-            $.each(groupedMatches[currentArena], function (poolName, matches) {
-                arenaMatches.push(...matches);
-            });
-
-            arenaMatches.sort((a, b) => a.match_number - b.match_number);
-
-            arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_number}
-                    </li>
-                `);
-
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-
-                    $("#matchListModal").modal("hide");
-
-                    // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/judges/${selectedId}`;
-                });
-
-                matchList.append(li);
-            });
-
-            // ✅ Modal baru ditampilkan setelah data selesai di-append
-            $("#matchListModal").modal("show");
-        });
-    });
 
     function startCountdown(startTime, duration = 180) {
         clearInterval(countdownInterval);

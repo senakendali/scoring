@@ -1971,6 +1971,10 @@ th, td {
     50% { opacity: 0; }
   }
 
+  ul#match-list {
+  min-width: 200px;
+}
+
 
    
 
