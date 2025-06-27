@@ -158,7 +158,7 @@ $(document).ready(function () {
     let allWinners = []; // simpan di luar .each untuk global
 
     // di dalam $.each(matches, function...) setelah if (!matches.length) return;
-    matches.forEach(match => {
+    /*matches.forEach(match => {
         if (match.winner_name) {
             let winnerScore = match.winner_corner === 'blue'
                 ? (match.participant_1_score ?? 0)
@@ -172,7 +172,7 @@ $(document).ready(function () {
                 arena: match.arena_name
             });
         }
-    });
+    });*/
 
     // setelah render selesai
     $('#show-winners-btn').off('click').on('click', function () {

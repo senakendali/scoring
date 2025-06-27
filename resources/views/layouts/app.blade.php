@@ -47,17 +47,9 @@
                         <li><span class="dropdown-item-text"><strong>Arena:</strong> {{ session('arena_name') }}</span></li>
                     @endif
 
-                    @if(session('role') === 'admin')
-                        
-                        <li><a class="dropdown-item" href="{{ url('/dashboard') }}"><i class="bi bi-house"></i> Dashboard</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/') }}"><i class="bi bi-award"></i></i> Go to Setup</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/import-matches') }}"><i class="bi bi-upload"></i> Import Matches</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/matches/tanding/admin') }}"><i class="bi bi-trophy"></i> Match Tanding</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/matches/seni/admin') }}"><i class="bi bi-trophy"></i> Match Seni</a></li>
-                        
-                    @endif
+                   
 
-                    <li><hr class="dropdown-divider"></li>
+                   
                     <li>
                         <form action="/logout" method="POST" class="px-3 m-0">
                             @csrf
@@ -70,6 +62,47 @@
             @endif
         </div>
     </header>
+   
+    @if(session('role') === 'admin')
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+           
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('/dashboard') }}">
+                            <i class="bi bi-house"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="{{ url('/') }}">
+                            <i class="bi bi-award"></i> Go to Setup
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('import-matches') ? 'active' : '' }}" href="{{ url('/import-matches') }}">
+                            <i class="bi bi-upload"></i> Import Matches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('matches/tanding/admin') ? 'active' : '' }}" href="{{ url('/matches/tanding/admin') }}">
+                            <i class="bi bi-trophy"></i> Match Tanding
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('matches/seni/admin') ? 'active' : '' }}" href="{{ url('/matches/seni/admin') }}">
+                            <i class="bi bi-trophy"></i> Match Seni
+                        </a>
+                    </li>
+  
+                </ul>
+            </div>
+        </div>
+    </nav>
+    @endif
 
 
 
