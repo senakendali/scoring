@@ -303,6 +303,7 @@ class RecapController extends Controller
             ->get();
 
         $result = [];
+        $finalists = [];
 
         foreach ($matches as $match) {
             $isInvalidMedal = in_array($match->win_reason, ['forfeit', 'disqualify']);
@@ -329,56 +330,64 @@ class RecapController extends Controller
                 ? ['name' => $match->red_name, 'contingent' => $match->red_contingent]
                 : ['name' => $match->blue_name, 'contingent' => $match->blue_contingent];
 
-            $result[$usia][] = [
-                'nama' => $winner['name'],
-                'kontingen' => $winner['contingent'],
-                'kelas' => $kelas,
-                'gender' => $gender,
-                'medali' => 'Juara I',
-                'sort' => 1,
-                'tournament_name' => $tournamentName,
-            ];
+            $loser = $match->winner_corner === 'red'
+                ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
+                : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
 
-            if ($match->round_label === 'Final' && !$isInvalidMedal) {
-                $loser = $match->winner_corner === 'red'
-                    ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
-                    : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
+            // ✅ Final round
+            if ($match->round_label === 'Final') {
+                $finalists[] = $winner['name'];
+                $finalists[] = $loser['name'];
 
+                // Juara I
                 $result[$usia][] = [
-                    'nama' => $loser['name'],
-                    'kontingen' => $loser['contingent'],
+                    'nama' => $winner['name'],
+                    'kontingen' => $winner['contingent'],
                     'kelas' => $kelas,
                     'gender' => $gender,
-                    'medali' => 'Juara II',
-                    'sort' => 2,
+                    'medali' => 'Juara I',
+                    'sort' => 1,
                     'tournament_name' => $tournamentName,
                 ];
+
+                // Juara II
+                if (!$isInvalidMedal) {
+                    $result[$usia][] = [
+                        'nama' => $loser['name'],
+                        'kontingen' => $loser['contingent'],
+                        'kelas' => $kelas,
+                        'gender' => $gender,
+                        'medali' => 'Juara II',
+                        'sort' => 2,
+                        'tournament_name' => $tournamentName,
+                    ];
+                }
             }
 
+            // ✅ Semifinal: Juara III (jika bukan finalis)
             if ($match->round_label === 'Semifinal' && !$isInvalidMedal) {
-                $loser = $match->winner_corner === 'red'
-                    ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
-                    : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
-
-                $result[$usia][] = [
-                    'nama' => $loser['name'],
-                    'kontingen' => $loser['contingent'],
-                    'kelas' => $kelas,
-                    'gender' => $gender,
-                    'medali' => 'Juara III',
-                    'sort' => 3,
-                    'tournament_name' => $tournamentName,
-                ];
+                if (!in_array($loser['name'], $finalists)) {
+                    $result[$usia][] = [
+                        'nama' => $loser['name'],
+                        'kontingen' => $loser['contingent'],
+                        'kelas' => $kelas,
+                        'gender' => $gender,
+                        'medali' => 'Juara III',
+                        'sort' => 3,
+                        'tournament_name' => $tournamentName,
+                    ];
+                }
             }
         }
 
-        // ✅ Urutkan per kategori usia berdasarkan medali
+        // Urutkan per usia berdasarkan medali
         foreach ($result as $usia => &$rows) {
             usort($rows, fn($a, $b) => $a['sort'] <=> $b['sort']);
         }
 
         return response()->json($result);
     }
+
 
     
 
@@ -390,6 +399,7 @@ class RecapController extends Controller
             ->get();
 
         $result = [];
+        $finalists = [];
 
         foreach ($matches as $match) {
             $isInvalidMedal = in_array($match->win_reason, ['forfeit', 'disqualify']);
@@ -418,46 +428,51 @@ class RecapController extends Controller
                 ? ['name' => $match->red_name, 'contingent' => $match->red_contingent]
                 : ['name' => $match->blue_name, 'contingent' => $match->blue_contingent];
 
-            $result[] = [
-                'nama' => $winner['name'],
-                'kontingen' => $winner['contingent'],
-                'kelas' => $kelas,
-                'gender' => $gender,
-                'medali' => 'Juara I',
-                'sort' => 1,
-                'tournament_name' => $tournamentName,
-            ];
+            $loser = $match->winner_corner === 'red'
+                ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
+                : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
 
-            if ($match->round_label === 'Final' && !$isInvalidMedal) {
-                $loser = $match->winner_corner === 'red'
-                    ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
-                    : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
+            if ($match->round_label === 'Final') {
+                $finalists[] = $winner['name'];
+                $finalists[] = $loser['name'];
 
+                // Juara I
                 $result[] = [
-                    'nama' => $loser['name'],
-                    'kontingen' => $loser['contingent'],
+                    'nama' => $winner['name'],
+                    'kontingen' => $winner['contingent'],
                     'kelas' => $kelas,
                     'gender' => $gender,
-                    'medali' => 'Juara II',
-                    'sort' => 2,
+                    'medali' => 'Juara I',
+                    'sort' => 1,
                     'tournament_name' => $tournamentName,
                 ];
+
+                // Juara II
+                if (!$isInvalidMedal) {
+                    $result[] = [
+                        'nama' => $loser['name'],
+                        'kontingen' => $loser['contingent'],
+                        'kelas' => $kelas,
+                        'gender' => $gender,
+                        'medali' => 'Juara II',
+                        'sort' => 2,
+                        'tournament_name' => $tournamentName,
+                    ];
+                }
             }
 
             if ($match->round_label === 'Semifinal' && !$isInvalidMedal) {
-                $loser = $match->winner_corner === 'red'
-                    ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
-                    : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
-
-                $result[] = [
-                    'nama' => $loser['name'],
-                    'kontingen' => $loser['contingent'],
-                    'kelas' => $kelas,
-                    'gender' => $gender,
-                    'medali' => 'Juara III',
-                    'sort' => 3,
-                    'tournament_name' => $tournamentName,
-                ];
+                if (!in_array($loser['name'], $finalists)) {
+                    $result[] = [
+                        'nama' => $loser['name'],
+                        'kontingen' => $loser['contingent'],
+                        'kelas' => $kelas,
+                        'gender' => $gender,
+                        'medali' => 'Juara III',
+                        'sort' => 3,
+                        'tournament_name' => $tournamentName,
+                    ];
+                }
             }
         }
 
@@ -474,6 +489,7 @@ class RecapController extends Controller
         return $pdf->download('rekap-pemenang-' . Str::slug($ageCategory) . '.pdf');
     }
 
+
     public function exportMedalRecapPerAtletAllPDF()
     {
         $matches = DB::table('local_matches')
@@ -482,6 +498,7 @@ class RecapController extends Controller
             ->get();
 
         $grouped = [];
+        $finalists = [];
 
         foreach ($matches as $match) {
             $isInvalidMedal = in_array($match->win_reason, ['forfeit', 'disqualify']);
@@ -508,46 +525,49 @@ class RecapController extends Controller
                 ? ['name' => $match->red_name, 'contingent' => $match->red_contingent]
                 : ['name' => $match->blue_name, 'contingent' => $match->blue_contingent];
 
-            $grouped[$usia][] = [
-                'nama' => $winner['name'],
-                'kontingen' => $winner['contingent'],
-                'kelas' => $kelas,
-                'gender' => $gender,
-                'medali' => 'Juara I',
-                'sort' => 1,
-                'tournament_name' => $tournamentName,
-            ];
+            $loser = $match->winner_corner === 'red'
+                ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
+                : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
 
-            if ($match->round_label === 'Final' && !$isInvalidMedal) {
-                $loser = $match->winner_corner === 'red'
-                    ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
-                    : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
+            if ($match->round_label === 'Final') {
+                $finalists[] = $winner['name'];
+                $finalists[] = $loser['name'];
 
                 $grouped[$usia][] = [
-                    'nama' => $loser['name'],
-                    'kontingen' => $loser['contingent'],
+                    'nama' => $winner['name'],
+                    'kontingen' => $winner['contingent'],
                     'kelas' => $kelas,
                     'gender' => $gender,
-                    'medali' => 'Juara II',
-                    'sort' => 2,
+                    'medali' => 'Juara I',
+                    'sort' => 1,
                     'tournament_name' => $tournamentName,
                 ];
+
+                if (!$isInvalidMedal) {
+                    $grouped[$usia][] = [
+                        'nama' => $loser['name'],
+                        'kontingen' => $loser['contingent'],
+                        'kelas' => $kelas,
+                        'gender' => $gender,
+                        'medali' => 'Juara II',
+                        'sort' => 2,
+                        'tournament_name' => $tournamentName,
+                    ];
+                }
             }
 
             if ($match->round_label === 'Semifinal' && !$isInvalidMedal) {
-                $loser = $match->winner_corner === 'red'
-                    ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
-                    : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
-
-                $grouped[$usia][] = [
-                    'nama' => $loser['name'],
-                    'kontingen' => $loser['contingent'],
-                    'kelas' => $kelas,
-                    'gender' => $gender,
-                    'medali' => 'Juara III',
-                    'sort' => 3,
-                    'tournament_name' => $tournamentName,
-                ];
+                if (!in_array($loser['name'], $finalists)) {
+                    $grouped[$usia][] = [
+                        'nama' => $loser['name'],
+                        'kontingen' => $loser['contingent'],
+                        'kelas' => $kelas,
+                        'gender' => $gender,
+                        'medali' => 'Juara III',
+                        'sort' => 3,
+                        'tournament_name' => $tournamentName,
+                    ];
+                }
             }
         }
 
