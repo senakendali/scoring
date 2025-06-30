@@ -27,6 +27,12 @@ Route::get('/dashboard', function () {
     ]);
 });
 
+Route::get('/medal-recap', function () {
+    return view('pages/medals-recapitulation', [
+        'js' => 'medal-recap.js'
+    ]);
+});
+
 Route::get('/import-matches', function () {
     return view('pages/import', [
         'js' => 'import.js',
@@ -37,6 +43,10 @@ Route::get('/import-matches', function () {
 // Export PDF
 Route::get('/medal-recap/export-pdf/{ageCategory}', [RecapController::class, 'exportPDF']);
 Route::get('/medal-recap/export-pdf-all', [RecapController::class, 'exportAllPDF']);
+
+Route::get('/medal-recap-per-atlet/export-pdf/{ageCategory}', [RecapController::class, 'exportMedalRecapPerAtletPDF']);
+Route::get('/winner-recap/export-pdf/all', [RecapController::class, 'exportMedalRecapPerAtletAllPDF']);
+
 
 
 // Match Routes
@@ -169,6 +179,7 @@ Route::prefix('api')->group(function () {
 
     // Recap
     Route::get('/medal-recap', [RecapController::class, 'medalRecap']);
+    Route::get('/medal-recap-per-atlet', [RecapController::class, 'medalRecapPerAtlet']);
 
 
 

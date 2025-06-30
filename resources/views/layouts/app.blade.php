@@ -74,7 +74,12 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link {{ Request::is('dashboard') ? 'active' : '' }}" href="{{ url('/dashboard') }}">
-                            <i class="bi bi-house"></i> Dashboard
+                            <i class="bi bi-house"></i> Medals Recapitulation
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::is('medal-recap') ? 'active' : '' }}" href="{{ url('/medal-recap') }}">
+                            <i class="bi bi-trophy"></i> Winners Recapitulation
                         </a>
                     </li>
                     <li class="nav-item">
