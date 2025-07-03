@@ -928,6 +928,13 @@ class LocalMatchController extends Controller
         // 🔥 Hapus dan hitung ulang skor
         $lastAction->delete();
 
+        broadcast(new \App\Events\RefereeActionCancelled(
+            $data['match_id'],
+            $data['corner'],
+            $data['action']
+        ))->toOthers();
+
+
         $blueScore = \App\Models\LocalValidScore::where('local_match_id', $data['match_id'])
             ->where('corner', 'blue')
             ->sum('point');

@@ -37,6 +37,14 @@ $(document).ready(function () {
     const channel = pusher.subscribe(`match.${matchId}`);
     const globalChannel = pusher.subscribe('global.match');
 
+    channel.bind('referee.action.cancelled', function (data) {
+        console.log("⛔ Referee Action Cancelled:", data);
+
+        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
+        $(selector).removeClass('active');
+    });
+
+
     /*channel.bind('referee.action', function (data) {
         console.log("📣 Referee Action Received:", data);
     
