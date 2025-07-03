@@ -505,6 +505,7 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
+        $(".match-item").css('height', '80px');
         $.get(`/api/local-matches/${matchId}`, function (data) {
             if(data.is_display_timer != 0){
                 $("#timer").show();
