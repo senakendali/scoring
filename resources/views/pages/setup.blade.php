@@ -19,6 +19,7 @@
 <div class="container mt-5 text-white d-flex justify-content-center">
     <button class="btn btn-outline-primary me-2" id="mode-admin"><i class="bi bi-person-badge"></i> Masuk Sebagai Administrator</button>
     <button class="btn btn-outline-success" id="mode-user"> <i class="bi bi-person-fill"></i> Masuk Sebagai Perangkat Pertandingan</button>
+    <a href="{{ url('import-matches') }}" class="btn btn-outline-info ms-2"><i class="bi bi-upload"></i> Import Matches</a>
 </div>
 
 <div class="container mt-4 text-white" id="match-setup-wrapper" style="display: none;">

@@ -302,6 +302,10 @@ class RecapController extends Controller
             ->whereIn('round_label', ['Final', 'Semifinal'])
             ->get();
 
+        $seniMatches = DB::table('local_seni_matches')
+            ->where('status', 'finished')
+            ->get();
+
         $result = [];
         $finalists = [];
 
@@ -334,12 +338,10 @@ class RecapController extends Controller
                 ? ['name' => $match->blue_name, 'contingent' => $match->blue_contingent]
                 : ['name' => $match->red_name, 'contingent' => $match->red_contingent];
 
-            // ✅ Final round
             if ($match->round_label === 'Final') {
                 $finalists[] = $winner['name'];
                 $finalists[] = $loser['name'];
 
-                // Juara I
                 $result[$usia][] = [
                     'nama' => $winner['name'],
                     'kontingen' => $winner['contingent'],
@@ -350,7 +352,6 @@ class RecapController extends Controller
                     'tournament_name' => $tournamentName,
                 ];
 
-                // Juara II
                 if (!$isInvalidMedal) {
                     $result[$usia][] = [
                         'nama' => $loser['name'],
@@ -364,7 +365,6 @@ class RecapController extends Controller
                 }
             }
 
-            // ✅ Semifinal: Juara III (jika bukan finalis)
             if ($match->round_label === 'Semifinal' && !$isInvalidMedal) {
                 if (!in_array($loser['name'], $finalists)) {
                     $result[$usia][] = [
@@ -380,7 +380,54 @@ class RecapController extends Controller
             }
         }
 
-        // Urutkan per usia berdasarkan medali
+        foreach ($seniMatches as $match) {
+            if (!in_array($match->medal, ['emas', 'perak', 'perunggu'])) continue;
+
+            $usia = match (true) {
+                Str::startsWith($match->age_category, 'Usia Dini') => 'Usia Dini',
+                Str::startsWith($match->age_category, 'Pra Remaja') => 'Pra Remaja',
+                Str::startsWith($match->age_category, 'Remaja') => 'Remaja',
+                Str::startsWith($match->age_category, 'Dewasa') => 'Dewasa',
+                Str::startsWith($match->age_category, 'Master') => 'Master',
+                default => $match->age_category,
+            };
+
+            $medalText = match ($match->medal) {
+                'emas' => 'Juara I',
+                'perak' => 'Juara II',
+                'perunggu' => 'Juara III',
+                default => ucfirst($match->medal),
+            };
+
+            $sort = match ($match->medal) {
+                'emas' => 1,
+                'perak' => 2,
+                'perunggu' => 3,
+                default => 4,
+            };
+
+            $kelas = ucfirst($match->category);
+
+            $nama = match ($match->match_type) {
+                'seni_tunggal', 'solo_kreatif' => $match->participant_1,
+                'seni_ganda' => $match->participant_1 . ' & ' . $match->participant_2,
+                'seni_regu' => $match->participant_1 . ' & ' . $match->participant_2 . ' & ' . $match->participant_3,
+                default => $match->participant_1,
+            };
+
+            $gender = $match->gender === 'male' ? 'Putra' : 'Putri';
+
+            $result[$usia][] = [
+                'nama' => $nama,
+                'kontingen' => $match->contingent_name,
+                'kelas' => $kelas,
+                'gender' => $gender,
+                'medali' => $medalText,
+                'sort' => $sort,
+                'tournament_name' => $match->tournament_name,
+            ];
+        }
+
         foreach ($result as $usia => &$rows) {
             usort($rows, fn($a, $b) => $a['sort'] <=> $b['sort']);
         }
@@ -396,6 +443,10 @@ class RecapController extends Controller
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->get();
+
+        $seniMatches = DB::table('local_seni_matches')
+            ->where('status', 'finished')
             ->get();
 
         $result = [];
@@ -436,7 +487,6 @@ class RecapController extends Controller
                 $finalists[] = $winner['name'];
                 $finalists[] = $loser['name'];
 
-                // Juara I
                 $result[] = [
                     'nama' => $winner['name'],
                     'kontingen' => $winner['contingent'],
@@ -447,7 +497,6 @@ class RecapController extends Controller
                     'tournament_name' => $tournamentName,
                 ];
 
-                // Juara II
                 if (!$isInvalidMedal) {
                     $result[] = [
                         'nama' => $loser['name'],
@@ -476,6 +525,60 @@ class RecapController extends Controller
             }
         }
 
+        foreach ($seniMatches as $match) {
+            if (!in_array($match->medal, ['emas', 'perak', 'perunggu'])) continue;
+
+            $usia = match (true) {
+                Str::startsWith($match->age_category, 'Usia Dini') => 'Usia Dini',
+                Str::startsWith($match->age_category, 'Pra Remaja') => 'Pra Remaja',
+                Str::startsWith($match->age_category, 'Remaja') => 'Remaja',
+                Str::startsWith($match->age_category, 'Dewasa') => 'Dewasa',
+                Str::startsWith($match->age_category, 'Master') => 'Master',
+                default => $match->age_category,
+            };
+
+            if ($usia !== $ageCategory) continue;
+
+            $medalText = match ($match->medal) {
+                'emas' => 'Juara I',
+                'perak' => 'Juara II',
+                'perunggu' => 'Juara III',
+                default => ucfirst($match->medal),
+            };
+
+            $sort = match ($match->medal) {
+                'emas' => 1,
+                'perak' => 2,
+                'perunggu' => 3,
+                default => 4,
+            };
+
+            $kelas = ucfirst($match->category);
+
+            $nama = match ($match->match_type) {
+                'seni_tunggal', 'solo_kreatif' => $match->participant_1,
+                'seni_ganda' => $match->participant_1 . ' & ' . $match->participant_2,
+                'seni_regu' => $match->participant_1 . ' & ' . $match->participant_2 . ' & ' . $match->participant_3,
+                default => $match->participant_1,
+            };
+
+            $gender = match (strtolower($match->gender)) {
+                'male' => 'Putra',
+                'female' => 'Putri',
+                default => ucfirst($match->gender),
+            };
+
+            $result[] = [
+                'nama' => $nama,
+                'kontingen' => $match->contingent_name,
+                'kelas' => $kelas,
+                'gender' => $gender,
+                'medali' => $medalText,
+                'sort' => $sort,
+                'tournament_name' => $match->tournament_name,
+            ];
+        }
+
         usort($result, fn($a, $b) => $a['sort'] <=> $b['sort']);
 
         $tournamentName = $result[0]['tournament_name'] ?? 'Turnamen';
@@ -495,6 +598,10 @@ class RecapController extends Controller
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->get();
+
+        $seniMatches = DB::table('local_seni_matches')
+            ->where('status', 'finished')
             ->get();
 
         $grouped = [];
@@ -569,6 +676,58 @@ class RecapController extends Controller
                     ];
                 }
             }
+        }
+
+        foreach ($seniMatches as $match) {
+            if (!in_array($match->medal, ['emas', 'perak', 'perunggu'])) continue;
+
+            $usia = match (true) {
+                Str::startsWith($match->age_category, 'Usia Dini') => 'Usia Dini',
+                Str::startsWith($match->age_category, 'Pra Remaja') => 'Pra Remaja',
+                Str::startsWith($match->age_category, 'Remaja') => 'Remaja',
+                Str::startsWith($match->age_category, 'Dewasa') => 'Dewasa',
+                Str::startsWith($match->age_category, 'Master') => 'Master',
+                default => $match->age_category,
+            };
+
+            $medalText = match ($match->medal) {
+                'emas' => 'Juara I',
+                'perak' => 'Juara II',
+                'perunggu' => 'Juara III',
+                default => ucfirst($match->medal),
+            };
+
+            $sort = match ($match->medal) {
+                'emas' => 1,
+                'perak' => 2,
+                'perunggu' => 3,
+                default => 4,
+            };
+
+            $kelas = ucfirst($match->category);
+
+            $nama = match ($match->match_type) {
+                'seni_tunggal', 'solo_kreatif' => $match->participant_1,
+                'seni_ganda' => $match->participant_1 . ' & ' . $match->participant_2,
+                'seni_regu' => $match->participant_1 . ' & ' . $match->participant_2 . ' & ' . $match->participant_3,
+                default => $match->participant_1,
+            };
+
+            $gender = match (strtolower($match->gender)) {
+                'male' => 'Putra',
+                'female' => 'Putri',
+                default => ucfirst($match->gender),
+            };
+
+            $grouped[$usia][] = [
+                'nama' => $nama,
+                'kontingen' => $match->contingent_name,
+                'kelas' => $kelas,
+                'gender' => $gender,
+                'medali' => $medalText,
+                'sort' => $sort,
+                'tournament_name' => $match->tournament_name,
+            ];
         }
 
         foreach ($grouped as $usia => &$rows) {

@@ -13,13 +13,21 @@ class RecapController extends Controller
 
     public function medalRecap()
     {
+        $tournamentName = session('tournament_name'); // ✅ Ambil dari session
+
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->when($tournamentName, fn($q) =>
+                $q->where('tournament_name', $tournamentName)
+            )
             ->get();
 
         $seniMatches = DB::table('local_seni_matches')
             ->whereNotNull('medal')
+            ->when($tournamentName, fn($q) =>
+                $q->where('tournament_name', $tournamentName)
+            )
             ->get();
 
         $grouped = [];
@@ -68,10 +76,8 @@ class RecapController extends Controller
                     $winner = $match->winner_corner === 'red' ? $match->red_contingent : $match->blue_contingent;
                     $loser = $match->winner_corner === 'red' ? $match->blue_contingent : $match->red_contingent;
 
-                    // Emas tetap diberikan
                     $emas[] = $winner;
 
-                    // Perak hanya jika lawan tidak kalah karena WO/Diskualifikasi
                     if (!$isInvalidMedal && $loser) {
                         $perak[] = $loser;
                     }
@@ -80,7 +86,6 @@ class RecapController extends Controller
                 if ($match->round_label === 'Semifinal') {
                     $loser = $match->winner_corner === 'red' ? $match->blue_contingent : $match->red_contingent;
 
-                    // Perunggu hanya jika kalah bukan karena WO/Diskualifikasi
                     if (!$isInvalidMedal && $loser) {
                         $perunggu[] = $loser;
                     }
@@ -128,13 +133,11 @@ class RecapController extends Controller
                 ];
             }
 
-            // Urutkan berdasar emas > perak > perunggu
             usort($rekapList, fn($a, $b) =>
                 [$b['emas'], $b['perak'], $b['perunggu']]
                 <=> [$a['emas'], $a['perak'], $a['perunggu']]
             );
 
-            // Tandai juara umum
             foreach ($rekapList as $i => &$row) {
                 if ($i === 0) $row['keterangan'] = 'JUARA UMUM 1';
                 else if ($i === 1) $row['keterangan'] = 'JUARA UMUM 2';
@@ -146,6 +149,7 @@ class RecapController extends Controller
 
         return response()->json($result);
     }
+
 
 
 
@@ -162,18 +166,25 @@ class RecapController extends Controller
 
     public function exportPDF($ageCategory)
     {
+        $tournamentName = session('tournament_name'); // ✅ Ambil dari session
+
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->when($tournamentName, fn($q) =>
+                $q->where('tournament_name', $tournamentName)
+            )
             ->get();
 
         $seniMatches = DB::table('local_seni_matches')
             ->whereNotNull('medal')
+            ->when($tournamentName, fn($q) =>
+                $q->where('tournament_name', $tournamentName)
+            )
             ->get();
 
         $grouped = [];
 
-        // Gabung dari tanding
         foreach ($matches as $match) {
             $baseCategory = match (true) {
                 Str::startsWith($match->class_name, 'Usia Dini') => 'Usia Dini',
@@ -189,7 +200,6 @@ class RecapController extends Controller
             }
         }
 
-        // Gabung dari seni
         foreach ($seniMatches as $match) {
             $age = Str::of($match->age_category)->trim()->ucfirst();
             $baseCategory = match (true) {
@@ -206,7 +216,7 @@ class RecapController extends Controller
             }
         }
 
-        // Bangun rekap
+        // 🔄 Proses perhitungan medali
         $emas = [];
         $perak = [];
         $perunggu = [];
@@ -274,13 +284,11 @@ class RecapController extends Controller
             ];
         }
 
-        // Urutkan berdasarkan emas > perak > perunggu
         usort($rekapList, fn($a, $b) =>
             [$b['emas'], $b['perak'], $b['perunggu']]
             <=> [$a['emas'], $a['perak'], $a['perunggu']]
         );
 
-        // Tandai juara umum
         foreach ($rekapList as $i => &$row) {
             if ($i === 0) $row['keterangan'] = 'JUARA UMUM 1';
             else if ($i === 1) $row['keterangan'] = 'JUARA UMUM 2';
@@ -295,15 +303,20 @@ class RecapController extends Controller
         return $pdf->download('rekap_medali_' . strtolower($ageCategory) . '.pdf');
     }
 
+
     public function medalRecapPerAtlet()
     {
+        $tournamentName = session('tournament_name'); // ✅ ambil dari session
+
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
             ->get();
 
         $seniMatches = DB::table('local_seni_matches')
             ->where('status', 'finished')
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
             ->get();
 
         $result = [];
@@ -328,8 +341,6 @@ class RecapController extends Controller
                 default => $usiaRaw,
             };
 
-            $tournamentName = $match->tournament_name;
-
             $winner = $match->winner_corner === 'red'
                 ? ['name' => $match->red_name, 'contingent' => $match->red_contingent]
                 : ['name' => $match->blue_name, 'contingent' => $match->blue_contingent];
@@ -349,7 +360,7 @@ class RecapController extends Controller
                     'gender' => $gender,
                     'medali' => 'Juara I',
                     'sort' => 1,
-                    'tournament_name' => $tournamentName,
+                    'tournament_name' => $match->tournament_name,
                 ];
 
                 if (!$isInvalidMedal) {
@@ -360,7 +371,7 @@ class RecapController extends Controller
                         'gender' => $gender,
                         'medali' => 'Juara II',
                         'sort' => 2,
-                        'tournament_name' => $tournamentName,
+                        'tournament_name' => $match->tournament_name,
                     ];
                 }
             }
@@ -374,7 +385,7 @@ class RecapController extends Controller
                         'gender' => $gender,
                         'medali' => 'Juara III',
                         'sort' => 3,
-                        'tournament_name' => $tournamentName,
+                        'tournament_name' => $match->tournament_name,
                     ];
                 }
             }
@@ -436,17 +447,22 @@ class RecapController extends Controller
     }
 
 
+
     
 
     public function exportMedalRecapPerAtletPDF($ageCategory)
     {
+        $tournamentName = session('tournament_name'); // ✅ Ambil nama turnamen aktif dari session
+
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
             ->get();
 
         $seniMatches = DB::table('local_seni_matches')
             ->where('status', 'finished')
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
             ->get();
 
         $result = [];
@@ -473,8 +489,6 @@ class RecapController extends Controller
 
             if ($usia !== $ageCategory) continue;
 
-            $tournamentName = $match->tournament_name;
-
             $winner = $match->winner_corner === 'red'
                 ? ['name' => $match->red_name, 'contingent' => $match->red_contingent]
                 : ['name' => $match->blue_name, 'contingent' => $match->blue_contingent];
@@ -494,7 +508,7 @@ class RecapController extends Controller
                     'gender' => $gender,
                     'medali' => 'Juara I',
                     'sort' => 1,
-                    'tournament_name' => $tournamentName,
+                    'tournament_name' => $match->tournament_name,
                 ];
 
                 if (!$isInvalidMedal) {
@@ -505,7 +519,7 @@ class RecapController extends Controller
                         'gender' => $gender,
                         'medali' => 'Juara II',
                         'sort' => 2,
-                        'tournament_name' => $tournamentName,
+                        'tournament_name' => $match->tournament_name,
                     ];
                 }
             }
@@ -519,7 +533,7 @@ class RecapController extends Controller
                         'gender' => $gender,
                         'medali' => 'Juara III',
                         'sort' => 3,
-                        'tournament_name' => $tournamentName,
+                        'tournament_name' => $match->tournament_name,
                     ];
                 }
             }
@@ -593,15 +607,20 @@ class RecapController extends Controller
     }
 
 
+
     public function exportMedalRecapPerAtletAllPDF()
     {
+        $tournamentName = session('tournament_name'); // ✅ Ambil nama turnamen aktif dari session
+
         $matches = DB::table('local_matches')
             ->where('status', 'finished')
             ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
             ->get();
 
         $seniMatches = DB::table('local_seni_matches')
             ->where('status', 'finished')
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
             ->get();
 
         $grouped = [];
@@ -626,8 +645,6 @@ class RecapController extends Controller
                 default => $usiaRaw,
             };
 
-            $tournamentName = $match->tournament_name;
-
             $winner = $match->winner_corner === 'red'
                 ? ['name' => $match->red_name, 'contingent' => $match->red_contingent]
                 : ['name' => $match->blue_name, 'contingent' => $match->blue_contingent];
@@ -647,7 +664,7 @@ class RecapController extends Controller
                     'gender' => $gender,
                     'medali' => 'Juara I',
                     'sort' => 1,
-                    'tournament_name' => $tournamentName,
+                    'tournament_name' => $match->tournament_name,
                 ];
 
                 if (!$isInvalidMedal) {
@@ -658,7 +675,7 @@ class RecapController extends Controller
                         'gender' => $gender,
                         'medali' => 'Juara II',
                         'sort' => 2,
-                        'tournament_name' => $tournamentName,
+                        'tournament_name' => $match->tournament_name,
                     ];
                 }
             }
@@ -672,7 +689,7 @@ class RecapController extends Controller
                         'gender' => $gender,
                         'medali' => 'Juara III',
                         'sort' => 3,
-                        'tournament_name' => $tournamentName,
+                        'tournament_name' => $match->tournament_name,
                     ];
                 }
             }
@@ -743,6 +760,7 @@ class RecapController extends Controller
 
         return $pdf->download('rekap-medali-semua-kategori.pdf');
     }
+
 
 
 

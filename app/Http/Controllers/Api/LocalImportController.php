@@ -10,74 +10,7 @@ use Illuminate\Support\Str;
 class LocalImportController extends Controller
 {
 
-    public function store_apapa(Request $request)
-    {
-        $data = $request->all();
-
-        // mapping match_id dari pusat ➜ id lokal
-        $matchIdMap = [];
-
-        // ✅ Truncate semua data dulu DI LUAR transaksi
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        DB::table('local_match_rounds')->truncate();
-        DB::table('local_judge_scores')->truncate();
-        DB::table('local_valid_scores')->truncate();
-        DB::table('match_personnel_assignments')->truncate();
-        DB::table('local_referee_actions')->truncate();
-        DB::table('local_matches')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
-
-        try {
-            DB::beginTransaction();
-
-            foreach ($data as $match) {
-                $insert = [
-                    'tournament_name' => $match['tournament_name'],
-                    'remote_match_id' => $match['match_id'],
-                    'arena_name' => $match['arena_name'],
-                    'pool_name' => $match['pool_name'],
-                    'class_name' => $match['class_name'],
-                    'match_code' => 'M-' . strtoupper(Str::random(5)),
-                    'total_rounds' => 3,
-                    'round_level' => $match['round_level'],
-                    'round_label' => $match['round_label'],
-                    'match_number' => $match['match_number'],
-                    'round_duration' => $match['round_duration'],
-                    'status' => 'not_started',
-                    'is_display_timer' => filter_var($match['is_display_timer'] ?? false, FILTER_VALIDATE_BOOLEAN),
-
-                    'red_id' => $match['red_id'] ?? null,
-                    'red_name' => $match['red_name'] ?? '',
-                    'red_contingent' => $match['red_contingent'] ?? '',
-                    'blue_id' => $match['blue_id'] ?? null,
-                    'blue_name' => $match['blue_name'] ?? '',
-                    'blue_contingent' => $match['blue_contingent'] ?? '',
-
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                $localId = DB::table('local_matches')->insertGetId($insert);
-                $matchIdMap[$match['match_id']] = $localId;
-            }
-
-            foreach ($data as $match) {
-                $localId = $matchIdMap[$match['match_id']];
-                DB::table('local_matches')->where('id', $localId)->update([
-                    'parent_match_red_id' => $match['parent_match_red_id'] ? ($matchIdMap[$match['parent_match_red_id']] ?? null) : null,
-                    'parent_match_blue_id' => $match['parent_match_blue_id'] ? ($matchIdMap[$match['parent_match_blue_id']] ?? null) : null,
-                ]);
-            }
-
-            DB::commit();
-            return response()->json(['message' => 'Matches imported successfully.']);
-        } catch (\Throwable $e) {
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-            }
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
+    
 
     public function store(Request $request)
     {
@@ -87,6 +20,7 @@ class LocalImportController extends Controller
         $matchIdMap = [];
 
         // ✅ Kosongkan tabel terkait SEBELUM transaksi
+        /* 
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
         DB::table('local_match_rounds')->truncate();
         DB::table('local_judge_scores')->truncate();
@@ -95,6 +29,7 @@ class LocalImportController extends Controller
         DB::table('local_referee_actions')->truncate();
         DB::table('local_matches')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        */
 
         try {
             DB::beginTransaction();
@@ -162,6 +97,7 @@ class LocalImportController extends Controller
 
         try {
             // ✅ Jalankan FK disable dan truncate di luar transaction
+            /*
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
             DB::table('local_seni_matches')->truncate();
             DB::table('local_seni_scores')->truncate();
@@ -169,6 +105,7 @@ class LocalImportController extends Controller
             DB::table('local_seni_final_scores')->truncate();
             DB::table('local_seni_component_scores')->truncate();
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            */
 
             // ✅ Baru mulai transaksi insert
             DB::transaction(function () use ($data) {
