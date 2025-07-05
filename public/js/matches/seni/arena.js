@@ -484,7 +484,7 @@ $(document).ready(function () {
                 $("#standar-deviasi").text(stddev.toFixed(6));
                 const totalScore = data.final_score ?? (mean - totalPenalty);
 
-                $("#total-score").text(totalScore.toFixed(6));
+                $("#total-score").text(median.toFixed(6));
             });
     }
 
