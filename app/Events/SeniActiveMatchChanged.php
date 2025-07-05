@@ -22,9 +22,10 @@ class SeniActiveMatchChanged implements ShouldBroadcastNow
     }
 
     public function broadcastOn()
-    {
-        return new Channel('global.seni.match');
+    {   
+        return new Channel('global.seni.match.' . $this->matchId);
     }
+
 
     public function broadcastAs()
     {

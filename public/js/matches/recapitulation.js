@@ -15,8 +15,8 @@ $(document).ready(function () {
 
     console.log("🟢 Recapitulation JS Ready, Match ID:", matchId);  
 
-    //const globalChannel = pusher.subscribe('global.match');
-    const globalChannel = pusher.subscribe(`global.match.${matchId}`);
+    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
      globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
         window.location.href = `/matches/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu

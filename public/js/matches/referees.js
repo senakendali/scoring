@@ -29,8 +29,8 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    //const globalChannel = pusher.subscribe('global.match');
-    const globalChannel = pusher.subscribe(`global.match.${matchId}`);
+    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
 
     // 🔥 Saat juri tekan tombol
     channel.bind('judge.point.submitted', function (data) {
