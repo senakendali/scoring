@@ -61,10 +61,10 @@
     <div class="detail-item" id="class-name">-</div>
 </div>
 <div class="blue-fall">
-    <div>Jatuhan:</div> <div id="red-fall-count" class="f-count">0</div>
+    <div>Jatuhan:</div> <div id="blue-fall-count" class="f-count">0</div>
 </div> 
 <div class="red-fall">
-    <div>Jatuhan:</div> <div id="blue-fall-count" class="f-count">0</div>
+    <div>Jatuhan:</div> <div id="red-fall-count" class="f-count">0</div>
 </div>
 
 <div class="d-flex flex-column" style="height:calc(100vh - 180px);">
