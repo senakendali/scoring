@@ -51,6 +51,8 @@ $(document).ready(function () {
 
         const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
         $(selector).removeClass('active');
+
+        
     });
 
     /*channel.bind('referee.action', function (data) {
@@ -91,11 +93,11 @@ $(document).ready(function () {
         if (data.action === 'jatuhan') {
             console.log('💧 Detected Jatuhan');
 
-            // Tambahkan jatuhan
             if (fallCounter[data.corner] !== undefined) {
-                fallCounter[data.corner]++;
+                fallCounter[data.corner] += 3;
                 $(`#${data.corner}-fall-count`).text(fallCounter[data.corner]);
             }
+
     
             const dropIcon = $(`
                 <div class="drop-effect-name"><img src="/images/drop-icon.png" alt="Jatuhan"></div>
@@ -226,6 +228,15 @@ $(document).ready(function () {
             setTimeout(() => {
                 $("#red-score").removeClass("bounce");
             }, 600);
+        }
+
+        if (typeof data.blueFallCount !== 'undefined') {
+            fallCounter.blue = data.blueFallCount;
+            $("#blue-fall-count").text(fallCounter.blue);
+        }
+        if (typeof data.redFallCount !== 'undefined') {
+            fallCounter.red = data.redFallCount;
+            $("#red-fall-count").text(fallCounter.red);
         }
 
         // 🔥 Tetap update penyesuaian

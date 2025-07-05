@@ -23,6 +23,7 @@
                     <tr>
                         <th>Partai</th>
                         <th>Babak</th>
+                        <th>Kelas</th>
                         <th style="background-color: #007bff; color: #fff;">Sudut Biru</th>
                         <th style="background-color: #007bff; color: #fff;">Kontingen</th>
                         <!--th>Skor</th-->
@@ -38,6 +39,7 @@
                         <tr>
                             <td>{{ $match->match_number }}</td>
                             <td>{{ $match->round_label }}</td>
+                            <td>{{ $match->class_name }}</td>
                             <td>{{ $match->blue_name }}</td>
                             <td>{{ $match->blue_contingent }}</td>
                            

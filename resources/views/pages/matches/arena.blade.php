@@ -125,29 +125,34 @@
                             <div id="judge-blue-1" class="judge" data-type="kick" data-corner="blue" data-judge="1">J1</div>
                             <div id="judge-blue-2" class="judge" data-type="kick" data-corner="blue" data-judge="2">J2</div>
                             <div id="judge-blue-3" class="judge" data-type="kick" data-corner="blue" data-judge="3">J3</div>
+                            
                         </div>
 
                        
                     </div>
                 </div>
-                <div class="d-flex justify-content-center flex-column">
-                     <div id="blue-score" class="score">
-                        -
-                    </div>
-                    <div class="fall-counter text-center text-dark mb-2">
-                        <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
-                    </div>
-
+                <!--div class="fall-counter text-center text-dark mb-2" style="background-color: #transparent; height:100%">
+                    <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
+                </div-->
+                
+                <div id="blue-score" class="score">
+                    -
                 </div>
-               
+                <div class="fall-counter text-center text-dark mb-2" style="background-color: #transparent; height:100%">
+                    <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
+                </div>
+                
             </div>
             <div class="red">
+                <div class="judge">
+                    <small>Jatuhan:</small> <span id="red-fall-count" class="fw-bold">0</span>
+                </div> 
                 <div id="red-score" class="score">
                     -
                 </div>
-                <div class="fall-counter text-center text-dark mb-2">
+                <!--div class="fall-counter text-center text-dark mb-2" style="background-color: #transparent; height:100%">
                     <small>Jatuhan:</small> <span id="red-fall-count" class="fw-bold">0</span>
-                </div>  
+                </div-->  
                 <div class="additional-score">
                     <div class="score-items">
                         <div class="item text-white" data-action="binaan_1" data-corner="red">
@@ -178,9 +183,11 @@
                        
                         <!--div class="point-type">PUKULAN</div-->
                         <div class="judges red">
+                            
                             <div id="judge-red-1" class="judge" data-type="punch" data-corner="red" data-judge="1">J1</div>
                             <div id="judge-red-2" class="judge" data-type="punch" data-corner="red" data-judge="2">J2</div>
                             <div id="judge-red-3" class="judge" data-type="punch" data-corner="red" data-judge="3">J3</div>
+                             
                         </div>
 
                     </div>

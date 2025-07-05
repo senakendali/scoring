@@ -56,6 +56,20 @@ class ScoreUpdated implements ShouldBroadcast
             ->where('action', '!=', 'jatuhan')
             ->sum('point_change');
 
+         // 💡 Ambil jumlah jatuhan
+        $blueFallCount = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
+            ->where('round_id', $this->roundId)
+            ->where('corner', 'blue')
+            ->where('action', 'jatuhan')
+            ->count() * 3;
+
+        $redFallCount = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
+            ->where('round_id', $this->roundId)
+            ->where('corner', 'red')
+            ->where('action', 'jatuhan')
+            ->count() * 3;
+
+
         // Tentukan pemenang realtime
         $winner = null;
         if ($this->blueScore > $this->redScore) {
@@ -77,6 +91,8 @@ class ScoreUpdated implements ShouldBroadcast
             'redScore' => $this->redScore,
             'blueAdjustment' => $this->blueAdjustment,
             'redAdjustment' => $this->redAdjustment,
+             'blueFallCount' => $blueFallCount, // 🔥 tambahin ini
+            'redFallCount' => $redFallCount,
             'winner_corner' => $winner,
         ];
     }
