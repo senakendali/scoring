@@ -31,6 +31,7 @@ $(document).ready(function () {
     });
     
     const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
     const channel = pusher.subscribe(`match.${matchId}`);
 
     channel.bind_global(function (event, data) {

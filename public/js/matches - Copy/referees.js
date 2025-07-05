@@ -1,17 +1,9 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    const url = window.location.origin;
     let matchId = parseInt($("#match-id").val());
 
     let currentArena = null;
-
-    const preloadImages = {
-        kick: new Image(),
-        punch: new Image()
-    };
-
-    preloadImages.kick.src = "/images/kick-icon.png";
-    preloadImages.punch.src = "/images/punch-icon.png";
-
+   
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
     let roundId = null;
@@ -24,6 +16,8 @@ $(document).ready(function () {
     });
 
     fetchMatchData();
+    //$(".item, .drop").prop("disabled", true).addClass("disabled");
+
 
     const host = window.location.hostname;
     const pusher = new Pusher('reverb', {
@@ -36,79 +30,7 @@ $(document).ready(function () {
 
     const channel = pusher.subscribe(`match.${matchId}`);
     const globalChannel = pusher.subscribe('global.match');
-
-    channel.bind('referee.action.cancelled', function (data) {
-        console.log("⛔ Referee Action Cancelled:", data);
-
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
-        $(selector).removeClass('active');
-    });
-
-    /*channel.bind('referee.action', function (data) {
-        console.log("📣 Referee Action Received:", data);
-    
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"]`;
-    
-        const $item = $(selector);
-        $item.addClass("active");
-    
-        // Kasih efek sebentar (misalnya 2 detik)
-        setTimeout(() => {
-            $item.removeClass("active");
-        }, 1000);
-    });*/
-
-    // Referee Action dari Dewan
-    // Backup score sebelumnya
-    // Siapkan backup score global
-    let backupScores = {
-        blue: null,
-        red: null
-    };
-    
-    let lockScore = {
-        blue: false,
-        red: false
-    };
-    
-
-    channel.bind('referee.action.submitted', function (data) {
-        console.log("🧩 Referee Action Submitted:", data);
-    
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
-        const $el = $(selector);
-        $el.addClass('active');
-    
-        if (data.action === 'jatuhan') {
-            console.log('💧 Detected Jatuhan');
-    
-            const dropIcon = $(`
-                <div class="drop-effect-name"><img src="/images/drop-icon.png" alt="Jatuhan"></div>
-            `);
-    
-            if (data.corner === 'blue') {
-                // 🔵 Kalau blue, append setelah #blue-name
-                $("#blue-name").after(dropIcon);
-            } else if (data.corner === 'red') {
-                // 🔴 Kalau red, prepend sebelum #red-name
-                $("#red-name").before(dropIcon);
-            }
-    
-            // 🔥 Hapus icon setelah 5 detik
-            setTimeout(() => {
-                dropIcon.remove();
-            }, 5000);
-        }
-    });
-    
-    
-    
-
-
-    
-    
-
-    
+    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
 
     // 🔥 Saat juri tekan tombol
     channel.bind('judge.point.submitted', function (data) {
@@ -131,7 +53,7 @@ $(document).ready(function () {
     // ✅ Global Match Change
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/display-arena/${data.new_match_id}`; // Sesuaikan path kalau perlu
+        window.location.href = `/matches/referees/${data.new_match_id}`; // Sesuaikan path kalau perlu
     });
 
     // ✅ Timer Started
@@ -142,8 +64,8 @@ $(document).ready(function () {
         $("#current-round").text(`ROUND ${data.round_number}`);
         //$("#blue-score").text("0");
         //$("#red-score").text("0");
-
         startCountdown(new Date(data.start_time).getTime(), data.duration || 180);
+        $(".item, .drop").prop("disabled", false).removeClass("disabled");
     });
 
     
@@ -168,7 +90,7 @@ $(document).ready(function () {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
             resetRefereeActions();
-            //resetScoreBackground();
+            //$(".item, .drop").prop("disabled", true).addClass("disabled");
         } else if (data.status === 'not_started') {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
@@ -179,109 +101,20 @@ $(document).ready(function () {
     channel.bind('score.updated', function (data) {
         console.log("🎯 Score updated:", data);
     
-        const blueScore = parseInt(data.blueScore) || 0;
-        const redScore = parseInt(data.redScore) || 0;
+        const blueScore = data.blueScore;
+        const redScore = data.redScore;
     
-        // 🔥 Update Blue Score kalau tidak lock
-        if (!lockScore.blue) {
-            $("#blue-score")
-                .text(blueScore)
-                .addClass("bounce");
+        $("#blue-score").text(blueScore).addClass("flash");
+        setTimeout(() => $("#blue-score").removeClass("flash"), 500);
     
-            setTimeout(() => {
-                $("#blue-score").removeClass("bounce");
-            }, 600);
-        }
+        $("#red-score").text(redScore).addClass("flash");
+        setTimeout(() => $("#red-score").removeClass("flash"), 500);
     
-        // 🔥 Update Red Score kalau tidak lock
-        if (!lockScore.red) {
-            $("#red-score")
-                .text(redScore)
-                .addClass("bounce");
-    
-            setTimeout(() => {
-                $("#red-score").removeClass("bounce");
-            }, 600);
-        }
-    
-        // 🔥 Tetap update penyesuaian
+        // 🔥 Update score tambahan di sisi masing-masing
         $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
         $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
     
-        // 🔥 Tetap update background pemenang
-        if (blueScore > redScore) {
-            $("#blue-score").css({
-                backgroundColor: "#4E25FF",
-                color: "#FFFFFF",
-            });
-            $(".blue .additional-score").css({
-                backgroundColor: "#4E25FF",
-                color: "#FFFFFF",
-            });
-
-            $("#red-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-
-            $(".red .additional-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-        } else if (redScore > blueScore) {
-            $("#red-score").css({
-                backgroundColor: "#E8003F",
-                color: "#FFFFFF",
-            });
-            $(".red .additional-score").css({
-                backgroundColor: "#E8003F",
-                color: "#FFFFFF",
-            });
-
-            $("#blue-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-
-            $(".blue .additional-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-        } else {
-            $("#blue-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-
-            $(".blue .additional-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#4E25FF"
-            });
-
-            
-            $("#red-score").css({
-                backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-
-            $(".red .additional-score").css({
-               backgroundColor: "#FFFFFF",
-                color: "#D32F2F"
-            });
-        }
-    });
-    
-    
-    
-    
-
-    channel.bind('judge.action.submitted', function (data) {
-        console.log("🎯 Judge Action Submitted:", data);
-    
-        const { corner, judge_number, type } = data;
-        console.log(`⏩ Update Judge Icon: corner=${corner}, judge=${judge_number}, type=${type}`);
-    
-        updateJudgeIcon(corner, judge_number, type);
+        
     });
 
     let waitingModalInstance = null;
@@ -301,7 +134,6 @@ $(document).ready(function () {
             }
 
             $('#waitingVerificationMessage').html(`<b>${description}</b>`);
-
             // Reset Progress
             $('#waitingVerificationProgress').css('width', '0%');
 
@@ -311,6 +143,7 @@ $(document).ready(function () {
                 keyboard: false       // Tidak bisa ESC close
             });
             waitingModalInstance.show();
+
             // Jalankan animasi progress bar
             let progress = 0;
             waitingProgressInterval = setInterval(() => {
@@ -319,6 +152,7 @@ $(document).ready(function () {
                 $('#waitingVerificationProgress').css('width', `${progress}%`);
             }, 300);
         });
+
 
     let verificationResultModalInstance = null;
     let verificationResultTimer = null;
@@ -343,7 +177,7 @@ $(document).ready(function () {
             let redPercent = totalVotes ? (redVotes / totalVotes * 100).toFixed(0) : 0;
             let invalidPercent = totalVotes ? (invalidVotes / totalVotes * 100).toFixed(0) : 0;
 
-             // Generate description
+            // Generate description
             let actionLabel = e.type === 'jatuhan' ? 'Jatuhan' : 'Hukuman';
             let cornerLabel = e.corner === 'blue' ? 'sudut Biru' : 'sudut Merah';
             let titleText = `${actionLabel} untuk ${cornerLabel}`;
@@ -362,17 +196,17 @@ $(document).ready(function () {
             let resultHtml = `
                 <div class="text-center fw-bold mb-3">${titleText}</div>
                 <div class="text-start mb-2">Biru (${blueVotes} vote)</div>
-                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress mb-3" style="height: 50px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: ${bluePercent}%;">${bluePercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Merah (${redVotes} vote)</div>
-                <div class="progress mb-3" style="height: 20px;">
+                <div class="progress mb-3" style="height: 50px;">
                 <div class="progress-bar bg-danger" role="progressbar" style="width: ${redPercent}%;">${redPercent}%</div>
                 </div>
 
                 <div class="text-start mb-2">Tidak Sah (${invalidVotes} vote)</div>
-                <div class="progress mb-2" style="height: 20px;">
+                <div class="progress mb-2" style="height: 50px;">
                 <div class="progress-bar bg-secondary" role="progressbar" style="width: ${invalidPercent}%;">${invalidPercent}%</div>
                 </div>
             `;
@@ -396,91 +230,128 @@ $(document).ready(function () {
 
 
     
-    function resetScoreBackground() {
-        $("#blue-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#4E25FF"
-        });
-        $(".blue .additional-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#4E25FF"
-        });
     
-        $("#red-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#D32F2F"
-        });
-        $(".red .additional-score").css({
-            backgroundColor: "#FFFFFF",
-            color: "#D32F2F"
-        });
-    }
+
+    $(".item[data-action], .drop[data-action]").on("click", function () {
+        const $btn = $(this);
+        const action = $btn.data("action");
+        const point = $btn.data("point");
+        const corner = $btn.data("corner");
+
+        // 🔁 DROP boleh diklik berkali-kali
+        if (action === 'drop') {
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            }).done(function (res) {
+                console.log("✅ Drop action sent", res);
+            }).fail(function (xhr) {
+                console.error("❌ Gagal kirim drop:", xhr.responseJSON?.message || xhr.statusText);
+            });
+
+            return;
+        }
+
+        // 🔁 JATUHAN juga bisa diklik berkali-kali
+        if (action === 'jatuhan') {
+            $.post("/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: roundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            }).done(function (res) {
+                console.log("✅ Jatuhan action sent", res);
+            }).fail(function (xhr) {
+                console.error("❌ Gagal kirim jatuhan:", xhr.responseJSON?.message || xhr.statusText);
+            });
+
+            return;
+        }
+
+        // 🔁 HAPUS JATUHAN
+        if (action === 'hapus-jatuhan') {
+            $.ajax({
+                url: "/api/local-referee-actions/remove-jatuhan",
+                method: "POST",
+                data: {
+                    local_match_id: matchId,
+                    round_id: roundId,
+                    corner: corner,
+                },
+                success: function (res) {
+                    console.log("🧹 Jatuhan berhasil dihapus:", res);
+                },
+                error: function (xhr) {
+                    console.error("❌ Gagal hapus jatuhan:", xhr.responseJSON?.message || xhr.statusText);
+                }
+            });
+
+            return;
+        }
+
+
+        // 🔄 Aksi biasa (toggle)
+        if ($btn.hasClass("active")) {
+            $btn.removeClass("active");
+
+            $.ajax({
+                url: "/api/local-referee-actions/cancel",
+                method: "POST",
+                data: {
+                    match_id: matchId,
+                    round_id: roundId,
+                    action: action,
+                    corner: corner
+                },
+                success: function (res) {
+                    console.log("🧹 Undo berhasil:", res);
+                },
+                error: function (xhr) {
+                    console.error("❌ Gagal undo:", xhr.responseJSON?.message || xhr.statusText);
+                }
+            });
+        } else {
+            $btn.addClass("active");
+
+            if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
+                $.post("/api/request-verification", {
+                    match_id: matchId,
+                    round_id: roundId,
+                    type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
+                    corner: corner,
+                }).done(function (res) {
+                    console.log("✅ Verification request sent", res);
+                }).fail(function (xhr) {
+                    console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
+                });
+            } else {
+                $.post("/api/local-referee-actions", {
+                    local_match_id: matchId,
+                    round_id: roundId,
+                    action: action,
+                    point_change: point,
+                    corner: corner,
+                }).done(function (res) {
+                    console.log("✅ Referee action sent", res);
+                }).fail(function (xhr) {
+                    console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
+                });
+            }
+        }
+    });
+
+
+
         
-        
-    
+
     function resetRefereeActions() {
         $(".item, .drop").removeClass('active');
+        //$(".item, .drop").prop("disabled", true).addClass("disabled");
     }
-
-    function updateJudgeIcon(corner, judgeNumber, type) {
-        const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
-
-        console.log(`🛠️ Try update #judge-${corner}-${judgeNumber}`);
-
-        if (!judgeEl.length) {
-            console.warn("❌ Element tidak ditemukan:", `#judge-${corner}-${judgeNumber}`);
-            return;
-        }
-
-        judgeEl.addClass("active");
-        const originalText = `J${judgeNumber}`;
-
-        if (type === 'kick' || type === 'punch') {
-            const img = preloadImages[type].cloneNode(); // ⬅️ gunakan gambar dari cache
-            img.style.height = "40px";
-            judgeEl.html(img);
-        } else {
-            console.warn("❌ Unknown type:", type);
-        }
-
-        setTimeout(() => {
-            judgeEl.text(originalText);
-            judgeEl.removeClass("active");
-        }, 2000);
-    }
-
-    
-
-    function updateJudgeIcon_(corner, judgeNumber, type) {
-        const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
-    
-        console.log(`🛠️ Try update #judge-${corner}-${judgeNumber}`);
-    
-        if (!judgeEl.length) {
-            console.warn("❌ Element tidak ditemukan:", `#judge-${corner}-${judgeNumber}`);
-            return;
-        }
-
-        // Tambah class active
-        judgeEl.addClass("active");
-    
-        const originalText = `J${judgeNumber}`;
-    
-        if (type === 'kick') {
-            judgeEl.html('<img src="/images/kick-icon.png" style="height:40px;">');
-        } else if (type === 'punch') {
-            judgeEl.html('<img src="/images/punch-icon.png" style="height:40px;">');
-        } else {
-            console.warn("❌ Unknown type:", type);
-        }
-    
-        setTimeout(() => {
-            judgeEl.text(originalText);
-            judgeEl.removeClass("active");
-        }, 2000);
-    }
-    
-    
     
     
 
@@ -513,49 +384,30 @@ $(document).ready(function () {
     function fetchMatchData() {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
-            if(data.is_display_timer != 0){
-                $("#timer").show();
-                $(".timer").css('color', '#000000');
-            }else{
-                $("#display-timer").css('height', '20px');
-                $("#timer").hide();
-            }
-            //$("#tournament-name").text(data.tournament_name);
             currentArena = data.arena_name;
-            $(".match-item").css('height', '80px');
-            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
+            $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#blue-name").html(`
                 ${data.blue.name}<br>
                 <small>${data.blue.contingent}</small>
-            `).css({
-                    'font-size': '23px',
-                    'font-weight': 'bold'
-                });
+            `);
             $("#red-name").html(`
                 ${data.red.name}<br>
                 <small>${data.red.contingent}</small>
-            `).css({
-                    'font-size': '23px',
-                    'font-weight': 'bold'
-                });
+            `);
+            $("#blue-score").text(data.blue.score);
+            $("#red-score").text(data.red.score);
 
             const maxRound = Math.max(...data.rounds.map(r => r.round_number));
             const roundLabels = getRoundLabels(maxRound);
 
             $("#stage").text(data.round_label);
-    
-           
+  
+
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;
-            $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`) .css({
-                'font-size': '23px',
-                'font-weight': 'bold'
-            });
-
-            $("#blue-score").text(data.blue.score);
-            $("#red-score").text(data.red.score);
+            $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`);
             $(".loader-bar").hide();
         });
     }
@@ -589,7 +441,7 @@ $(document).ready(function () {
                     $("#matchListModal").modal("hide");
 
                     // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/display-arena/${selectedId}`;
+                    window.location.href = `/matches/referees/${selectedId}`;
                 });
 
                 matchList.append(li);

@@ -36,6 +36,7 @@ $(document).ready(function () {
 
     const channel = pusher.subscribe(`match.${matchId}`);
     const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
 
     channel.bind('referee.action.cancelled', function (data) {
         console.log("⛔ Referee Action Cancelled:", data);
@@ -43,6 +44,7 @@ $(document).ready(function () {
         const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
         $(selector).removeClass('active');
     });
+
 
     /*channel.bind('referee.action', function (data) {
         console.log("📣 Referee Action Received:", data);
@@ -512,6 +514,7 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
+        $(".match-item").css('height', '80px');
         $.get(`/api/local-matches/${matchId}`, function (data) {
             if(data.is_display_timer != 0){
                 $("#timer").show();
@@ -522,7 +525,6 @@ $(document).ready(function () {
             }
             //$("#tournament-name").text(data.tournament_name);
             currentArena = data.arena_name;
-            $(".match-item").css('height', '80px');
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);

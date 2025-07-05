@@ -29,6 +29,12 @@ $(document).ready(function () {
 
     $(".navbar").hide();
 
+
+
+
+
+    
+
     function loadLiveSeniMatches() {
         $.get(url + "/api/local-matches/seni/live", function (data) {
             $(".loader-bar").show();
@@ -169,8 +175,8 @@ $(document).ready(function () {
                         <tr>
                             <th></th>
                             <th></th>
-                            <th class="text-center text-primary blue text-white">Sudut Biru</th>
-                            <th class="text-center text-danger red text-white">Sudut Merah</th>
+                            <th class="text-center text-primary">Sudut Biru</th>
+                            <th class="text-center text-danger">Sudut Merah</th>
                             
                             ${isOperator || isKetua ? '<th></th>' : ''}
                         </tr>
