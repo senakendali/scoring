@@ -117,7 +117,8 @@ $(document).ready(function () {
         $("#median").text(median.toFixed(6)).addClass("text-center");
         $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
         $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
-        $("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
+        //$("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
+        $("#final-score").text(median.toFixed(6)).addClass("text-center");
     }
 
 
@@ -310,7 +311,8 @@ $(document).ready(function () {
             $("#median").text(median.toFixed(6)).addClass("text-center");
             $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
             $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
-            $("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
+            //$("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
+            $("#final-score").text(median.toFixed(6)).addClass("text-center");
 
             const start = new Date(data.start_time);
             const end = new Date(data.end_time);
