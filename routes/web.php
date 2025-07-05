@@ -47,6 +47,8 @@ Route::get('/medal-recap/export-pdf-all', [RecapController::class, 'exportAllPDF
 Route::get('/medal-recap-per-atlet/export-pdf/{ageCategory}', [RecapController::class, 'exportMedalRecapPerAtletPDF']);
 Route::get('/winner-recap/export-pdf/all', [RecapController::class, 'exportMedalRecapPerAtletAllPDF']);
 
+Route::get('/export/local-matches', [LocalMatchController::class, 'exportLocalMatches']);
+
 
 
 // Match Routes
@@ -81,6 +83,7 @@ Route::prefix('api')->group(function () {
     List match for admin 
     */
     Route::get('/local-matches/admin', [LocalMatchController::class, 'fetchMatchForAdmin']);
+    
     Route::get('/local-matches/seni/admin', [LocalMatchSeniController::class, 'fetchMatchForAdmin']);
     Route::post('/seni-matches/{id}/set-medal', [LocalMatchSeniController::class, 'setMedal']);
 
@@ -181,6 +184,8 @@ Route::prefix('api')->group(function () {
 
     Route::post('/local-matches/{match}/set-winner-manual', [LocalMatchController::class, 'setWinnerManual']);
     Route::post('/local-seni-matches/{id}/set-score-manual', [LocalMatchSeniController::class, 'setScoreManual']);
+
+    
 
 
 

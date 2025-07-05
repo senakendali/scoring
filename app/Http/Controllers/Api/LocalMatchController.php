@@ -16,6 +16,7 @@ use App\Events\RefereeActionSubmitted;
 use Illuminate\Support\Facades\Cache;
 use App\Events\VerificationRequested;
 use App\Events\VerificationResulted;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LocalMatchController extends Controller
 {
@@ -78,6 +79,46 @@ class LocalMatchController extends Controller
 
         return response()->json($grouped);
     }
+
+    public function exportLocalMatches()
+    {
+        $arena = session('arena_name');
+        $tournament = session('tournament_name');
+
+        $query = \App\Models\LocalMatch::query();
+
+        if ($arena) {
+            $query->where('arena_name', $arena);
+        }
+
+        if ($tournament) {
+            $query->where('tournament_name', $tournament);
+        }
+
+        $matches = $query->orderBy('arena_name')
+            ->orderBy('pool_name')
+            ->orderBy('class_name')
+            ->orderBy('round_level')
+            ->orderBy('match_number')
+            ->get();
+
+        $grouped = $matches->groupBy(['arena_name', 'pool_name'])->map(function ($pools) {
+            return $pools->map(function ($matches) {
+                return $matches->sortBy('match_number');
+            });
+        });
+
+
+        $pdf = \PDF::loadView('exports.local-matches', [
+            'grouped' => $grouped,
+            'arena' => $arena,
+            'tournament' => $tournament,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("daftar-pertandingan-{$arena}.pdf");
+    }
+
+     
 
 
     public function fetchLiveMatches(Request $request)

@@ -102,6 +102,9 @@ $(document).ready(function () {
     function loadMatches(){
         $.get(url + "/api/local-matches/admin", function (data) {
             $(".loader-bar").show();
+
+           
+
             $('#match-tables').empty();
 
             $.each(data, function (arenaName, pools) {
@@ -124,12 +127,14 @@ $(document).ready(function () {
                             <tr>
                                 <th>No Partai</th>
                                 <th>Babak</th>
+                                <th>Kelas</th>
                                 <th colspan="2" class="text-center">Peserta</th>
                                 <th>Pemenang</th>
                                 <th>Keterangan</th>
                                 <th class="text-nowrap">Action</th>
                             </tr>
                             <tr>
+                                <th></th>
                                 <th></th>
                                 <th></th>
                                 <th class="text-center text-primary">Sudut Biru</th>
@@ -146,6 +151,7 @@ $(document).ready(function () {
                         <tr>
                             <td>${match.match_number}</td>
                             <td>${match.round_label}</td>
+                            <td>${match.class_name}</td>
                             <td class="text-primary fw-bold">
                                 ${match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD'}<br>
                                 <small>${match.blue_contingent || '-'}</small><br>
@@ -303,110 +309,7 @@ $(document).ready(function () {
     }
     
     
-    function renderManualBracket(rounds) {
-        const svgId = 'bracket-svg-layer';
-        const $container = $('#bracket-container');
-        $container.empty().addClass('bracket').css('position', 'relative');
     
-        const $svg = $(`<svg id="${svgId}" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></svg>`);
-        $container.append($svg);
-    
-        const maxRound = Math.max(...Object.keys(rounds).map(Number));
-        const matchRefs = {};
-    
-        for (let i = 1; i <= maxRound; i++) {
-            const $round = $('<div class="round"></div>');
-            const matches = rounds[i] || [];
-    
-            for (let j = 0; j < matches.length; j++) {
-                const match = matches[j];
-                //const blue = match.blue_name || 'TBD';
-                //const red = match.red_name || 'TBD';
-
-                //{match.round_level === 1 && match.red_name == 'TBD' ? 'BYE' : match.red_name || 'TBD'}<br></br>
-
-                const blue = match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD';
-                const red =  match.round_level === 1 && match.red_name == 'TBD' ? 'BYE' : match.red_name || 'TBD';
-                
-
-                const isTBD = (blue === 'TBD' && red === 'TBD');
-    
-                const winner = !isTBD
-                    ? (match.winner_id === match.blue_id ? 'blue' :
-                       match.winner_id === match.red_id ? 'red' : null)
-                    : null;
-    
-                const $match = $(`
-                    <div class="match-wrapper" data-match-id="${match.id}" style="position: relative;">
-                        <div class="match">
-                            <div class="team ${winner === 'blue' ? 'winner' : ''} team-blue">${blue}</div>
-                            <div class="team ${winner === 'red' ? 'winner' : ''} team-red">${red}</div>
-                        </div>
-                    </div>
-                `);
-    
-                if (i > 1) {
-                    const gap = 80 * Math.pow(2, i - 2);
-                    $match.css('margin-top', `${gap}px`);
-                }
-    
-                matchRefs[match.id] = $match;
-                $round.append($match);
-            }
-    
-            $container.append($round);
-        }
-    
-        // PANGGIL konektor setelah semua DOM render
-        // Tunggu 2 frame supaya layout bener-bener siap
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            renderSvgConnectors(rounds, matchRefs, svgId);
-        });
-    });
-
-    }
-
-    function renderSvgConnectors(rounds, matchRefs, svgId) {
-        const svg = document.getElementById(svgId);
-        svg.innerHTML = ''; // clear old
-    
-        const maxRound = Math.max(...Object.keys(rounds).map(Number));
-    
-        for (let i = 2; i <= maxRound; i++) {
-            const matches = rounds[i] || [];
-    
-            for (const match of matches) {
-                const child = matchRefs[match.id]?.find('.match');
-                if (!child.length) continue;
-    
-                const childOffset = child.offset();
-                const childX = childOffset.left;
-                const childY = childOffset.top + child.outerHeight() / 2;
-    
-                const parentRed = matchRefs[match.parent_match_red_id]?.find('.match');
-                const parentBlue = matchRefs[match.parent_match_blue_id]?.find('.match');
-    
-                if (!parentRed?.length || !parentBlue?.length) continue;
-    
-                const pRedOffset = parentRed.offset();
-                const pBlueOffset = parentBlue.offset();
-    
-                const pRedX = pRedOffset.left + parentRed.outerWidth();
-                const pRedY = pRedOffset.top + parentRed.outerHeight() / 2;
-                const pBlueY = pBlueOffset.top + parentBlue.outerHeight() / 2;
-    
-                const centerY = (pRedY + pBlueY) / 2;
-    
-                console.log(`Garis dari ${pRedX},${pRedY} ke ${childX},${centerY}`);
-    
-                svg.innerHTML += `
-                    <line x1="${pRedX}" y1="${pRedY}" x2="${pRedX}" y2="${pBlueY}" stroke="#fff" stroke-width="2"/>
-                    <line x1="${pRedX}" y1="${centerY}" x2="${childX}" y2="${centerY}" stroke="#fff" stroke-width="2"/>
-                `;
-            }
-        }
-    }
 
     
     
