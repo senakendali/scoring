@@ -1983,6 +1983,18 @@ th, td {
     font-size: 20px;
     }
 
+   .drop-container {
+        width: 320px;
+        height: 120px;
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+    }
+
+
    .blue-fall{
         width: 150px;
         height: 100px;
@@ -1993,13 +2005,13 @@ th, td {
         align-items: center;
         text-align: center;
         justify-content: center;
-        position: absolute;
+        /*position: absolute;
         bottom: 0;
-        left: 40%;
+        left: 40%;*/
         text-transform: uppercase;
         font-size: 20px;
-        border-top-left-radius: 5px;
-        border-top-right-radius: 5px;
+        border-radius: 5px;
+        
        
    }
 
@@ -2014,16 +2026,16 @@ th, td {
         height: 100px;
         background: #FFF;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-         border-top-left-radius: 5px;
-        border-top-right-radius: 5px;
+         border-radius: 5px;
+        
         display: flex;
          flex-direction: column;
         align-items: center;
         text-align: center;
         justify-content: center;
-        position: absolute;
+        /*position: absolute;
         bottom: 0;
-        right: 40%;
+        right: 40%;*/
         text-transform: uppercase;
         font-size: 20px;
        
