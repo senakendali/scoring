@@ -130,14 +130,23 @@
                        
                     </div>
                 </div>
-                
-                <div id="blue-score" class="score">
-                    -
+                <div class="d-flex justify-content-center flex-column">
+                     <div id="blue-score" class="score">
+                        -
+                    </div>
+                    <div class="fall-counter text-center text-dark mb-2">
+                        <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
+                    </div>
+
                 </div>
+               
             </div>
             <div class="red">
                 <div id="red-score" class="score">
                     -
+                </div>
+                <div class="fall-counter text-center text-dark mb-2">
+                    <small>Jatuhan:</small> <span id="red-fall-count" class="fw-bold">0</span>
                 </div>  
                 <div class="additional-score">
                     <div class="score-items">

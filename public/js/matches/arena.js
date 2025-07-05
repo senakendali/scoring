@@ -9,6 +9,12 @@ $(document).ready(function () {
         punch: new Image()
     };
 
+    let fallCounter = {
+        blue: 0,
+        red: 0
+    };
+
+
     preloadImages.kick.src = "/images/kick-icon.png";
     preloadImages.punch.src = "/images/punch-icon.png";
 
@@ -84,6 +90,12 @@ $(document).ready(function () {
     
         if (data.action === 'jatuhan') {
             console.log('💧 Detected Jatuhan');
+
+            // Tambahkan jatuhan
+            if (fallCounter[data.corner] !== undefined) {
+                fallCounter[data.corner]++;
+                $(`#${data.corner}-fall-count`).text(fallCounter[data.corner]);
+            }
     
             const dropIcon = $(`
                 <div class="drop-effect-name"><img src="/images/drop-icon.png" alt="Jatuhan"></div>
@@ -171,6 +183,15 @@ $(document).ready(function () {
             clearInterval(countdownInterval);
             $(".timer").text("00:00");
             resetRefereeActions();
+
+             // ✅ Reset jatuhan
+            fallCounter.blue = 0;
+            fallCounter.red = 0;
+            $("#blue-fall-count").text(0);
+            $("#red-fall-count").text(0);
+
+
+            
             //resetScoreBackground();
         } else if (data.status === 'not_started') {
             clearInterval(countdownInterval);

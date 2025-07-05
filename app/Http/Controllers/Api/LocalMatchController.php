@@ -96,6 +96,8 @@ class LocalMatchController extends Controller
         }
 
         $matches = $query->orderBy('arena_name')
+            ->where('match_number', '>=', 112)
+            ->where('match_number', '<=', 190)
             ->orderBy('pool_name')
             ->orderBy('class_name')
             ->orderBy('round_level')
