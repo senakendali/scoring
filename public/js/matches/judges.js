@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
+    const url = window.location.origin + '/digital_scoring/scoring/public';
     let currentRoundNumber = 1;
 
     let matchId = parseInt($("#match-id").val());
@@ -162,7 +162,7 @@ $(document).ready(function () {
         if (!currentVerification.match_id || !currentVerification.round_id) return;
     
         $.ajax({
-            url: '/api/submit-verification-vote',
+            url: url + '/api/submit-verification-vote',
             method: 'POST',
             data: {
                 match_id: currentVerification.match_id,
@@ -263,7 +263,7 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
-        $.get(`/api/local-matches/${matchId}`, function (data) {
+        $.get(url + `/api/local-matches/${matchId}`, function (data) {
             currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
@@ -368,7 +368,7 @@ $(document).ready(function () {
         
     
         // 🔥 Submit ke server
-        $.post(`/api/local-judge-scores`, {
+        $.post(url + `/api/local-judge-scores`, {
             match_id: matchId,
             round_id: roundId,
             judge_number: judgeNumber,
@@ -405,7 +405,7 @@ $(document).ready(function () {
     function loadJudgeRecap() {
         const matchId = $("#match-id").val();
     
-        $.get(`/api/local-matches/${matchId}/judge-recap`, function(response) {
+        $.get(url + `/api/local-matches/${matchId}/judge-recap`, function(response) {
             response.rounds.forEach((round, index) => {
                 const roundNumber = index + 1;
     

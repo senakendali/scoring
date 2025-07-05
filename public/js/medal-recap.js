@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
 
     $('#export-all').on('click', function () {
         window.open(`${url}/winner-recap/export-pdf/all`, '_blank');

@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
 
     const arenaName = $("#session-arena").val();
     const roleName = $("#session-role").val();
@@ -208,7 +208,7 @@ $(document).ready(function () {
         const arena = $(this).data("arena");
         const tournament = $(this).data("tournament");
     
-        fetch("/api/matches/seni/start", {
+        fetch(url + "/api/matches/seni/start", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

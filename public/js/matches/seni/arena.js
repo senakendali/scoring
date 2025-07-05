@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
+    const url = window.location.origin + '/digital_scoring/scoring/public';
     let matchId = parseInt($("#match-id").val());
 
     console.log("🟢 Arena JS Ready, Match ID:", matchId);

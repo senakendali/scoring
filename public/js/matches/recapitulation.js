@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
     var matchId = $("#match-id").val();
 
     let currentArena = null;
@@ -52,7 +52,7 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
-        $.get(`/api/local-matches/${matchId}`, function (data) {
+        $.get(url + `/api/local-matches/${matchId}`, function (data) {
             currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name).css('font-size', '18px');
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
@@ -116,7 +116,7 @@ $(document).ready(function () {
     });
 
     function loadRekapitulasi(matchId) {
-        $.get(`/api/local-matches/${matchId}/recap`, function (data) {
+        $.get(url + `/api/local-matches/${matchId}/recap`, function (data) {
             $('#match-tables').html('');
             let finalBlue = 0;
             let finalRed = 0;

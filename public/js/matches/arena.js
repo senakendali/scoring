@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
     let matchId = parseInt($("#match-id").val());
 
     let currentArena = null;
@@ -568,7 +568,7 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
-        $.get(`/api/local-matches/${matchId}`, function (data) {
+        $.get(url + `/api/local-matches/${matchId}`, function (data) {
             if(data.is_display_timer != 0){
                 $("#timer").show();
                 $(".timer").css('color', '#000000');

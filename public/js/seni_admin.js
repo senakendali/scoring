@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
 
     const arenaName = $("#session-arena").val();
     const roleName = $("#session-role").val();
@@ -75,7 +75,7 @@ $(document).ready(function () {
     $('#btn-create-match-final').on('click', function () {
         $('#final-match-body').html('Loading...');
 
-        $.get('/api/local-seni-matches/pool-winners', function (res) {
+        $.get(url + '/api/local-seni-matches/pool-winners', function (res) {
             let html = '';
 
             res.forEach(pool => {
@@ -123,7 +123,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: '/api/local-seni-matches/create-pool-final-match',
+            url: url + '/api/local-seni-matches/create-pool-final-match',
             method: 'POST',
             data: { winners: selected },
             success: function (res) {
@@ -195,7 +195,7 @@ $(document).ready(function () {
         const medal = $(this).val();
         const $select = $(this);
 
-        fetch(`/api/seni-matches/${matchId}/set-medal`, {
+        fetch(url + `/api/seni-matches/${matchId}/set-medal`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -268,7 +268,7 @@ $(document).ready(function () {
             Loading...
         `);
 
-        fetch("/api/matches/seni/start", {
+        fetch(url + "/api/matches/seni/start", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -331,7 +331,7 @@ $('#submit-score-btn').on('click', function () {
     }
 
     $.ajax({
-        url: `/api/local-seni-matches/${matchId}/set-score-manual`,
+        url: url + `/api/local-seni-matches/${matchId}/set-score-manual`,
         method: 'POST',
         data: {
             score: score.toFixed(6),

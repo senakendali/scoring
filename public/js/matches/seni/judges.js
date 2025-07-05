@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
+    const url = window.location.origin + '/digital_scoring/scoring/public';
 
    
 
@@ -142,7 +142,7 @@ $(document).ready(function () {
                 const component = $row.data("component");
                 const value = parseFloat($row.find("input").val()) || 0;
 
-                $.post('/api/seni-component-score', {
+                $.post(url + '/api/seni-component-score', {
                     match_id: matchId,
                     judge_number: judgeNumbers,
                     component: component,
@@ -249,7 +249,7 @@ $(document).ready(function () {
         totalDeduction += deduction;
 
        $.ajax({
-            url: "/api/seni-scores",
+            url: url + "/api/seni-scores",
             method: "POST",
             data: {
                 local_match_id: matchId,
@@ -331,7 +331,7 @@ $(document).ready(function () {
         $btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...');
         $btn.prop('disabled', true);
 
-        $.post('/api/seni-additional-score', {
+        $.post(url + '/api/seni-additional-score', {
             match_id: matchId,
             judge_number: judgeNumber,
             additional_score: score,

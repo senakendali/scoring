@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
+    const url = window.location.origin + '/digital_scoring/scoring/public';
     let matchId = parseInt($("#match-id").val());
     let currentArena = null;
    
@@ -275,7 +275,7 @@ $(document).ready(function () {
 
         // Kirim ke backend
         $.ajax({
-            url: "/api/seni-penalties",
+            url: url + "/api/seni-penalties",
             method: "POST",
             data: {
             match_id: matchId,
@@ -284,7 +284,7 @@ $(document).ready(function () {
             },
             success: function (res) {
                 console.log("✅ Penalties submitted:", res);
-                $.post(`/api/recalculate-final-score/${matchId}`, function (response) {
+                $.post(url + `/api/recalculate-final-score/${matchId}`, function (response) {
                     console.log("🎯 Final score recalculated:", response.final_score);
                 }).fail(function (err) {
                     console.error("❌ Gagal hitung ulang final score:", err);

@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
 
     const arenaName = $("#session-arena").val();
     const roleName = $("#session-role").val();
@@ -82,7 +82,7 @@ $(document).ready(function () {
         const winnerCorner = $(this).attr('id') === 'manual-win-blue' ? 'blue' : 'red';
 
         $.ajax({
-            url: `/api/local-matches/${matchId}/set-winner-manual`,
+            url: url + `/api/local-matches/${matchId}/set-winner-manual`,
             method: 'POST',
             data: {
                 corner: winnerCorner,
@@ -237,7 +237,7 @@ $(document).ready(function () {
         const arena = $btn.data("arena");
         const tournament = $btn.data("tournament");
 
-        fetch("/api/matches/start", {
+        fetch(url + "/api/matches/start", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

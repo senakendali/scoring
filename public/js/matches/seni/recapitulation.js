@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin;
+    var url = window.location.origin + '/digital_scoring/scoring/public';
     var matchId = $("#match-id").val();
     
     const arena = $("#session-arena").val();

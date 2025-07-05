@@ -1,8 +1,9 @@
 $(document).ready(function () {
+    var url = window.location.origin + '/digital_scoring/scoring/public';
     let activeJuris = [];
 
     function fetchActiveJuris(tournament, arena, matchType) {
-        return fetch(`/api/active-juris?tournament_name=${encodeURIComponent(tournament)}&arena_name=${encodeURIComponent(arena)}&tipe_pertandingan=${matchType}`)
+        return fetch(url + `/api/active-juris?tournament_name=${encodeURIComponent(tournament)}&arena_name=${encodeURIComponent(arena)}&tipe_pertandingan=${matchType}`)
             .then(res => res.json())
             .then(data => {
                 activeJuris = data;
@@ -32,7 +33,7 @@ $(document).ready(function () {
     
 
     // Ambil tournament list
-    fetch('/api/local-matches/tournaments')
+    fetch(url + '/api/local-matches/tournaments')
         .then(res => res.json())
         .then(tournaments => {
             const select = document.getElementById("tournament_name");
@@ -69,7 +70,7 @@ $(document).ready(function () {
         // Jangan fetch kalau belum pilih keduanya
         if (!tournament || !matchType) return;
 
-        fetch(`/api/local-matches/arenas?tournament=${encodeURIComponent(tournament)}&type=${matchType}`)
+        fetch(url + `/api/local-matches/arenas?tournament=${encodeURIComponent(tournament)}&type=${matchType}`)
             .then(res => res.json())
             .then(arenas => {
                 const arenaSelect = document.getElementById("arena_name");
@@ -174,7 +175,7 @@ $(document).ready(function () {
             }
         }
 
-        fetch('/api/match-personnel-assignments', {
+        fetch(url + '/api/match-personnel-assignments', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

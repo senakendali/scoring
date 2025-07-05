@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
+    const url = window.location.origin + '/digital_scoring/scoring/public';
     let matchId = parseInt($("#match-id").val());
 
     let currentArena = null;
@@ -241,7 +241,7 @@ $(document).ready(function () {
 
         // 🔁 DROP boleh diklik berkali-kali
         if (action === 'drop') {
-            $.post("/api/local-referee-actions", {
+            $.post(url + "/api/local-referee-actions", {
                 local_match_id: matchId,
                 round_id: roundId,
                 action: action,
@@ -258,7 +258,7 @@ $(document).ready(function () {
 
         // 🔁 JATUHAN juga bisa diklik berkali-kali
         if (action === 'jatuhan') {
-            $.post("/api/local-referee-actions", {
+            $.post(url + "/api/local-referee-actions", {
                 local_match_id: matchId,
                 round_id: roundId,
                 action: action,
@@ -276,7 +276,7 @@ $(document).ready(function () {
         // 🔁 HAPUS JATUHAN
         if (action === 'hapus-jatuhan') {
             $.ajax({
-                url: "/api/local-referee-actions/remove-jatuhan",
+                url: url + "/api/local-referee-actions/remove-jatuhan",
                 method: "POST",
                 data: {
                     local_match_id: matchId,
@@ -300,7 +300,7 @@ $(document).ready(function () {
             $btn.removeClass("active");
 
             $.ajax({
-                url: "/api/local-referee-actions/cancel",
+                url: url + "/api/local-referee-actions/cancel",
                 method: "POST",
                 data: {
                     match_id: matchId,
@@ -319,7 +319,7 @@ $(document).ready(function () {
             $btn.addClass("active");
 
             if (action === 'verifikasi_jatuhan' || action === 'verifikasi_hukuman') {
-                $.post("/api/request-verification", {
+                $.post(url + "/api/request-verification", {
                     match_id: matchId,
                     round_id: roundId,
                     type: action === 'verifikasi_jatuhan' ? 'jatuhan' : 'hukuman',
@@ -330,7 +330,7 @@ $(document).ready(function () {
                     console.error("❌ Gagal kirim request verifikasi:", xhr.responseJSON?.message || xhr.statusText);
                 });
             } else {
-                $.post("/api/local-referee-actions", {
+                $.post(url + "/api/local-referee-actions", {
                     local_match_id: matchId,
                     round_id: roundId,
                     action: action,
@@ -384,7 +384,7 @@ $(document).ready(function () {
 
     function fetchMatchData() {
         $(".loader-bar").show();
-        $.get(`/api/local-matches/${matchId}`, function (data) {
+        $.get(url + `/api/local-matches/${matchId}`, function (data) {
             currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);

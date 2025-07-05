@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin;
+    const url = window.location.origin + '/digital_scoring/scoring/public';
     const matchId = window.location.pathname.split("/").pop();
     const timerEl = $("#timer");
     
@@ -446,7 +446,7 @@ $(document).ready(function () {
             if (instance) instance.hide();
 
             $.ajax({
-                url: `/api/local-seni-matches/${matchId}/disqualify`,
+                url: url + `/api/local-seni-matches/${matchId}/disqualify`,
                 method: 'PATCH',
                 data: {
                     reason: reason
@@ -592,7 +592,7 @@ $(document).ready(function () {
             Loading...
         `);
 
-        $.post(`/api/local-seni-matches/${matchId}/next`, function (res) {
+        $.post(url + `/api/local-seni-matches/${matchId}/next`, function (res) {
             if (res.new_match_id) {
                 window.location.href = `/matches/seni/${res.new_match_id}`;
             } else {
