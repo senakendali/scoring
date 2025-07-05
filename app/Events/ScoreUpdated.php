@@ -47,11 +47,13 @@ class ScoreUpdated implements ShouldBroadcast
         $bluePenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
             ->where('round_id', $this->roundId)
             ->where('corner', 'blue')
+            ->where('action', '!=', 'jatuhan')
             ->sum('point_change');
 
         $redPenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
             ->where('round_id', $this->roundId)
             ->where('corner', 'red')
+            ->where('action', '!=', 'jatuhan')
             ->sum('point_change');
 
         // Tentukan pemenang realtime
