@@ -54,7 +54,7 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $.get(`/api/local-matches/${matchId}`, function (data) {
             currentArena = data.arena_name;
-            $("#tournament-name").text(data.tournament_name);
+            $("#tournament-name").text(data.tournament_name).css('font-size', '18px');
             $("#match-code").text(data.arena_name + " Partai " + data.match_number);
             $("#class-name").text(data.class_name);
             $("#blue-name").text(data.blue.name);
