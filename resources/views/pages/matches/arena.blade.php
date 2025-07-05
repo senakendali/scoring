@@ -60,11 +60,11 @@
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
 </div>
-<div class="fall-counter text-center text-dark mb-2" style="display:none;">
-    <small>Jatuhan:</small> <span id="red-fall-count" class="fw-bold">0</span>
+<div class="blue-fall">
+    <div>Jatuhan:</div> <div id="red-fall-count" class="f-count">0</div>
 </div> 
-<div class="fall-counter text-center text-dark mb-2" style="display:none;">
-    <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
+<div class="red-fall">
+    <div>Jatuhan:</div> <div id="blue-fall-count" class="f-count">0</div>
 </div>
 
 <div class="d-flex flex-column" style="height:calc(100vh - 180px);">
