@@ -35,7 +35,10 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
+    const arenaSlug = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
+    const globalChannel = pusher.subscribe(`arena.match.${arenaSlug}`);
 
     channel.bind('referee.action.cancelled', function (data) {
         console.log("⛔ Referee Action Cancelled:", data);

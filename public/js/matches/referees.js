@@ -29,7 +29,9 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe('global.match');
+    const arenaSlug = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
+    const globalChannel = pusher.subscribe(`arena.match.${arenaSlug}`);
 
     // 🔥 Saat juri tekan tombol
     channel.bind('judge.point.submitted', function (data) {

@@ -176,6 +176,50 @@ class LocalMatchRoundController extends Controller
         $tournament = $currentMatch->tournament_name;
         $currentNumber = $currentMatch->match_number;
 
+        // Cari match berikutnya di arena DAN turnamen yang sama
+        $nextMatch = LocalMatch::where('match_number', '>', $currentNumber)
+            ->where('arena_name', $arena)
+            ->where('tournament_name', $tournament)
+            ->orderBy('match_number', 'asc')
+            ->first();
+
+        if ($nextMatch) {
+            $nextMatch->is_active = true;
+            $nextMatch->save();
+
+            // ✅ Broadcast hanya ke arena terkait
+            broadcast(new \App\Events\ActiveMatchChanged(
+                $nextMatch->id,
+                $nextMatch->arena_name
+            ))->toOthers();
+
+            return response()->json([
+                'message' => 'Match switched',
+                'new_match_id' => $nextMatch->id
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'No next match available in the same arena'
+        ], 404);
+    }
+
+
+    public function changeToNextMatch_dipakai($currentId)
+    {
+        // Matikan semua match aktif
+        LocalMatch::where('is_active', true)->update(['is_active' => false]);
+
+        // Ambil match sekarang
+        $currentMatch = LocalMatch::find($currentId);
+        if (!$currentMatch) {
+            return response()->json(['message' => 'Current match not found'], 404);
+        }
+
+        $arena = $currentMatch->arena_name;
+        $tournament = $currentMatch->tournament_name;
+        $currentNumber = $currentMatch->match_number;
+
         // Cari match berikutnya di arena dan turnamen yang sama
         $nextMatch = LocalMatch::where('match_number', '>', $currentNumber)
             ->where('arena_name', $arena)

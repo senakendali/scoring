@@ -119,6 +119,7 @@
    
 
     <main class="app-content">
+        <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
         @yield('content')
     </main>
 

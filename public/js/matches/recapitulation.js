@@ -15,7 +15,9 @@ $(document).ready(function () {
 
     console.log("🟢 Recapitulation JS Ready, Match ID:", matchId);  
 
-    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe('global.match');
+    const arenaSlug = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
+    const globalChannel = pusher.subscribe(`arena.match.${arenaSlug}`);
      globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
         window.location.href = `/matches/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu

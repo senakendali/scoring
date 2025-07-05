@@ -30,7 +30,9 @@ $(document).ready(function () {
         disableStats: true,
     });
     
-    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe('global.match');
+    const arenaSlug = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
+    const globalChannel = pusher.subscribe(`arena.match.${arenaSlug}`);
     const channel = pusher.subscribe(`match.${matchId}`);
 
     channel.bind_global(function (event, data) {

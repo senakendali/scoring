@@ -4,21 +4,24 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Support\Str;
 
 class ActiveMatchChanged implements ShouldBroadcastNow
 {
     protected $matchId;
-
-    public function __construct($matchId)
+     protected $arenaName;
+    public function __construct($matchId, $arenaName)
     {
-    $this->matchId = $matchId;
+     $this->matchId = $matchId;
+     $this->arenaName = $arenaName;
     \Log::info("📢 Constructor called ActiveMatchChanged", ['match_id' => $this->matchId]);
     }
 
 
     public function broadcastOn()
     {
-        return new Channel('global.match');
+        //return new Channel('global.match.' . $this->matchId);
+        return new Channel('arena.match.' . \Str::slug($this->arenaName));
     }
 
     public function broadcastAs()
