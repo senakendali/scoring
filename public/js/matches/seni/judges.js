@@ -33,7 +33,8 @@ $(document).ready(function () {
         disableStats: true,
     });
     
-    const globalChannel = pusher.subscribe('global.seni.match');
+    //const globalChannel = pusher.subscribe('global.seni.match');
+    const globalChannel = pusher.subscribe(`global.seni.match.${matchId}`);
     const channel = pusher.subscribe(`match.${matchId}`);
 
     channel.bind_global(function (event, data) {

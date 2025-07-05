@@ -28,7 +28,8 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-     const globalChannel = pusher.subscribe('global.seni.match');
+     //const globalChannel = pusher.subscribe('global.seni.match');
+     const globalChannel = pusher.subscribe(`global.seni.match.${matchId}`);
 
     globalChannel.bind('seni.match.changed', function (data) {
         console.log("🎯 Match aktif berubah:", data);
