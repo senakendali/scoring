@@ -292,6 +292,64 @@ $(document).ready(function () {
             $btn.prop("disabled", false).html(originalHtml);
         });
     });
+    
+    $(document).on('click', '.btn-set-score', function () {
+    const matchId = $(this).data('id');
+    const name = $(this).data('name'); // Kontingen
+    const participant = $(this).data('participant'); // Peserta
+    const score = $(this).data('score');
+
+    $('#match-id-for-score').val(matchId);
+    $('#contingent-name').val(name);
+    $('#participant-name').val(participant); // Tambahkan ini
+    $('#final-score').val(score);
+
+    $('#manualScoreModal').modal('show');
+});
+
+
+// Saat blur, pastikan format 6 angka di belakang koma
+$('#final-score').on('blur', function () {
+    let raw = $(this).val().replace(/\D/g, ''); // hanya ambil digit angka
+    if (!raw) return;
+
+    let parsed = parseInt(raw, 10);
+    let finalScore = parsed / 100000; // bagi 100000
+    $(this).val(finalScore.toFixed(6)); // format ke 6 desimal
+});
+
+
+// Saat submit, pastikan parse aman
+$('#submit-score-btn').on('click', function () {
+    const matchId = $('#match-id-for-score').val();
+    let value = $('#final-score').val().replace(',', '.');
+    const score = parseFloat(value);
+
+    if (isNaN(score)) {
+        alert('Nilai tidak valid');
+        return;
+    }
+
+    $.ajax({
+        url: `/api/local-seni-matches/${matchId}/set-score-manual`,
+        method: 'POST',
+        data: {
+            score: score.toFixed(6),
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (res) {
+            $('#manualScoreModal').modal('hide');
+            alert(res.message || 'Skor berhasil disimpan');
+            loadSeniMatchesAdmin(); // reload data
+        },
+        error: function () {
+            alert('Gagal menyimpan skor');
+        }
+    });
+});
+
+
+
 
 
     function slugify(text) {
@@ -402,21 +460,21 @@ $(document).ready(function () {
                                             </button>
                                         </td>
                                     `;
-                                } else if (isOperator) {
+                                } else {
                                     tableHtml += `
                                         <td>
                                             <button 
-                                                class="btn btn-sm btn-success btn-enter-match"
+                                                class="btn btn-sm btn-outline-info btn-set-score"
                                                 data-id="${match.id}"
-                                                data-arena="${arenaName}"
-                                                data-tournament="${tournament}">
-                                                Masuk
+                                                data-name="${match.contingent?.name || '-'}"
+                                                data-participant="${match.team_member1?.name || '-'}"
+                                                data-score="${scoreValue || ''}">
+                                                Input Skor
                                             </button>
                                         </td>
                                     `;
-                                } else {
-                                    tableHtml += `<td>-</td>`;
                                 }
+
 
                                 tableHtml += `</tr>`;
                             });

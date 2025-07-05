@@ -73,8 +73,6 @@ Route::prefix('matches')->group(function () {
     Route::get('/judges/{match_id}', [MatchController::class, 'displayJudge']);
     Route::get('/referees/{match_id}', [MatchController::class, 'displayReferee']);
     Route::get('/{match_id}/recap', [MatchController::class, 'displayRecapitulation']);
-
-    
 });
 
 // API Routes (should typically be in api.php)
@@ -180,6 +178,10 @@ Route::prefix('api')->group(function () {
     // Recap
     Route::get('/medal-recap', [RecapController::class, 'medalRecap']);
     Route::get('/medal-recap-per-atlet', [RecapController::class, 'medalRecapPerAtlet']);
+
+    Route::post('/local-matches/{match}/set-winner-manual', [LocalMatchController::class, 'setWinnerManual']);
+    Route::post('/local-seni-matches/{id}/set-score-manual', [LocalMatchSeniController::class, 'setScoreManual']);
+
 
 
 

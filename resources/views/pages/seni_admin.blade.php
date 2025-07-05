@@ -51,6 +51,40 @@
   </div>
 </div>
 
+<div class="modal fade" id="manualScoreModal" tabindex="-1" aria-labelledby="manualScoreLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="manualScoreLabel">Input Skor Manual</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="match-id-for-score">
+        <div class="mb-3">
+          <label class="form-label">Kontingen</label>
+          <input type="text" class="form-control" id="contingent-name" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nama Peserta</label>
+          <input type="text" class="form-control" id="participant-name" readonly>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nilai Akhir</label>
+          
+          <input type="number" class="form-control" id="final-score" placeholder="Misal: 938000 → 9.380000">
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" id="submit-score-btn">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
 <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
 <input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">

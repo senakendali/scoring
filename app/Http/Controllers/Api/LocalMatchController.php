@@ -294,6 +294,84 @@ class LocalMatchController extends Controller
         return response()->json(['message' => 'Pertandingan diakhiri dan pemenang disimpan.']);
     }
 
+    public function setWinnerManual(Request $request, $id)
+    {
+        $request->validate([
+            'corner' => 'required|in:blue,red',
+        ]);
+
+        $match = LocalMatch::findOrFail($id);
+
+        // Set manual winner
+        $corner = $request->corner;
+        $match->winner_corner = $corner;
+        $match->winner_id = $match->{$corner . '_id'};
+        $match->winner_name = $match->{$corner . '_name'};
+        $match->winner_contingent = $match->{$corner . '_contingent'};
+        $match->win_reason = 'manual';
+        $match->status = 'finished';
+
+        $match->save();
+
+        // Hentikan semua round yang masih aktif
+        $match->rounds()->where('status', 'in_progress')->update([
+            'status' => 'finished',
+            'end_time' => now(),
+        ]);
+
+        // Set peserta ke pertandingan selanjutnya
+        if ($match->winner_id) {
+            $nextMatches = LocalMatch::where(function ($q) use ($match) {
+                $q->where('parent_match_red_id', $match->id)
+                ->orWhere('parent_match_blue_id', $match->id);
+            })->get();
+
+            foreach ($nextMatches as $nextMatch) {
+                $slot = null;
+
+                if ($nextMatch->parent_match_red_id == $match->id) {
+                    $nextMatch->red_id = $match->winner_id;
+                    $nextMatch->red_name = $match->winner_name;
+                    $nextMatch->red_contingent = $match->winner_contingent;
+                    $slot = 2;
+                }
+
+                if ($nextMatch->parent_match_blue_id == $match->id) {
+                    $nextMatch->blue_id = $match->winner_id;
+                    $nextMatch->blue_name = $match->winner_name;
+                    $nextMatch->blue_contingent = $match->winner_contingent;
+                    $slot = 1;
+                }
+
+                $nextMatch->save();
+
+                // Optional: kalau pakai sinkronisasi ke server pusat
+                /*
+                if ($nextMatch->remote_match_id && $slot) {
+                    try {
+                        $client->post($baseUrl . '/api/update-next-match-slot', [
+                            'json' => [
+                                'remote_match_id' => $nextMatch->remote_match_id,
+                                'slot' => $slot,
+                                'winner_id' => $match->winner_id,
+                            ],
+                            'timeout' => 5,
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Log::warning('⚠️ Gagal update next match di server pusat', [
+                            'remote_match_id' => $nextMatch->remote_match_id,
+                            'slot' => $slot,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+                */
+            }
+        }
+
+        return response()->json(['message' => 'Pemenang diset manual dan diteruskan ke babak selanjutnya.']);
+    }
+
 
 
     private function calculateScore__($matchId, $corner)

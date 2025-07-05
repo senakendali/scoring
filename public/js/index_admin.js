@@ -59,116 +59,137 @@ $(document).ready(function () {
 
     
 
-    $.get(url + "/api/local-matches/admin", function (data) {
-        $(".loader-bar").show();
-        $('#match-tables').empty();
-
-        /*$('#match-tables').before(`
-            <div class="mb-3 text-end">
-                <button class="btn btn-primary" id="show-winners-btn">
-                    <i class="bi bi-star-fill"></i> Lihat Pemenang Tertinggi
-                </button>
-            </div>
-        `);*/
+    loadMatches();
 
 
-        $.each(data, function (arenaName, pools) {
-            let matches = [];
+    
 
-            // Gabung semua match dari setiap pool di arena ini
-            $.each(pools, function (poolName, poolMatches) {
-                matches = matches.concat(poolMatches);
-            });
+    // ✅ Tampilkan Modal
+    $(document).on('click', '.set-winner-btn', function () {
+        const matchId = $(this).data('id');
+        const blueName = $(this).data('blue');
+        const redName = $(this).data('red');
 
-            if (!matches.length) return;
+        $('#match-id-for-winner').val(matchId);
+        $('#manual-win-blue').text(`🏅 ${blueName || 'Biru'} Menang`);
+        $('#manual-win-red').text(`🏅 ${redName || 'Merah'} Menang`);
 
-            // Urutkan berdasarkan match_number (atau match_order)
-            matches.sort((a, b) => a.match_number - b.match_number);
+        $('#manualWinnerModal').modal('show');
+    });
 
-            let arenaSection = `<div class="mb-5">
-                <h4 class="text-white mb-3">${arenaName.toUpperCase()}</h4>
-                <table class="table table-dark">
-                    <thead>
+    $('#manual-win-blue, #manual-win-red').on('click', function () {
+        const matchId = $('#match-id-for-winner').val();
+        const winnerCorner = $(this).attr('id') === 'manual-win-blue' ? 'blue' : 'red';
+
+        $.ajax({
+            url: `/api/local-matches/${matchId}/set-winner-manual`,
+            method: 'POST',
+            data: {
+                corner: winnerCorner,
+                _token: $('meta[name="csrf-token"]').attr('content') // pastikan ada di head
+            },
+            success: function (res) {
+                $('#manualWinnerModal').modal('hide');
+                alert(res.message || 'Pemenang berhasil diatur');
+               loadMatches();
+            },
+            error: function (xhr) {
+                alert('Gagal mengatur pemenang');
+            }
+        });
+    });
+
+    function loadMatches(){
+        $.get(url + "/api/local-matches/admin", function (data) {
+            $(".loader-bar").show();
+            $('#match-tables').empty();
+
+            $.each(data, function (arenaName, pools) {
+                let matches = [];
+
+                // Gabung semua match dari setiap pool di arena ini
+                $.each(pools, function (poolName, poolMatches) {
+                    matches = matches.concat(poolMatches);
+                });
+
+                if (!matches.length) return;
+
+                // Urutkan berdasarkan match_number
+                matches.sort((a, b) => a.match_number - b.match_number);
+
+                let arenaSection = `<div class="mb-5">
+                    <h4 class="text-white mb-3">${arenaName.toUpperCase()}</h4>
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>No Partai</th>
+                                <th>Babak</th>
+                                <th colspan="2" class="text-center">Peserta</th>
+                                <th>Pemenang</th>
+                                <th>Keterangan</th>
+                                <th class="text-nowrap">Action</th>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th class="text-center text-primary">Sudut Biru</th>
+                                <th class="text-center text-danger">Sudut Merah</th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                $.each(matches, function (index, match) {
+                    arenaSection += `
                         <tr>
-                            <th>No Partai</th>
-                            <th>Babak</th>
-                            <th colspan="2" class="text-center">Peserta</th>
-                            <th>Pemenang</th>
-                            <th>Keterangan</th>
-                            <th class="text-nowrap">Action</th>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <th></th>
-                            <th class="text-center text-primary">Sudut Biru</th>
-                            <th class="text-center text-danger">Sudut Merah</th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-            $.each(matches, function (index, match) {
-                arenaSection += `
-                    <tr>
-                        <td>${match.match_number}</td>
-                        <td>${match.round_label}</td>
-                        <td class="text-primary fw-bold">
-                            ${match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD'}<br>
-                            <small>${match.blue_contingent || '-'}</small><br>
-                            <small class="text-info">Score: ${match.participant_1_score ?? '-'}</small>
-                        </td>
-                        <td class="text-danger fw-bold">
-                            ${match.round_level === 1 && match.red_name == 'TBD' ? 'BYE' : match.red_name || 'TBD'}<br>
-                            <small>${match.red_contingent || '-'}</small><br>
-                            <small class="text-info">Score: ${match.participant_2_score ?? '-'}</small>
-                        </td>
-                        <td>
-                        ${
-                            match.winner_name
-                            ? `<div class="btn btn-success"><i class="bi bi-trophy"></i> ${match.winner_name}</div>`
-                            : `<div>-</div>`
-                        }
-                        </td>
-
-                        <td>${match.status}</td>
-                        
+                            <td>${match.match_number}</td>
+                            <td>${match.round_label}</td>
+                            <td class="text-primary fw-bold">
+                                ${match.round_level === 1 && match.blue_name == 'TBD' ? 'BYE' : match.blue_name || 'TBD'}<br>
+                                <small>${match.blue_contingent || '-'}</small><br>
+                                <small class="text-info">Score: ${match.participant_1_score ?? '-'}</small>
+                            </td>
+                            <td class="text-danger fw-bold">
+                                ${match.round_level === 1 && match.red_name == 'TBD' ? 'BYE' : match.red_name || 'TBD'}<br>
+                                <small>${match.red_contingent || '-'}</small><br>
+                                <small class="text-info">Score: ${match.participant_2_score ?? '-'}</small>
+                            </td>
+                            <td>
+                                ${
+                                    match.winner_name
+                                    ? `<div class="btn btn-success"><i class="bi bi-trophy"></i> ${match.winner_name}</div>`
+                                    : `<div>-</div>`
+                                }
+                            </td>
+                            <td>${match.status}</td>
                             <td class="text-nowrap">
                                 <div class="d-flex gap-1">
+                                    ${match.status !== 'finished' ? `
+                                        <button class="btn btn-outline-info btn-sm set-winner-btn"
+                                            data-id="${match.id}"
+                                            data-blue="${match.blue_name}"
+                                            data-red="${match.red_name}">
+                                            Set Winner
+                                        </button>
+                                    ` : ''}
                                     ${match.status === 'finished' && match.winner_name ? `
                                         <a href="/matches/${match.id}/recap" class="btn btn-outline-warning btn-sm btn-recap-match">Rekap</a>
                                     ` : ''}
                                 </div>
                             </td>
-                    </tr>`;
-            });
+                        </tr>`;
+                });
 
-            arenaSection += `</tbody></table></div>`;
-            $('#match-tables').append(arenaSection);
-            $(".loader-bar").hide();
+                arenaSection += `</tbody></table></div>`;
+                $('#match-tables').append(arenaSection);
+                $(".loader-bar").hide();
+            });
         });
+    }
 
-    });
 
-    let allWinners = []; // simpan di luar .each untuk global
-
-    // di dalam $.each(matches, function...) setelah if (!matches.length) return;
-    matches.forEach(match => {
-        if (match.winner_name) {
-            let winnerScore = match.winner_corner === 'blue'
-                ? (match.participant_1_score ?? 0)
-                : (match.participant_2_score ?? 0);
-
-            allWinners.push({
-                match_number: match.match_number,
-                winner_name: match.winner_name,
-                contingent: match.winner_contingent,
-                score: winnerScore,
-                arena: match.arena_name
-            });
-        }
-    });
 
     // setelah render selesai
     $('#show-winners-btn').off('click').on('click', function () {

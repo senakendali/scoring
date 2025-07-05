@@ -321,6 +321,26 @@ class LocalMatchSeniController extends Controller
     return response()->json($finalResult);
 }
 
+public function setScoreManual(Request $request, $id)
+{
+    $request->validate([
+        'score' => 'required|numeric|between:0,100.999999',
+    ]);
+
+
+    $match = LocalSeniMatch::findOrFail($id);
+
+    if ($match->status === 'finished') {
+        return response()->json(['message' => 'Pertandingan sudah selesai'], 400);
+    }
+
+    $match->final_score = $request->score;
+    $match->status = 'finished'; // Opsional, tergantung kamu mau langsung anggap selesai atau tidak
+    $match->save();
+
+    return response()->json(['message' => 'Skor berhasil disimpan.']);
+}
+
 
     public function setMedal(Request $request, $id)
     {

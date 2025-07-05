@@ -45,6 +45,23 @@
   </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="manualWinnerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title">Atur Pemenang Manual</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <input type="hidden" id="match-id-for-winner">
+        <button id="manual-win-blue" class="btn btn-primary w-100 mb-2"></button>
+        <button id="manual-win-red" class="btn btn-danger w-100"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 
 <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
