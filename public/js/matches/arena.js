@@ -35,7 +35,8 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    const globalChannel = pusher.subscribe('global.match');
+    //const globalChannel = pusher.subscribe('global.match');
+    const globalChannel = pusher.subscribe(`global.match.${matchId}`);
 
     channel.bind('referee.action.cancelled', function (data) {
         console.log("⛔ Referee Action Cancelled:", data);
