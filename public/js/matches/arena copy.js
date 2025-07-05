@@ -181,37 +181,37 @@ $(document).ready(function () {
     // ✅ Score Updated
     channel.bind('score.updated', function (data) {
         console.log("🎯 Score updated:", data);
-
+    
         const blueScore = parseInt(data.blueScore) || 0;
         const redScore = parseInt(data.redScore) || 0;
-
+    
         // 🔥 Update Blue Score kalau tidak lock
         if (!lockScore.blue) {
             $("#blue-score")
                 .text(blueScore)
                 .addClass("bounce");
-
+    
             setTimeout(() => {
                 $("#blue-score").removeClass("bounce");
             }, 600);
         }
-
+    
         // 🔥 Update Red Score kalau tidak lock
         if (!lockScore.red) {
             $("#red-score")
                 .text(redScore)
                 .addClass("bounce");
-
+    
             setTimeout(() => {
                 $("#red-score").removeClass("bounce");
             }, 600);
         }
-
+    
         // 🔥 Tetap update penyesuaian
         $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
         $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
-
-        // 🔥 Update background berdasarkan skor
+    
+        // 🔥 Tetap update background pemenang
         if (blueScore > redScore) {
             $("#blue-score").css({
                 backgroundColor: "#4E25FF",
@@ -226,11 +226,11 @@ $(document).ready(function () {
                 backgroundColor: "#FFFFFF",
                 color: "#D32F2F"
             });
+
             $(".red .additional-score").css({
                 backgroundColor: "#FFFFFF",
                 color: "#D32F2F"
             });
-
         } else if (redScore > blueScore) {
             $("#red-score").css({
                 backgroundColor: "#E8003F",
@@ -245,55 +245,34 @@ $(document).ready(function () {
                 backgroundColor: "#FFFFFF",
                 color: "#4E25FF"
             });
+
             $(".blue .additional-score").css({
                 backgroundColor: "#FFFFFF",
                 color: "#4E25FF"
             });
-
         } else {
-            // Kalau imbang, reset warna dulu
             $("#blue-score").css({
                 backgroundColor: "#FFFFFF",
                 color: "#4E25FF"
             });
+
             $(".blue .additional-score").css({
                 backgroundColor: "#FFFFFF",
                 color: "#4E25FF"
             });
 
+            
             $("#red-score").css({
                 backgroundColor: "#FFFFFF",
                 color: "#D32F2F"
             });
+
             $(".red .additional-score").css({
-                backgroundColor: "#FFFFFF",
+               backgroundColor: "#FFFFFF",
                 color: "#D32F2F"
             });
-
-            // 💥 Jika ada winner_corner saat skor imbang, tampilkan highlight pemenang
-            if (data.winner_corner === 'blue') {
-                $("#blue-score").css({
-                    backgroundColor: "#4E25FF",
-                    color: "#FFFFFF"
-                });
-                $(".blue .additional-score").css({
-                    backgroundColor: "#4E25FF",
-                    color: "#FFFFFF"
-                });
-
-            } else if (data.winner_corner === 'red') {
-                $("#red-score").css({
-                    backgroundColor: "#E8003F",
-                    color: "#FFFFFF"
-                });
-                $(".red .additional-score").css({
-                    backgroundColor: "#E8003F",
-                    color: "#FFFFFF"
-                });
-            }
         }
     });
-
     
     
     

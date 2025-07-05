@@ -41,24 +41,32 @@ class ScoreUpdated implements ShouldBroadcast
     }
 
     // Tambahan (di dalam broadcastWith)
-    public function broadcastWith___()
+    public function broadcastWith()
     {
-        $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
+        // Ambil total penalti dari referee actions
+        $bluePenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
             ->where('round_id', $this->roundId)
             ->where('corner', 'blue')
             ->sum('point_change');
 
-        $redAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
+        $redPenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
             ->where('round_id', $this->roundId)
             ->where('corner', 'red')
             ->sum('point_change');
 
-        /*return [
-            'blueScore' => $this->blueScore,
-            'redScore' => $this->redScore,
-            'blueAdjustment' => $blueAdjustment,
-            'redAdjustment' => $redAdjustment,
-        ];*/
+        // Tentukan pemenang realtime
+        $winner = null;
+        if ($this->blueScore > $this->redScore) {
+            $winner = 'blue';
+        } elseif ($this->redScore > $this->blueScore) {
+            $winner = 'red';
+        } else {
+            if ($bluePenalty < $redPenalty) {
+                $winner = 'blue';
+            } elseif ($redPenalty < $bluePenalty) {
+                $winner = 'red';
+            }
+        }
 
         return [
             'match_id' => $this->matchId,
@@ -67,10 +75,13 @@ class ScoreUpdated implements ShouldBroadcast
             'redScore' => $this->redScore,
             'blueAdjustment' => $this->blueAdjustment,
             'redAdjustment' => $this->redAdjustment,
+            'winner_corner' => $winner,
         ];
     }
 
-    public function broadcastWith()
+    
+
+    public function broadcastWith__()
     {
         return [
             'match_id' => $this->matchId,
