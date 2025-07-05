@@ -424,7 +424,7 @@ $(document).ready(function () {
 
                 const totalScore = data.final_score ?? (mean - totalPenalty);
 
-                $("#total-score").text(totalScore.toFixed(6));
+                $("#total-score").text(median.toFixed(6));
             });
         }, 1500);
     }
