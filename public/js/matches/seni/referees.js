@@ -29,7 +29,9 @@ $(document).ready(function () {
 
     const channel = pusher.subscribe(`match.${matchId}`);
      //const globalChannel = pusher.subscribe('global.seni.match');
-     const globalChannel = pusher.subscribe(`global.seni.match.${matchId}`);
+     //const globalChannel = pusher.subscribe(`global.seni.match.${matchId}`);
+     const slugArena = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
+    const globalChannel = pusher.subscribe(`arena.seni.match.${slugArena}`);
 
     globalChannel.bind('seni.match.changed', function (data) {
         console.log("🎯 Match aktif berubah:", data);

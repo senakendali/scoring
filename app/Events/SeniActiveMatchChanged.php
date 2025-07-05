@@ -5,16 +5,19 @@ namespace App\Events;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Str;
 
 class SeniActiveMatchChanged implements ShouldBroadcastNow
 {
     use SerializesModels;
 
     public int $matchId;
+     protected $arenaName;
 
-    public function __construct(int $matchId)
+    public function __construct(int $matchId, $arenaName)
     {
         $this->matchId = $matchId;
+        $this->arenaName = $arenaName;
 
         \Log::info("📢 [SeniActiveMatchChanged] Constructed", [
             'match_id' => $this->matchId
@@ -23,7 +26,9 @@ class SeniActiveMatchChanged implements ShouldBroadcastNow
 
     public function broadcastOn()
     {   
-        return new Channel('global.seni.match.' . $this->matchId);
+        //return new Channel('global.seni.match.' . $this->matchId);
+         //return new Channel('arena.match.' . \Str::slug($this->arenaName));
+         return new Channel('arena.seni.match.' . Str::slug($this->arenaName));
     }
 
 
@@ -35,7 +40,8 @@ class SeniActiveMatchChanged implements ShouldBroadcastNow
     public function broadcastWith()
     {
         \Log::info("📡 [SeniActiveMatchChanged] Broadcasting...", [
-            'match_id' => $this->matchId
+            'match_id' => $this->matchId,
+            'arena' => $this->arenaName
         ]);
 
         return [

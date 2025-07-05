@@ -464,7 +464,9 @@ class SeniMatchSetupController extends Controller
         $nextMatch->status = 'ongoing';
         $nextMatch->save();
 
-        broadcast(new \App\Events\SeniActiveMatchChanged($nextMatch->id))->toOthers();
+        //broadcast(new \App\Events\SeniActiveMatchChanged($nextMatch->id))->toOthers();
+        broadcast(new \App\Events\SeniActiveMatchChanged($nextMatch->id, $currentMatch->arena_name))->toOthers();
+
 
         return response()->json([
             'message' => 'Match switched',
