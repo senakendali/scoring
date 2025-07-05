@@ -103,7 +103,11 @@
     <div class="row">
         <div class="col-12">
         <div class="content">
-      
+            <div class="text-end mb-3">
+                  <a href="/export/local-seni-matches" target="_blank" class="btn btn-outline-light">
+                      <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
+                  </a>
+              </div>
             <div id="match-tables"></div>
         </div>
         </div>

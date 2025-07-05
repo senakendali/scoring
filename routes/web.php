@@ -48,6 +48,7 @@ Route::get('/medal-recap-per-atlet/export-pdf/{ageCategory}', [RecapController::
 Route::get('/winner-recap/export-pdf/all', [RecapController::class, 'exportMedalRecapPerAtletAllPDF']);
 
 Route::get('/export/local-matches', [LocalMatchController::class, 'exportLocalMatches']);
+Route::get('/export/local-seni-matches', [LocalMatchSeniController::class, 'exportSeniPdf']);
 
 
 

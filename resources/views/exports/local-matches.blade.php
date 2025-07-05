@@ -29,6 +29,8 @@
                         <!--th>Skor</th-->
                         <th style="background-color: #dc3545; color: #fff;">Sudut Merah</th>
                         <th style="background-color: #dc3545; color: #fff;">Kontingen</th>
+                        <th>Skor Biru</th>
+                        <th>Skor Merah</th>
                         <!--th>Skor</th>
                         <th>Pemenang</th>
                         <th>Status</th-->
@@ -45,6 +47,8 @@
                            
                             <td>{{ $match->red_name }}</td>
                             <td>{{ $match->red_contingent }}</td>
+                            <td>-</td>
+                            <td>-</td>
                             <!--td>{{ $match->participant_2_score ?? '-' }}</td>
                             <td>{{ $match->winner_name ?? '-' }}</td>
                             <td>{{ $match->status }}</td-->

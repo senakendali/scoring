@@ -60,6 +60,13 @@
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
 </div>
+<div class="fall-counter text-center text-dark mb-2" style="display:none;">
+    <small>Jatuhan:</small> <span id="red-fall-count" class="fw-bold">0</span>
+</div> 
+<div class="fall-counter text-center text-dark mb-2" style="display:none;">
+    <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
+</div>
+
 <div class="d-flex flex-column" style="height:calc(100vh - 180px);">
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <div class="match-header">
@@ -138,15 +145,11 @@
                 <div id="blue-score" class="score">
                     -
                 </div>
-                <div class="fall-counter text-center text-dark mb-2" style="background-color: #transparent; height:100%">
-                    <small>Jatuhan:</small> <span id="blue-fall-count" class="fw-bold">0</span>
-                </div>
+                
                 
             </div>
             <div class="red">
-                <div class="judge">
-                    <small>Jatuhan:</small> <span id="red-fall-count" class="fw-bold">0</span>
-                </div> 
+                
                 <div id="red-score" class="score">
                     -
                 </div>
@@ -205,4 +208,5 @@
     
     
 </div>   
+
 @endsection
