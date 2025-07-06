@@ -47,7 +47,7 @@ $(document).ready(function () {
     // ✅ Global Match Change
     globalChannel.bind('seni.match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/seni/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu
+        window.location.href = url + `/matches/seni/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu
     });
 
     window.Echo.channel(`seni-score.${tournamentSlug}.${arenaSlug}`)

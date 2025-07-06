@@ -156,7 +156,7 @@ $(document).ready(function () {
                     
 
                     $("#matchListModal").modal("hide");
-                    window.location.href = `/matches/seni/${selectedId}`;
+                    window.location.href = url + `/matches/seni/${selectedId}`;
                 });
 
                 matchList.append(li);
@@ -594,7 +594,7 @@ $(document).ready(function () {
 
         $.post(url + `/api/local-seni-matches/${matchId}/next`, function (res) {
             if (res.new_match_id) {
-                window.location.href = `/matches/seni/${res.new_match_id}`;
+                window.location.href = url + `/matches/seni/${res.new_match_id}`;
             } else {
                 alert("Tidak ada pertandingan berikutnya.");
             }

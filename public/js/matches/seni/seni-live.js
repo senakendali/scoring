@@ -193,7 +193,7 @@ $(document).ready(function () {
     // ✅ Handler tombol Recap
     $(document).on("click", ".btn-recap-match", function () {
         const matchId = $(this).data("id");
-        window.location.href = `/matches/seni/${matchId}/recap`;
+        window.location.href = url + `/matches/seni/${matchId}/recap`;
     });
 
     

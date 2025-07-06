@@ -159,7 +159,7 @@ $(document).ready(function () {
                     
 
                     $("#matchListModal").modal("hide");
-                    window.location.href = `/matches/${selectedId}`;
+                    window.location.href = url + `/matches/${selectedId}`;
                 });
 
                 matchList.append(li);
@@ -565,7 +565,7 @@ $(document).ready(function () {
     $(".next-match").on("click", function () {
         $.post(url + `/api/matches/${matchId}/next`, function (res) {
             if (res.new_match_id) {
-                window.location.href = `/matches/${res.new_match_id}`;
+                window.location.href = url +  `/matches/${res.new_match_id}`;
             } else {
                 alert("Tidak ada pertandingan berikutnya.");
             }

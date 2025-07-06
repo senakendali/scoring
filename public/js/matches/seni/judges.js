@@ -55,7 +55,7 @@ $(document).ready(function () {
         // 1. Redirect ke halaman match baru
         // 2. Atau fetch ulang data match aktif
 
-        window.location.href = `/matches/seni/judges/${newMatchId}`;
+        window.location.href = url + `/matches/seni/judges/${newMatchId}`;
     });
 
     

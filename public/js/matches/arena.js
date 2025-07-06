@@ -148,7 +148,7 @@ $(document).ready(function () {
     // ✅ Global Match Change
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/display-arena/${data.new_match_id}`; // Sesuaikan path kalau perlu
+        window.location.href = url + `/matches/display-arena/${data.new_match_id}`; // Sesuaikan path kalau perlu
     });
 
     // ✅ Timer Started
@@ -645,7 +645,7 @@ $(document).ready(function () {
                     $("#matchListModal").modal("hide");
 
                     // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/display-arena/${selectedId}`;
+                    window.location.href = url + `/matches/display-arena/${selectedId}`;
                 });
 
                 matchList.append(li);

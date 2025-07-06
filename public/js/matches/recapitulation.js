@@ -20,7 +20,7 @@ $(document).ready(function () {
     const globalChannel = pusher.subscribe(`arena.match.${arenaSlug}`);
      globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu
+        window.location.href = url + `/matches/${data.new_match_id}/recap`; // Sesuaikan path kalau perlu
     });
 
     fetchMatchData();
@@ -104,7 +104,7 @@ $(document).ready(function () {
                     $("#matchListModal").modal("hide");
 
                     // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/${selectedId}/recap`;
+                    window.location.href = url + `/matches/${selectedId}/recap`;
                 });
 
                 matchList.append(li);

@@ -42,7 +42,7 @@ $(document).ready(function () {
         // 1. Redirect ke halaman match baru
         // 2. Atau fetch ulang data match aktif
 
-        window.location.href = `/matches/seni/referees/${newMatchId}`;
+        window.location.href = url + `/matches/seni/referees/${newMatchId}`;
     });
 
     // Buat slug versi JS

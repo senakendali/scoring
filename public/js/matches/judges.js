@@ -41,7 +41,7 @@ $(document).ready(function () {
 
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed to:", data.new_match_id);
-        window.location.href = `/matches/judges/${data.new_match_id}`; // atau operator, screen, sesuai page lo
+        window.location.href = url + `/matches/judges/${data.new_match_id}`; // atau operator, screen, sesuai page lo
     });
     
     channel.bind('timer.started', function (data) {
@@ -320,7 +320,7 @@ $(document).ready(function () {
                     $("#matchListModal").modal("hide");
 
                     // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/judges/${selectedId}`;
+                    window.location.href = url + `/matches/judges/${selectedId}`;
                 });
 
                 matchList.append(li);

@@ -54,7 +54,7 @@ $(document).ready(function () {
     // ✅ Global Match Change
     globalChannel.bind('match.changed', function (data) {
         console.log("🎯 Match changed:", data);
-        window.location.href = `/matches/referees/${data.new_match_id}`; // Sesuaikan path kalau perlu
+        window.location.href = url + `/matches/referees/${data.new_match_id}`; // Sesuaikan path kalau perlu
     });
 
     // ✅ Timer Started
@@ -442,7 +442,7 @@ $(document).ready(function () {
                     $("#matchListModal").modal("hide");
 
                     // ✅ Redirect ke halaman detail partai
-                    window.location.href = `/matches/referees/${selectedId}`;
+                    window.location.href = url + `/matches/referees/${selectedId}`;
                 });
 
                 matchList.append(li);
