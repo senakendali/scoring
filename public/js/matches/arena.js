@@ -15,8 +15,8 @@ $(document).ready(function () {
     };
 
 
-    preloadImages.kick.src = "/images/kick-icon.png";
-    preloadImages.punch.src = "/images/punch-icon.png";
+    preloadImages.kick.src = url + "/images/kick-icon.png";
+    preloadImages.punch.src = url + "/images/punch-icon.png";
 
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
 
@@ -100,7 +100,7 @@ $(document).ready(function () {
 
     
             const dropIcon = $(`
-                <div class="drop-effect-name"><img src="/images/drop-icon.png" alt="Jatuhan"></div>
+                <div class="drop-effect-name"><img src="`+url + `/images/drop-icon.png" alt="Jatuhan"></div>
             `);
     
             if (data.corner === 'blue') {
@@ -523,12 +523,13 @@ $(document).ready(function () {
         const originalText = `J${judgeNumber}`;
     
         if (type === 'kick') {
-            judgeEl.html('<img src="/images/kick-icon.png" style="height:40px;">');
+            judgeEl.html(`<img src="${url}/images/kick-icon.png" style="height:40px;">`);
         } else if (type === 'punch') {
-            judgeEl.html('<img src="/images/punch-icon.png" style="height:40px;">');
+            judgeEl.html(`<img src="${url}/images/punch-icon.png" style="height:40px;">`);
         } else {
             console.warn("❌ Unknown type:", type);
         }
+
     
         setTimeout(() => {
             judgeEl.text(originalText);
