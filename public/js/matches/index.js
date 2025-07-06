@@ -36,7 +36,7 @@ $(document).ready(function () {
         const tournament = $("#session-tournament").val();
 
         if (e.arena_name === arena && e.tournament_name === tournament) {
-            let route = "/matches";
+            let route = url + "/matches";
 
             switch (role) {
                 case "juri": route += `/judges/${e.match_id}`; break;
