@@ -459,6 +459,16 @@ $('#submit-score-btn').on('click', function () {
                                                 Recap
                                             </button>
                                         </td>
+                                        <td>
+                                            <button 
+                                                class="btn btn-sm btn-outline-info btn-set-score"
+                                                data-id="${match.id}"
+                                                data-name="${match.contingent?.name || '-'}"
+                                                data-participant="${match.team_member1?.name || '-'}"
+                                                data-score="${scoreValue || ''}">
+                                                Input Skor
+                                            </button>
+                                        </td>
                                     `;
                                 } else {
                                     tableHtml += `
