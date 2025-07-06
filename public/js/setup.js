@@ -195,12 +195,12 @@ $(document).ready(function () {
             setTimeout(() => {
                 // Admin → redirect ke dashboard
                 if (mode === 'admin') {
-                    window.location.href = "/dashboard";
+                    window.location.href = url + "/dashboard";
                     return;
                 }
 
                 const matchType = formData.match_type;
-                const redirectBase = '/matches';
+                const redirectBase = url + '/matches';
 
                 if (matchType === 'seni') {
                     window.location.href = `${redirectBase}/seni`;
