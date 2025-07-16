@@ -90,28 +90,46 @@
             <div class="blue">
                 <div class="additional-point">
                     <div class="score-items">
-                        <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="blue">
-                            <img src="{{ asset('images/binaan-1.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="binaan_1" data-point="0" data-corner="blue">
+                            <div>
+                                <img src="{{ asset('images/binaan-1.png') }}">
+                            </div>
+                            <div>Binaan 1</div>
+                            
                         </div>
-                        <div class="item text-white" data-action="binaan_2" data-point="0" data-corner="blue">
-                            <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
+                        <div class="item text-white d-flex flex-column" data-action="binaan_2" data-point="0" data-corner="blue">
+                            <div>
+                                <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
+                            </div> 
+                            <div>Binaan 2</div>
                         </div>
                     </div>
                     <div class="score-items">
-                        <div class="item text-white" data-action="teguran_1" data-point="-1" data-corner="blue">
-                            <img src="{{ asset('images/teguran-1.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="teguran_1" data-point="-1" data-corner="blue">
+                            <div>
+                                <img src="{{ asset('images/teguran-1.png') }}">
+                            </div>    
+                            <div>Teguran 1</div>
                         </div>
-                        <div class="item text-white" data-action="teguran_2" data-point="-2" data-corner="blue">
-                            <img src="{{ asset('images/teguran-2.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="teguran_2" data-point="-2" data-corner="blue">
+                            <div>
+                                <img src="{{ asset('images/teguran-2.png') }}">
+                            </div>
+                            <div>Teguran 2</div>
                         </div>
                     </div>
                     <div class="score-items">
-                        <div class="item text-white" data-action="peringatan_1" data-point="-5" data-corner="blue">
-                            <img src="{{ asset('images/peringatan-1.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="peringatan_1" data-point="-5" data-corner="blue">
+                            <div>
+                                <img src="{{ asset('images/peringatan-1.png') }}">
+                            </div>
+                            <div>Peringatan 1</div>
                         </div>
-                        <div class="item text-white" data-action="peringatan_2" data-point="-10" data-corner="blue">
-                            <img src="{{ asset('images/peringatan-2.png') }}">
-                           
+                        <div class="item text-white d-flex flex-column" data-action="peringatan_2" data-point="-10" data-corner="blue">
+                            <div>
+                                <img src="{{ asset('images/peringatan-2.png') }}">
+                            </div>
+                           <div>Peringatan 2</div>
                         </div>
                     </div>
                     <div class="score-items d-flex gap-2">
@@ -142,27 +160,45 @@
             <div class="red">
             <div class="additional-point">
                     <div class="score-items">
-                        <div class="item text-white" data-action="binaan_1" data-point="0" data-corner="red">
-                            <img src="{{ asset('images/binaan-1.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="binaan_1" data-point="0" data-corner="red">
+                            <div>
+                                <img src="{{ asset('images/binaan-1.png') }}">
+                            </div>
+                            <div>Binaan 1</div>
                         </div>
-                        <div class="item text-white" data-action="binaan_2" data-point="0" data-corner="red">
+                        <div class="item text-white d-flex flex-column" data-action="binaan_2" data-point="0" data-corner="red">
+                           <div>
                             <img src="{{ asset('images/binaan-2.png') }}" style="transform: rotate(65deg);">
+                           </div> 
+                           <div>Binaan 2</div>
                         </div>
                     </div>
                     <div class="score-items">
-                        <div class="item text-white" data-action="teguran_1" data-point="-1" data-corner="red">
-                            <img src="{{ asset('images/teguran-1.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="teguran_1" data-point="-1" data-corner="red">
+                            <div>
+                                <img src="{{ asset('images/teguran-1.png') }}">
+                            </div>
+                            <div>Teguran 1</div>
                         </div>
-                        <div class="item text-white" data-action="teguran_2" data-point="-2" data-corner="red">
-                            <img src="{{ asset('images/teguran-2.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="teguran_2" data-point="-2" data-corner="red">
+                            <div>
+                                <img src="{{ asset('images/teguran-2.png') }}">
+                            </div>
+                            <div>Teguran 2</div>
                         </div>
                     </div>
                     <div class="score-items">
-                        <div class="item text-white" data-action="peringatan_1" data-point="-5" data-corner="red">
-                            <img src="{{ asset('images/peringatan-1.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="peringatan_1" data-point="-5" data-corner="red">
+                            <div>
+                                <img src="{{ asset('images/peringatan-1.png') }}">
+                            </div>
+                            <div>Peringatan 1</div>
                         </div>
-                        <div class="item text-white" data-action="peringatan_2" data-point="-10" data-corner="red">
-                            <img src="{{ asset('images/peringatan-2.png') }}">
+                        <div class="item text-white d-flex flex-column" data-action="peringatan_2" data-point="-10" data-corner="red">
+                            <div>
+                                <img src="{{ asset('images/peringatan-2.png') }}">
+                            </div>
+                            <div>Peringatan 2</div>
                            
                         </div>
                     </div>
