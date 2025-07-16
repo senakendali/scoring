@@ -6,4 +6,5 @@ return [
     'site_name' => 'Senstech',
     'default_timezone' => 'Asia/Jakarta',
     'max_upload_size' => 2048, // dalam KB
+    'path_prefix' => env('APP_PATH_PREFIX', ''),
 ];

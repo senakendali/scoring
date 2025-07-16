@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.tanding_layout')
 @section('content')
 <div class="modal fade" id="matchListModal" tabindex="-1" aria-labelledby="matchListModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-sm">
@@ -15,12 +15,12 @@
     </div>
   </div>
 </div>
-<div class="fix-match-info" id="tournament-name">-</div>
+<!--div class="fix-match-info" id="tournament-name">-</div>
  <div class="fix-match-detail">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
-</div>
+</div-->
 <input type="hidden" id="match-id" value="{{ $match_id }}">
 <div class="match-header">
     <!--div class="match-info" id="tournament-name">-</div>

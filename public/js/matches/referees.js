@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin + '/digital_scoring/scoring/public';
+    const url = APP.baseUrl;
     let matchId = parseInt($("#match-id").val());
 
     let currentArena = null;
@@ -350,8 +350,14 @@ $(document).ready(function () {
         
 
     function resetRefereeActions() {
-        $(".item, .drop").removeClass('active');
-        //$(".item, .drop").prop("disabled", true).addClass("disabled");
+    // Reset semua kecuali peringatan1 dan peringatan2
+         $(".item, .drop").each(function () {
+            const action = $(this).data('action');
+
+            if (action !== 'peringatan_1' && action !== 'peringatan_2') {
+                $(this).removeClass('active');
+            }
+        });
     }
     
     
@@ -409,6 +415,16 @@ $(document).ready(function () {
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
             roundId = activeRound?.id || null;
             $("#current-round").text(`ROUND ${activeRound?.round_number || 1}`);
+
+            // ✅ Tampilkan penalti aktif
+            $('[data-action][data-corner]').removeClass('active');
+            if (data.penalties) {
+                Object.entries(data.penalties).forEach(([corner, actions]) => {
+                    actions.forEach(action => {
+                        $(`[data-action="${action}"][data-corner="${corner}"]`).addClass('active');
+                    });
+                });
+            }
             $(".loader-bar").hide();
         });
     }

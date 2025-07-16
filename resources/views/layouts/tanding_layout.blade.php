@@ -16,15 +16,17 @@
 <body>
     <div id="loader" class="loader-bar"></div>
     
-    <header class="app-header d-flex justify-content-start  light">
+    <header class="app-header d-flex justify-content-start judges">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-           <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
-
-            @if(request()->segment(2) == 'display-arena')
-                <div id="timer" class="timer arena roboto-bold text-white">
-                    00:00
-                </div>
-            @endif
+            <div class="t-detail d-flex flex-column w-100 gap-2">
+                    <div class="tournament-info" id="tournament-name">-</div>
+                    <div class="d-flex match-detail-info gap-2">
+                        <div class="item" id="match-code" style="cursor:pointer;">-</div>
+                        <div class="item" id="stage">-</div>
+                        <div class="item" id="class-name">-</div>
+                    </div>
+            </div>
+           
             
             @if(session('role') && (request()->segment(2) != 'display-arena' && request()->segment(3) != 'live'))
             <div class="dropdown ms-auto">

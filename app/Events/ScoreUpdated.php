@@ -45,29 +45,25 @@ class ScoreUpdated implements ShouldBroadcast
     {
         // Ambil total penalti dari referee actions
         $bluePenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('round_id', $this->roundId)
             ->where('corner', 'blue')
             ->where('action', '!=', 'jatuhan')
             ->sum('point_change');
 
         $redPenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('round_id', $this->roundId)
             ->where('corner', 'red')
             ->where('action', '!=', 'jatuhan')
             ->sum('point_change');
 
          // 💡 Ambil jumlah jatuhan
         $blueFallCount = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('round_id', $this->roundId)
             ->where('corner', 'blue')
             ->where('action', 'jatuhan')
-            ->count() * 3;
+            ->count();
 
         $redFallCount = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('round_id', $this->roundId)
             ->where('corner', 'red')
             ->where('action', 'jatuhan')
-            ->count() * 3;
+            ->count();
 
 
         // Tentukan pemenang realtime

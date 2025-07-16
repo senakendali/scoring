@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin + '/digital_scoring/scoring/public';
+    const url = APP.baseUrl;
     const matchId = window.location.pathname.split("/").pop();
     const timerEl = $("#timer");
     

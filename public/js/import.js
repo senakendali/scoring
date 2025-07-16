@@ -9,6 +9,7 @@ $(document).ready(function () {
     const $tournamentSelectTanding = $('#tournament_name_tanding');
     const $tournamentSelectSeni = $('#tournament_name_seni');
     const dataSource = $('#data_source').val();
+    const url = APP.baseUrl;
 
     
     $(".loader-bar").show();
@@ -71,7 +72,7 @@ $(document).ready(function () {
             }));
 
             $.ajax({
-                url: '/api/import-matches',
+                url: url + '/api/import-matches',
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -126,7 +127,7 @@ $(document).ready(function () {
             }));
 
             $.ajax({
-                url: '/api/import-seni-matches',
+                url: url + '/api/import-seni-matches',
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

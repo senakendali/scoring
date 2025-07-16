@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin + '/digital_scoring/scoring/public';
+    const url = APP.baseUrl;
     var matchId = $("#match-id").val();
 
     let currentArena = null;

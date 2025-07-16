@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin + '/digital_scoring/scoring/public';
+    const url = APP.baseUrl;
     let currentRoundNumber = 1;
 
     let matchId = parseInt($("#match-id").val());

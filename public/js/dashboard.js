@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin + '/digital_scoring/scoring/public';
+    var url = APP.baseUrl;
 
     $('#export-all').on('click', function () {
         window.open(`${url}/medal-recap/export-pdf-all`, '_blank');

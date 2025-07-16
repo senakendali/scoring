@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin + '/digital_scoring/scoring/public';
+    var url = APP.baseUrl;
     let matchId = parseInt($("#match-id").val());
 
     let currentArena = null;
@@ -41,8 +41,7 @@ $(document).ready(function () {
     });
 
     const channel = pusher.subscribe(`match.${matchId}`);
-    //const globalChannel = pusher.subscribe('global.match');
-    //const globalChannel = pusher.subscribe(`global.match.${matchId}`);
+    
     const arenaSlug = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
     const globalChannel = pusher.subscribe(`arena.match.${arenaSlug}`);
 
@@ -52,22 +51,16 @@ $(document).ready(function () {
         const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"], .drop[data-action="${data.action}"][data-corner="${data.corner}"]`;
         $(selector).removeClass('active');
 
+        if (data.action === 'jatuhan') {
+            if (fallCounter[data.corner] > 0) {
+                fallCounter[data.corner] -= 1; // 👉 dari -3 jadi -1
+                $(`#${data.corner}-fall-count`).text(fallCounter[data.corner]);
+            }
+        }
+
+
         
     });
-
-    /*channel.bind('referee.action', function (data) {
-        console.log("📣 Referee Action Received:", data);
-    
-        const selector = `.item[data-action="${data.action}"][data-corner="${data.corner}"]`;
-    
-        const $item = $(selector);
-        $item.addClass("active");
-    
-        // Kasih efek sebentar (misalnya 2 detik)
-        setTimeout(() => {
-            $item.removeClass("active");
-        }, 1000);
-    });*/
 
     // Referee Action dari Dewan
     // Backup score sebelumnya
@@ -94,7 +87,7 @@ $(document).ready(function () {
             console.log('💧 Detected Jatuhan');
 
             if (fallCounter[data.corner] !== undefined) {
-                fallCounter[data.corner] += 3;
+                fallCounter[data.corner] += 1;
                 $(`#${data.corner}-fall-count`).text(fallCounter[data.corner]);
             }
 
@@ -117,14 +110,6 @@ $(document).ready(function () {
             }, 5000);
         }
     });
-    
-    
-    
-
-
-    
-    
-
     
 
     // 🔥 Saat juri tekan tombol
@@ -186,11 +171,7 @@ $(document).ready(function () {
             $(".timer").text("00:00");
             resetRefereeActions();
 
-             // ✅ Reset jatuhan
-            fallCounter.blue = 0;
-            fallCounter.red = 0;
-            $("#blue-fall-count").text(0);
-            $("#red-fall-count").text(0);
+             
 
 
             
@@ -475,8 +456,16 @@ $(document).ready(function () {
         
     
     function resetRefereeActions() {
-        $(".item, .drop").removeClass('active');
+    // Reset semua kecuali peringatan1 dan peringatan2
+         $(".item, .drop").each(function () {
+            const action = $(this).data('action');
+
+            if (action !== 'peringatan_1' && action !== 'peringatan_2') {
+                $(this).removeClass('active');
+            }
+        });
     }
+
 
     function updateJudgeIcon(corner, judgeNumber, type) {
         const judgeEl = $(`#judge-${corner}-${judgeNumber}`);
@@ -577,12 +566,27 @@ $(document).ready(function () {
                 $("#display-timer").css('height', '20px');
                 $("#timer").hide();
             }
-            //$("#tournament-name").text(data.tournament_name);
+            
             currentArena = data.arena_name;
             $(".match-item").css('height', '80px');
-            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
-            $("#match-code").text(data.arena_name + " Partai " + data.match_number);
-            $("#class-name").text(data.class_name);
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim()).css({
+                    'font-weight': 'bold'
+                });
+
+            $("#match-code").text(data.arena_name + " Partai " + data.match_number).css({
+                'font-size': '16px',
+                'font-weight': 'bold'
+            });
+            $("#class-name").text(data.class_name).css({
+                'font-size': '16px',
+                'font-weight': 'bold'
+            });
+
+            $("#stage").text(data.round_label).css({
+                'font-size': '16px',
+                'font-weight': 'bold'
+            });
+
             $("#blue-name").html(`
                 ${data.blue.name}<br>
                 <small>${data.blue.contingent}</small>
@@ -601,7 +605,7 @@ $(document).ready(function () {
             const maxRound = Math.max(...data.rounds.map(r => r.round_number));
             const roundLabels = getRoundLabels(maxRound);
 
-            $("#stage").text(data.round_label);
+           
     
            
             const activeRound = data.rounds.find(r => r.status === 'in_progress') || data.rounds[0];
@@ -613,6 +617,48 @@ $(document).ready(function () {
 
             $("#blue-score").text(data.blue.score);
             $("#red-score").text(data.red.score);
+
+            if (data.winner_corner === 'blue') {
+                $("#blue-score").css({
+                    backgroundColor: "#4E25FF",
+                    color: "#FFFFFF"
+                });
+                $(".blue .additional-score").css({
+                    backgroundColor: "#4E25FF",
+                    color: "#FFFFFF"
+                });
+            } else if (data.winner_corner === 'red') {
+                $("#red-score").css({
+                    backgroundColor: "#E8003F",
+                    color: "#FFFFFF"
+                });
+                $(".red .additional-score").css({
+                    backgroundColor: "#E8003F",
+                    color: "#FFFFFF"
+                });
+            }
+
+
+            // 💧 Set Jatuhan dari API
+            if (typeof data.blueFallCount !== 'undefined') {
+                fallCounter.blue = data.blueFallCount;
+                $("#blue-fall-count").text(fallCounter.blue);
+            }
+            if (typeof data.redFallCount !== 'undefined') {
+                fallCounter.red = data.redFallCount;
+                $("#red-fall-count").text(fallCounter.red);
+            }
+
+            // ✅ Tampilkan penalti aktif
+            $('[data-action][data-corner]').removeClass('active');
+            if (data.penalties) {
+                Object.entries(data.penalties).forEach(([corner, actions]) => {
+                    actions.forEach(action => {
+                        $(`[data-action="${action}"][data-corner="${corner}"]`).addClass('active');
+                    });
+                });
+            }
+
             $(".loader-bar").hide();
         });
     }

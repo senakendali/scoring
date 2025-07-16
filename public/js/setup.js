@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    var url = window.location.origin + '/digital_scoring/scoring/public';
+    const url = APP.baseUrl;
     let activeJuris = [];
 
     function fetchActiveJuris(tournament, arena, matchType) {

@@ -30,6 +30,16 @@ body{
     min-height: 180px;
 }
 
+.app-header.judges {
+    width: 100%;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100px;
+}
+
 .app-header.light img {
     max-height: 180px;
     height: auto;
@@ -104,6 +114,46 @@ body{
     color: #FFFFFF;
 }
 
+.tournament-info {
+    width: 400px;
+    margin: 0 auto;
+    font-size: 15px;
+    padding:5px;
+    background:linear-gradient(to bottom, #2a2a2a, #000000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    border-radius: 5px;
+
+}
+
+.match-detail-info{
+    width: 600px;
+    margin: 0 auto;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    border-radius: 5px;
+}
+
+.match-detail-info .item{
+    flex: 1;
+    font-size: 15px;
+    padding:5px;
+    background:linear-gradient(to bottom, #2a2a2a, #000000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    border-radius: 5px;
+}
+
 .fix-match-info {
     position: fixed;
     top: 0;
@@ -114,6 +164,32 @@ body{
     min-height: 80px;
     /*width: 750px;*/
     /*min-width: 600px;*/
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    padding: 20px;
+
+    /* 🎯 Tambahin shadow di sini */
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.6);
+
+
+}
+
+.fix-match-info.arena{
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 25px;
+    background: linear-gradient(to bottom, #2a2a2a, #000000);
+    min-height: 80px;
+    width: 750px;
+    
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -210,6 +286,25 @@ body{
    
     min-height: 80px;
     min-width: 600px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+   gap: 20px;
+}
+
+.fix-match-detail.arena {
+    position: fixed;
+    top: 95px;
+    left: 50%;
+    transform: translateX(-50%);
+   
+    min-height: 80px;
+    min-width: 750px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -492,7 +587,7 @@ body{
 }
 
 .roboto-bold {
-    font-family: "Roboto", serif;
+    /*font-family: "Roboto", serif;*/
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
@@ -580,7 +675,6 @@ body{
 .display-arena-container .blue .score{
     background-color: #FFFFFF;
     width: 50%;
-    border-bottom: 1px solid #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -618,7 +712,6 @@ body{
 .display-arena-container .red .score{
     background-color: #FFFFFF;
     width: 50%;
-    border-bottom: 1px solid #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -770,7 +863,7 @@ body{
 .judge-container .judges {
     width: 100%; /* Maintain relative width */
     height:100%; /* Fixed height */
-    border-bottom: 1px solid #ffffff; /* Ensure proper casing for hex colors */
+
     box-sizing: border-box; /* Include padding and border in width/height */
     display: flex;
     gap: 10px;
@@ -1979,8 +2072,8 @@ th, td {
     
   }
 
-  .fall-counter {
-    font-size: 20px;
+    .fall-counter {
+        font-size: 20px;
     }
 
    .drop-container {
@@ -1991,32 +2084,51 @@ th, td {
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        gap: 10px;
+       
+       
     }
 
 
    .blue-fall{
         width: 150px;
         height: 100px;
-        background: #FFF;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        background-color: #ffc107;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
         justify-content: center;
-        /*position: absolute;
-        bottom: 0;
-        left: 40%;*/
+       
         text-transform: uppercase;
         font-size: 20px;
-        border-radius: 5px;
+        
         
        
    }
 
+   .drop-indicator{
+        width: 150px;
+        height: 100px;
+        background:linear-gradient(to bottom, #2a2a2a, #000000);
+        
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        justify-content: center;
+       
+        text-transform: uppercase;
+        font-size: 20px;
+   }
+
+   .drop-indicator img{
+    width: 60px;
+   }
+
    .f-count{
-        font-size: 30px !important;
+        font-size: 60px !important;
         font-weight: bold;
 
    }
@@ -2024,21 +2136,28 @@ th, td {
    .red-fall{
         width: 150px;
         height: 100px;
-        background: #FFF;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-         border-radius: 5px;
+        background-color: #ffc107;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
         
         display: flex;
          flex-direction: column;
         align-items: center;
         text-align: center;
         justify-content: center;
-        /*position: absolute;
-        bottom: 0;
-        right: 40%;*/
+        
         text-transform: uppercase;
-        font-size: 20px;
+        
        
+   }
+
+   .drop-container .label{
+    background-color: #FFFFFF;
+    width: 130px;
+    color: #000000;
+    padding: 1px;
+    border-radius: 5px;
+    font-weight: bold
    }
 
 

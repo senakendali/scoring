@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cjmanajemen - Digital Scoring</title>
     
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css?v=' . time() . '') }}">
     <link rel="stylesheet" href="{{ asset('bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap-icons/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
@@ -45,7 +45,7 @@
                     
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <form action="/logout" method="POST" class="px-3 m-0">
+                        <form action="{{ config('app_settings.path_prefix') }}/logout" method="POST" class="px-3 m-0">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-danger w-100">Logout</button>
                         </form>
@@ -93,28 +93,16 @@
    
     </script>
 
+    <script>
+        window.APP_PATH_PREFIX = "{{ config('app_settings.path_prefix') }}";
+        window.APP = {
+            baseUrl: window.location.origin + window.APP_PATH_PREFIX
+        };
+    </script>
 
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-    
     @if(isset($js))
         <script src="{{ asset('js/'.$js.'?v='.time()) }}"></script>
     @endif
     
-
-
-
 </body>
 </html>

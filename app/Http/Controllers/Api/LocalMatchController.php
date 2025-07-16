@@ -169,12 +169,8 @@ class LocalMatchController extends Controller
 
 
 
-
-
-
-
     // Menampilkan pertandingan berdasarkan ID
-    public function show($id)
+    public function show_asli($id)
     {
         $match = LocalMatch::with([
             'rounds' => function ($query) {
@@ -210,6 +206,116 @@ class LocalMatchController extends Controller
             ],
             'rounds' => $match->rounds,
             'total_rounds' => $match->total_rounds,
+        ]);
+    }
+
+   public function show($id)
+    {
+        $match = LocalMatch::with([
+            'rounds' => function ($query) {
+                $query->orderBy('round_number');
+            }
+        ])->findOrFail($id);
+
+        // Skor
+        $red_score = $this->calculateScore($id, 'red');
+        $blue_score = $this->calculateScore($id, 'blue');
+
+        // Total penalti semua ronde (selain jatuhan)
+        $bluePenalty = LocalRefereeAction::where('local_match_id', $id)
+            ->where('corner', 'blue')
+            ->where('action', '!=', 'jatuhan')
+            ->sum('point_change');
+
+        $redPenalty = LocalRefereeAction::where('local_match_id', $id)
+            ->where('corner', 'red')
+            ->where('action', '!=', 'jatuhan')
+            ->sum('point_change');
+
+        // Jatuhan
+        $blueFallCount = LocalRefereeAction::where('local_match_id', $id)
+            ->where('corner', 'blue')
+            ->where('action', 'jatuhan')
+            ->count();
+
+        $redFallCount = LocalRefereeAction::where('local_match_id', $id)
+            ->where('corner', 'red')
+            ->where('action', 'jatuhan')
+            ->count();
+
+        // Warnings (global count)
+        $blueWarnings = LocalRefereeAction::where('local_match_id', $id)
+            ->where('corner', 'blue')
+            ->whereIn('action', ['peringatan_1', 'peringatan_2'])
+            ->count();
+
+        $redWarnings = LocalRefereeAction::where('local_match_id', $id)
+            ->where('corner', 'red')
+            ->whereIn('action', ['peringatan_1', 'peringatan_2'])
+            ->count();
+
+        // Penalties detail untuk display
+        $penaltyTypes = [
+            'binaan_1', 'binaan_2',
+            'teguran_1', 'teguran_2',
+            'peringatan_1', 'peringatan_2'
+        ];
+
+        $penalties = LocalRefereeAction::where('local_match_id', $id)
+            ->whereIn('action', $penaltyTypes)
+            ->select('corner', 'action')
+            ->get()
+            ->groupBy('corner')
+            ->map(function ($group) {
+                return $group->pluck('action')->unique()->values();
+            });
+
+        // Winner logic
+        $winner = null;
+        if ($blue_score > $red_score) {
+            $winner = 'blue';
+        } elseif ($red_score > $blue_score) {
+            $winner = 'red';
+        } else {
+            if ($bluePenalty < $redPenalty) {
+                $winner = 'blue';
+            } elseif ($redPenalty < $bluePenalty) {
+                $winner = 'red';
+            }
+        }
+
+        return response()->json([
+            'id' => $match->id,
+            'tournament_name' => $match->tournament_name,
+            'arena_name' => $match->arena_name,
+            'match_code' => $match->match_code,
+            'match_number' => $match->match_number,
+            'class_name' => $match->class_name,
+            'status' => $match->status,
+            'is_display_timer' => $match->is_display_timer,
+            'round_level' => $match->round_level,
+            'round_label' => $match->round_label,
+            'round_duration' => $match->round_duration,
+            'blue' => [
+                'name' => $match->blue_name,
+                'contingent' => $match->blue_contingent,
+                'score' => $blue_score,
+            ],
+            'red' => [
+                'name' => $match->red_name,
+                'contingent' => $match->red_contingent,
+                'score' => $red_score,
+            ],
+            'rounds' => $match->rounds,
+            'total_rounds' => $match->total_rounds,
+
+            // Tambahan untuk display
+            'blueFallCount' => $blueFallCount,
+            'redFallCount' => $redFallCount,
+            'blueWarnings' => $blueWarnings,
+            'redWarnings' => $redWarnings,
+            'winner_corner' => $winner,
+            'penalties' => $penalties,
         ]);
     }
 

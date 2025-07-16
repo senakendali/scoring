@@ -54,18 +54,21 @@
 </div>
 
 
- <div class="fix-match-info" id="tournament-name">-</div>
- <div class="fix-match-detail">
+ <div class="fix-match-info arena" id="tournament-name">-</div>
+ <div class="fix-match-detail arena">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
 </div>
 <div class="drop-container">
-    <div class="blue-fall">
-        <div>Jatuhan:</div> <div id="blue-fall-count" class="f-count">0</div>
+    <div class="blue-fall roboto-bold text-white">
+        <div id="blue-fall-count" class="f-count">0</div>
     </div> 
-    <div class="red-fall">
-        <div>Jatuhan:</div> <div id="red-fall-count" class="f-count">0</div>
+    <div class="drop-indicator roboto-bold text-white">
+        <img src="{{ asset('images/drop.png') }}" alt="">
+    </div>
+    <div class="red-fall roboto-bold text-white">
+        <div id="red-fall-count" class="f-count">0</div>
     </div>
 </div>
 

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.tanding_layout')
 @section('content')
 <!-- Modal Result Verifikasi -->
 <div class="modal fade" id="verificationResultModal" tabindex="-1" aria-labelledby="verificationResultModalLabel" aria-hidden="true">
@@ -55,13 +55,13 @@
 
 
 
-<div class="fix-match-info dark" id="tournament-name">-</div>
+<!--div class="fix-match-info dark" id="tournament-name">-</div>
 <div class="fix-match-detail">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
-</div>
-<div class="judges-container d-flex flex-column" style="height:calc(100vh - 180px);">
+</div-->
+<div class="judges-container d-flex flex-column" style="height:calc(100vh - 100px);">
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="round-id" value="{{ $round_id }}">
 

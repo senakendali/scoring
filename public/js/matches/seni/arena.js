@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const url = window.location.origin + '/digital_scoring/scoring/public';
+    const url = APP.baseUrl;
     let matchId = parseInt($("#match-id").val());
 
     console.log("🟢 Arena JS Ready, Match ID:", matchId);
@@ -167,26 +167,6 @@ $(document).ready(function () {
         });
 
 
-    
-    
-    
-    
-
-   
-
-
-    
-    
-        
-        
-
-
-   
-    
-    
-    
-    
-
     // ✅ Countdown Timer Handler
     function startCountUp(startTime, maxDuration = 600) {
         clearInterval(countdownInterval);
@@ -350,10 +330,6 @@ $(document).ready(function () {
         }
     }
 
-
-
-    
-
     function fetchJuriCount(tournament, arena) {
         const matchId = $("#match-id").val();
 
@@ -491,15 +467,5 @@ $(document).ready(function () {
                 $("#total-score").text(median.toFixed(6));
             });
     }
-
-
-
-
-
-
-
-
-    
-
     
 });
