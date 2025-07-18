@@ -352,7 +352,7 @@ class LocalMatchSeniController extends Controller
             $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
         }
 
-        $query->whereRaw('CAST(match_order AS UNSIGNED) >= ?', [89]);
+        //$query->whereRaw('CAST(match_order AS UNSIGNED) >= ?', [89]);
 
 $matches = $query
     ->orderByRaw('CAST(match_order AS UNSIGNED)')
