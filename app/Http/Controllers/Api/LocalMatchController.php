@@ -30,11 +30,16 @@ class LocalMatchController extends Controller
     public function index(Request $request)
     {
         $arena = session('arena_name');
+        $tournament = session('tournament_name');
 
         $query =  $query = LocalMatch::query();
 
         if ($arena) {
             $query->where('arena_name', $arena);
+        }
+
+        if ($tournament) {
+            $query->where('tournament_name', $tournament);
         }
 
         // Urutkan berdasarkan arena, pool, kelas, dan round_level

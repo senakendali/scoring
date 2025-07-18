@@ -26,6 +26,7 @@ class LocalMatchSeniController extends Controller
     {
         $arenaName = session('arena_name');
         $matchType = session('match_type'); // 'seni' atau 'tanding'
+        $tournament = session('tournament_name');
 
         $query = \App\Models\LocalSeniMatch::query();
 
@@ -35,6 +36,10 @@ class LocalMatchSeniController extends Controller
 
         if ($matchType) {
             $query->where('match_type', 'like', 'seni_%');
+        }
+
+        if ($tournament) {
+            $query->where('tournament_name', $tournament);
         }
 
          // ✅ Filter hanya match yang sedang berlangsung
@@ -107,6 +112,7 @@ class LocalMatchSeniController extends Controller
 {
     $arenaName = session('arena_name');
     $matchType = session('match_type'); // 'seni' atau 'tanding'
+    $tournament = session('tournament_name');
 
     $query = \App\Models\LocalSeniMatch::query();
 
@@ -116,6 +122,10 @@ class LocalMatchSeniController extends Controller
 
     if ($matchType === 'seni') {
         $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+    }
+
+    if ($tournament) {
+        $query->where('tournament_name', $tournament);
     }
 
     $matches = $query->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))->get();
