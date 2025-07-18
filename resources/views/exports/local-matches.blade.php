@@ -14,7 +14,7 @@
    <h2>DAFTAR PERTANDINGAN - {{ strtoupper($tournament) }}</h2>
 
     @foreach($grouped as $arena => $pools)
-        <h3>Arena: {{ strtoupper($arena) }}</h3>
+        <h3>{{ strtoupper($arena) }}</h3>
 
         @foreach($pools as $pool => $matches)
             

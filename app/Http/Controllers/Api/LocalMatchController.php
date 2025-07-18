@@ -60,6 +60,7 @@ class LocalMatchController extends Controller
     {
         $arena = session('arena_name');
         $tournament = session('tournament_name'); // ✅ ambil nama turnamen dari session
+       
 
         $query = LocalMatch::query();
 
@@ -89,6 +90,7 @@ class LocalMatchController extends Controller
     {
         $arena = session('arena_name');
         $tournament = session('tournament_name');
+        
 
         $query = \App\Models\LocalMatch::query();
 
@@ -101,8 +103,6 @@ class LocalMatchController extends Controller
         }
 
         $matches = $query->orderBy('arena_name')
-            ->where('match_number', '>=', 112)
-            ->where('match_number', '<=', 190)
             ->orderBy('pool_name')
             ->orderBy('class_name')
             ->orderBy('round_level')

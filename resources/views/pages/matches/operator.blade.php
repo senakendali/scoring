@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.tanding_layout')
 @section('content')
 <div class="modal fade" id="nextRoundModal" tabindex="-1" aria-labelledby="nextRoundLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -145,12 +145,12 @@
 </div>
 
 
-<div class="fix-match-info dark" id="tournament-name">-</div>
+<!--div class="fix-match-info dark" id="tournament-name">-</div>
 <div class="fix-match-detail">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
-</div>
+</div-->
 
 <div class="match-header">
     <input type="hidden" id="round-id">
