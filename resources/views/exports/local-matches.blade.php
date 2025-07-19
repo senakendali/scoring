@@ -13,50 +13,43 @@
 <body>
    <h2>DAFTAR PERTANDINGAN - {{ strtoupper($tournament) }}</h2>
 
-    @foreach($grouped as $arena => $pools)
-        <h3>{{ strtoupper($arena) }}</h3>
+  @foreach($grouped as $arena => $matches)
+    <h3>{{ strtoupper($arena) }}</h3>
 
-        @foreach($pools as $pool => $matches)
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Partai</th>
-                        <th>Babak</th>
-                        <th>Kelas</th>
-                        <th style="background-color: #007bff; color: #fff;">Sudut Biru</th>
-                        <th style="background-color: #007bff; color: #fff;">Kontingen</th>
-                        <!--th>Skor</th-->
-                        <th style="background-color: #dc3545; color: #fff;">Sudut Merah</th>
-                        <th style="background-color: #dc3545; color: #fff;">Kontingen</th>
-                        <th>Skor Biru</th>
-                        <th>Skor Merah</th>
-                        <!--th>Skor</th>
-                        <th>Pemenang</th>
-                        <th>Status</th-->
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($matches as $match)
-                        <tr>
-                            <td>{{ $match->match_number }}</td>
-                            <td>{{ $match->round_label }}</td>
-                            <td>{{ $match->class_name }}</td>
-                            <td>{{ $match->blue_name }}</td>
-                            <td>{{ $match->blue_contingent }}</td>
-                           
-                            <td>{{ $match->red_name }}</td>
-                            <td>{{ $match->red_contingent }}</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <!--td>{{ $match->participant_2_score ?? '-' }}</td>
-                            <td>{{ $match->winner_name ?? '-' }}</td>
-                            <td>{{ $match->status }}</td-->
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endforeach
-    @endforeach
+    <table>
+        <thead>
+            <tr>
+                <th>Partai</th>
+                <th>Babak</th>
+                <th>Kelas</th>
+                <th style="background-color: #007bff; color: #fff;">Sudut Biru</th>
+                <th style="background-color: #007bff; color: #fff;">Kontingen</th>
+                <th style="background-color: #dc3545; color: #fff;">Sudut Merah</th>
+                <th style="background-color: #dc3545; color: #fff;">Kontingen</th>
+                <th>Skor Biru</th>
+                <th>Skor Merah</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($matches as $match)
+                <tr>
+                    <td>{{ $match->match_number }}</td>
+                    <td>{{ $match->round_label }}</td>
+                    <td>{{ $match->class_name }}</td>
+                    <td>{{ $match->blue_name }}</td>
+                    <td>{{ $match->blue_contingent }}</td>
+                    <td>{{ $match->red_name }}</td>
+                    <td>{{ $match->red_contingent }}</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+@endforeach
+
+
+
+
 </body>
 </html>

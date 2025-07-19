@@ -86,7 +86,51 @@ class LocalMatchController extends Controller
         return response()->json($grouped);
     }
 
-    public function exportLocalMatches()
+  public function exportLocalMatches()
+    {
+        $tournament = session('tournament_name');
+        $arena = session('arena_name');
+
+        $query = \App\Models\LocalMatch::query();
+
+        if ($tournament) {
+            $query->where('tournament_name', $tournament);
+        }
+
+        if ($arena) {
+            $query->where('arena_name', $arena);
+        }
+
+        $matches = $query->orderBy('arena_name')
+            ->orderBy('pool_name')
+            ->orderBy('class_name')
+            ->orderBy('round_level')
+            ->orderBy('match_number')
+            ->get();
+
+        // ⛳️ Gabungkan semua pool per arena (sama seperti JS)
+        $grouped = $matches->groupBy('arena_name')->map(function ($arenaMatches) {
+            return $arenaMatches->sortBy('match_number')->values();
+        });
+
+        $pdf = \PDF::loadView('exports.local-matches', [
+            'grouped' => $grouped, // sekarang: arena => [semua match urut]
+            'arena' => $arena,
+            'tournament' => $tournament,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("daftar-pertandingan-{$tournament}.pdf");
+    }
+
+
+
+
+
+
+
+
+
+    public function exportLocalMatches_()
     {
         $arena = session('arena_name');
         $tournament = session('tournament_name');
