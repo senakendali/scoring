@@ -61,7 +61,7 @@
                                 <th scope="col" class="bg-secondary text-center">J4</th>
                             </tr>
                         </thead>
-                        <tbody id="unsur-tunggal-ganda">
+                        <tbody>
                             <tr id="truth-row">
                                 <td class="blue">Kebenaran</td>
                                 <td class="blue text-center">-</td>
@@ -76,40 +76,14 @@
                                 <td class="blue text-center">-</td>
                                 <td class="blue text-center">-</td>
                             </tr>
-                        </tbody>
-
-                        <tbody id="unsur-regu-solo" style="display:none;">
-                            <tr id="attack-row">
-                                <td class="blue">Attack Defense Technique</td>
-                                <td class="blue text-center">-</td>
-                                <td class="blue text-center">-</td>
-                                <td class="blue text-center">-</td>
-                                <td class="blue text-center">-</td>
-                            </tr>
-                            <tr id="firmness-row">
-                                <td class="blue">Firmness and Harmony</td>
-                                <td class="blue text-center">-</td>
-                                <td class="blue text-center">-</td>
-                                <td class="blue text-center">-</td>
-                                <td class="blue text-center">-</td>
-                            </tr>
-                            <tr id="soulfulness-row">
-                                <td class="blue">Soulfullness</td>
+                            <tr id="total-row">
+                                <td class="blue">Total Nilai</td>
                                 <td class="blue text-center">-</td>
                                 <td class="blue text-center">-</td>
                                 <td class="blue text-center">-</td>
                                 <td class="blue text-center">-</td>
                             </tr>
                         </tbody>
-
-                        <tr id="total-row">
-                            <td class="blue">Total Nilai</td>
-                            <td class="blue text-center">-</td>
-                            <td class="blue text-center">-</td>
-                            <td class="blue text-center">-</td>
-                            <td class="blue text-center">-</td>
-                        </tr>
-
                     </table>
 
 

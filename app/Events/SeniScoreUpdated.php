@@ -52,6 +52,8 @@ class SeniScoreUpdated implements ShouldBroadcast
 
         $match = LocalSeniMatch::find($this->matchId);
         $category = strtolower($match->category);
+        $matchType = $match->match_type; // pastikan field ini ada di tabel
+
         $baseScore = in_array($category, ['tunggal', 'regu']) ? 9.90 : 9.10;
 
         foreach ($juris as $juri) {
@@ -69,12 +71,11 @@ class SeniScoreUpdated implements ShouldBroadcast
 
             $additional = $final?->kemantapan ?? 0;
 
-            $componentTotal = 0;
-            if ($component) {
-                $componentTotal += $component->attack_defense_technique ?? 0;
-                $componentTotal += $component->firmness_harmony ?? 0;
-                $componentTotal += $component->soulfulness ?? 0;
-            }
+            $attack = $component?->attack_defense_technique ?? 0;
+            $firmness = $component?->firmness_harmony ?? 0;
+            $soul = $component?->soulfulness ?? 0;
+
+            $componentTotal = $attack + $firmness + $soul;
 
             $score = $baseScore + $additional + $componentTotal - $deduction;
 
@@ -84,7 +85,11 @@ class SeniScoreUpdated implements ShouldBroadcast
                 'score' => round($score, 2),
                 'deduction' => round($deduction, 2),
                 'additional_score' => round($additional, 2),
-                 'component_score' => round($componentTotal, 2),
+                'component_score' => round($componentTotal, 2),
+                // 🔹 Detail untuk Regu/Solo Kreatif
+                'attack_defense_technique' => round($attack, 2),
+                'firmness_harmony' => round($firmness, 2),
+                'soulfulness' => round($soul, 2),
             ];
         }
 
@@ -96,9 +101,11 @@ class SeniScoreUpdated implements ShouldBroadcast
 
         return [
             'match_id' => $this->matchId,
+            'match_type' => $matchType, // 🔹 kirim ke frontend
             'judges' => $results,
             'penalty' => round($penalty, 2),
             'penalties' => $penalties,
         ];
     }
+
 }

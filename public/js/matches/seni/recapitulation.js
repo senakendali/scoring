@@ -62,22 +62,47 @@ $(document).ready(function () {
         const judges = data.judges || [];
         const totalPenalty = parseFloat(data.penalty ?? 0);
         const penalties = data.penalties || [];
+        const matchType = data.match_type || "";
 
+        // Update tabel hukuman
         updatePenaltyRecapTable(penalties);
 
+        // Urutkan skor dari kecil ke besar
         judges.sort((a, b) => a.score - b.score);
         const scores = judges.map(j => j.score);
 
-        // 🔷 Update Tabel Nilai Unsur (Kebenaran, Kemantapan, Total)
-        const $truthRow = $("#truth-row td").slice(1);
-        const $additionalRow = $("#additional-row td").slice(1);
-        const $totalRow = $("#total-row td").slice(1);
+        // 🔹 Format Tunggal & Ganda → Kebenaran & Kemantapan
+        if (matchType === "seni_tunggal" || matchType === "seni_ganda") {
+            $("#unsur-tunggal-ganda").show();
+            $("#unsur-regu-solo").hide();
 
-        judges.forEach((j, index) => {
-            $truthRow.eq(index).text(j.truth_score.toFixed(2)).addClass("text-center");
-            $additionalRow.eq(index).text(j.additional_score.toFixed(2)).addClass("text-center");
-            $totalRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
-        });
+            const $truthRow = $("#truth-row td").slice(1);
+            const $additionalRow = $("#additional-row td").slice(1);
+            const $totalRow = $("#total-row td").slice(1);
+
+            judges.forEach((j, index) => {
+                $truthRow.eq(index).text(j.truth_score?.toFixed(2) ?? "-").addClass("text-center");
+                $additionalRow.eq(index).text(j.additional_score?.toFixed(2) ?? "-").addClass("text-center");
+                $totalRow.eq(index).text(j.score?.toFixed(2) ?? "-").addClass("text-center");
+            });
+
+        // 🔹 Format Regu & Solo Kreatif → ATTACK, FIRMNESS, SOULFULNESS
+        } else if (matchType === "seni_regu" || matchType === "solo_kreatif") {
+            $("#unsur-tunggal-ganda").hide();
+            $("#unsur-regu-solo").show();
+
+            const $attackRow = $("#attack-row td").slice(1);
+            const $firmnessRow = $("#firmness-row td").slice(1);
+            const $soulRow = $("#soulfulness-row td").slice(1);
+            const $totalRow = $("#total-row td").slice(1);
+
+            judges.forEach((j, index) => {
+                $attackRow.eq(index).text(j.attack_defense_technique?.toFixed(2) ?? "-").addClass("text-center");
+                $firmnessRow.eq(index).text(j.firmness_harmony?.toFixed(2) ?? "-").addClass("text-center");
+                $soulRow.eq(index).text(j.soulfulness?.toFixed(2) ?? "-").addClass("text-center");
+                $totalRow.eq(index).text(j.score?.toFixed(2) ?? "-").addClass("text-center");
+            });
+        }
 
         // 🔴 Update Tabel Nilai Gabungan Akhir
         const $jurisHeader = $(".mytable-gabungan thead tr").eq(1).find("th");
@@ -117,9 +142,10 @@ $(document).ready(function () {
         $("#median").text(median.toFixed(6)).addClass("text-center");
         $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
         $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
-        //$("#final-score").text((mean - totalPenalty).toFixed(6)).addClass("text-center");
         $("#final-score").text(median.toFixed(6)).addClass("text-center");
     }
+
+
 
 
 
@@ -146,6 +172,15 @@ $(document).ready(function () {
          $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
             currentArena = data.arena_name;
             $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim()).css("font-size", "17px");
+
+            if (data.match_type === 'seni_regu' || data.match_type === 'solo_kreatif') {
+                $("#unsur-tunggal-ganda").hide();
+                $("#unsur-regu-solo").show();
+            } else {
+                $("#unsur-tunggal-ganda").show();
+                $("#unsur-regu-solo").hide();
+            }
+
           
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
@@ -153,8 +188,6 @@ $(document).ready(function () {
             $("#gender").text(data.category + "  " + (data.gender === 'male' ? 'PUTRA' : 'PUTRI'));
 
             $("#contingent-name").text(data.contingent);
-
-
 
             // 🔥 Reset semua dulu
             $("#participant-1").text('-').hide();
