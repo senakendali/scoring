@@ -1,4 +1,4 @@
-@extends('layouts.seni')
+@extends('layouts.seni_layout')
 @section('content')
 <!-- Modal Notifikasi -->
 <div class="modal fade" id="scoreSubmitModal" tabindex="-1" aria-labelledby="scoreSubmitModalLabel" aria-hidden="true">
@@ -65,15 +65,15 @@
   </div>
 </div>
 
-<div class="fix-match-info dark" id="tournament-name">-</div>
+<!--div class="fix-match-info dark" id="tournament-name">-</div>
 <div class="fix-match-detail">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="age-category">-</div>
     <div class="detail-item" id="gender">-</div>
-</div>
+</div-->
 
 <!--div class="fix-match-info light roboto-bold" id="tournament-name">-</div-->
-<div class="judges-container d-flex flex-column"  style="height:calc(100vh - 180px);">
+<div class="judges-container d-flex flex-column"  style="height:calc(100vh - 100px);">
     
     <input type="hidden" id="match-id" value="{{ $match_id }}">
     <input type="hidden" id="judge-number" value="{{ session('juri_number') }}">
@@ -174,7 +174,7 @@
                   </thead>
                  <tbody>
                     <tr data-component="attack_defense_technique">
-                      <td style="font-size:11px; ">Attack Defense Technique (0.01 - 0.30)</td>
+                      <td style="font-size:14px; ">Attack Defense Technique (0.01 - 0.30)</td>
                       <td class="score-buttons d-flex flex-wrap gap-1">
                         <!-- Button 0.01 - 0.30 -->
                         <!-- Isi pakai JS atau generate manual -->
@@ -182,27 +182,27 @@
                       <td><input type="text" class="form-control text-center component-total" readonly value="0.00"></td>
                     </tr>
                     <tr data-component="firmness_harmony">
-                      <td style="font-size:11px; ">Firmness and Harmony (0.01 - 0.30)</td>
+                      <td style="font-size:14px; ">Firmness and Harmony (0.01 - 0.30)</td>
                       <td class="score-buttons d-flex flex-wrap gap-1"></td>
                       <td><input type="text" class="form-control text-center component-total" readonly value="0.00"></td>
                     </tr>
                     <tr data-component="soulfulness">
-                      <td style="font-size:11px; ">Soulfullness (0.01 - 0.30)</td>
+                      <td style="font-size:14px; ">Soulfullness (0.01 - 0.30)</td>
                       <td class="score-buttons d-flex flex-wrap gap-1"></td>
                       <td><input type="text" class="form-control text-center component-total" readonly value="0.00"></td>
                     </tr>
                   </tbody>
                   <tfoot>
                     <tr style="display: none">
-                      <td colspan="2" style="font-size:11px; border:none; text-align: right"></td>
+                      <td colspan="2" style="font-size:14px; border:none; text-align: right"></td>
                       <td style="border:none; ">Total Score <input type="text" id="component-total" class="form-control text-center" readonly value="0.00"></td>
                     </tr>
                     <tr style="display: none">
-                      <td colspan="2" style="font-size:11px; border:none; ">Base Score</td>
+                      <td colspan="2" style="font-size:14px; border:none; ">Base Score</td>
                       <td style="border:none; "><input type="text" id="base-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
                     <tr>
-                      <td colspan="2" style="font-size:11px; border:none;  text-align: left">Score</td>
+                      <td colspan="2" style="font-size:14px; border:none;  text-align: left">Score</td>
                       <td style="border:none; "><input type="text" id="final-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
                   </tfoot>

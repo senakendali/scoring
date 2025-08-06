@@ -1959,7 +1959,6 @@ th, td {
 
 
 .judges_table th, .table td {
-    height: 100%;
     vertical-align: middle !important;
 }
 
@@ -1983,9 +1982,13 @@ th, td {
   font-size: 0.75rem;
 }
 
-.judges_table td .form-control,
+.judges_table td .form-control{
+
+}
+
 .judges_table td .btn {
-  height: 25px; 
+  height: 30px;
+  width: 40px; 
   padding: 4px;
   
 }

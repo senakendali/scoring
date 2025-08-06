@@ -1,4 +1,4 @@
-@extends('layouts.seni')
+@extends('layouts.seni_layout')
 @section('content')
 <div class="modal fade" id="matchListModal" tabindex="-1" aria-labelledby="matchListModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-sm">
@@ -24,12 +24,12 @@
 <input type="hidden" id="session-role" value="{{ session('role') }}">
 <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
 
-<div class="fix-match-info" id="tournament-name">-</div>
+<!--div class="fix-match-info" id="tournament-name">-</div>
  <div class="fix-match-detail">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="age-category">-</div>
     <div class="detail-item" id="gender">-</div>
-</div>
+</div-->
 <input type="hidden" id="match-id" value="{{ $match_id }}">
 <div class="match-header">
         <div class="match-item">

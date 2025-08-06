@@ -1,4 +1,4 @@
-@extends('layouts.seni')
+@extends('layouts.seni_layout')
 @section('content')
 <div class="modal fade" id="disqualifiedModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -47,13 +47,13 @@
 </div>
 
 
- <div class="fix-match-info" id="tournament-name">-</div>
+ <!--div class="fix-match-info" id="tournament-name">-</div>
  <div class="fix-match-detail">
     <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="age-category">-</div>
     <div class="detail-item" id="gender">-</div>
-</div>
-<div class="d-flex flex-column" style="height:calc(100vh - 180px);">
+</div-->
+<div class="d-flex flex-column" style="height:calc(100vh - 100px);">
     <input type="hidden" id="match-id" value="{{ $match_id }}">
 
     <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
