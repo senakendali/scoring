@@ -23,8 +23,6 @@ $(document).ready(function () {
     let roundId = null;
     let countdownInterval = null;
 
-    
-
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -112,8 +110,6 @@ $(document).ready(function () {
             }, 5000);
         }
     });
-
-    
     
 
     // 🔥 Saat juri tekan tombol
@@ -435,96 +431,6 @@ $(document).ready(function () {
             }, 5000);
         });
 
-        // --- helpers modal ---
-    function showModalById(id) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const modal = bootstrap.Modal.getOrCreateInstance(el);
-        modal.show();
-    }
-    function hideModalById(id) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const modal = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
-        modal.hide();
-    }
-
-    // --- render pengumuman pemenang TANDING ---
-    function renderTandingWinnerModal(data) {
-    // Elemen dari Blade
-    const nameEl   = document.getElementById('winner-name');
-    const contEl   = document.getElementById('winner-contingent');
-    const badgeEl  = document.getElementById('winner-corner-badge');
-    const reasonEl = document.getElementById('winner-reason');
-
-    if (!nameEl || !contEl || !badgeEl || !reasonEl) {
-        console.warn('[tanding] elemen winner modal belum ada di DOM');
-        return;
-    }
-
-    // Ambil corner / reason
-    let corner = (data?.corner ?? data?.winner_corner ?? '').toString().toLowerCase();
-    const reasonRaw = (data?.reason_label || data?.reason || '').toString();
-
-    // Ambil nama & kontingen (payload flat dari event endMatch)
-    let name = data?.winner_name || data?.display_name || '';
-    let contingent = data?.contingent || data?.contingent_name || '';
-
-    // Fallback kalau suatu saat kamu kirim payload model "group result"
-    if ((!name || !contingent) && data?.participants) {
-        const blue = data.participants.blue || {};
-        const red  = data.participants.red  || {};
-        if (!corner) {
-        if (blue.winning_corner === 'blue') corner = 'blue';
-        else if (red.winning_corner === 'red') corner = 'red';
-        }
-        const src = corner === 'red' ? red : blue;
-        if (!name) {
-        name = src.participants_joined || (Array.isArray(src.participants) ? src.participants.join(', ') : '');
-        }
-        if (!contingent) {
-        contingent = src.contingent || '';
-        }
-    }
-
-    if (!name) name = '-';
-    if (!contingent) contingent = '-';
-
-    // Tulis ke DOM
-    nameEl.textContent = name;
-    contEl.textContent = contingent;
-
-    // Badge sudut
-    /*if (corner === 'red') {
-        badgeEl.style.display = '';
-        badgeEl.innerHTML = '<span class="badge bg-danger">RED</span>';
-    } else if (corner === 'blue') {
-        badgeEl.style.display = '';
-        badgeEl.innerHTML = '<span class="badge bg-primary">BLUE</span>';
-    } else {
-        badgeEl.style.display = 'none';
-        badgeEl.innerHTML = '';
-    }
-
-    // Alasan (opsional)
-    if (reasonRaw) {
-        reasonEl.style.display = '';
-        const pretty = reasonRaw.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
-        reasonEl.textContent = pretty;
-    } else {
-        reasonEl.style.display = 'none';
-        reasonEl.textContent = '';
-    }*/
-    }
-
-
-
-    globalChannel.bind('tanding.winner.announced', function (data) {
-        renderTandingWinnerModal(data);
-        showModalById('winnerModal');
-    });
-
-
 
     
     function resetScoreBackground() {
@@ -663,49 +569,36 @@ $(document).ready(function () {
             
             currentArena = data.arena_name;
             $(".match-item").css('height', '80px');
-            $("#tournament-name").text(data.tournament_name).css({
-                    'font-size': '23px',
-                    'font-weight': 'bold',
-                    'width': '790px',
-                    'top': '12px'
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim()).css({
+                    'font-weight': 'bold'
                 });
 
-            $(".detail-item").css({
-                'font-size': '23px',
-                'font-weight': 'bold',
-                'height': '70px',
-               
-               
-            });
-
             $("#match-code").text(data.arena_name + " Partai " + data.match_number).css({
-                'font-size': '23px',
+                'font-size': '16px',
                 'font-weight': 'bold'
             });
-            $("#class-name").text(data.class_name.replace("Usia Dini", "UD").trim()).css({
-                'font-size': '23px',
+            $("#class-name").text(data.class_name).css({
+                'font-size': '16px',
                 'font-weight': 'bold'
             });
-
-           
 
             $("#stage").text(data.round_label).css({
-                'font-size': '23px',
+                'font-size': '16px',
                 'font-weight': 'bold'
             });
 
             $("#blue-name").html(`
                 ${data.blue.name}<br>
-                <small style="font-size: 18px; font-style: italic; ">${data.blue.contingent}</small>
+                <small>${data.blue.contingent}</small>
             `).css({
-                    'font-size': '25px',
+                    'font-size': '23px',
                     'font-weight': 'bold'
                 });
             $("#red-name").html(`
                 ${data.red.name}<br>
-                <small style="font-size: 18px; font-style: italic; ">${data.red.contingent}</small>
+                <small>${data.red.contingent}</small>
             `).css({
-                    'font-size': '25px',
+                    'font-size': '23px',
                     'font-weight': 'bold'
                 });
 

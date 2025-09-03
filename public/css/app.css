@@ -305,7 +305,7 @@ body{
     transform: translateX(-50%);
    
     min-height: 80px;
-    min-width: 750px;
+    width: 790px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;
@@ -314,7 +314,7 @@ body{
     z-index: 1;
     color: #FFFFFF;
     text-transform: uppercase;
-   gap: 20px;
+   gap: 8px;
 
    
 
@@ -517,7 +517,7 @@ body{
 
 .match-panel .panel-header .round.active{
     height: 50px;
-    background-color: #2a2a2a;
+    background-color: #ffc107;
     color: #FFFFFF;
 }
 
@@ -562,7 +562,7 @@ body{
     height: 50px;
     width: 50%;
     padding: var(--base-padding);
-    background-color: #2A2A2A;
+    background-color: var(--secondary-color);
     
 }
 

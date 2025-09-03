@@ -53,35 +53,6 @@
   </div>
 </div>
 
-<div class="modal fade" id="winnerModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-fullscreen">
-     <div class="modal-content" style="
-            background: url('{{ asset('images/bg-result.png') }}') no-repeat center center;
-            background-size: cover;">
-
-            <div class="modal-body d-flex align-items-center justify-content-center" id="winnerModalBody">
-              <div class="d-flex flex-column text-center">
-
-                <h1 class="fw-bold winner-title mb-4">CONGRATULATION</h1>
-
-                <div id="winner-name" class="fw-bold winner-name">-</div>
-                <div id="winner-contingent" class="fw-bold winner-contingent">-</div>
-
-                <div id="winner-corner-badge" class="mb-2" style="min-height:28px; display:none;">
-                  <!-- contoh: <span class="badge bg-primary">BLUE</span> -->
-                </div>
-
-                <div id="winner-reason" class="mt-2 h5" style="display:none;">-</div>
-
-              </div>
-            </div>
-
-
-      
-    </div>
-  </div>
-</div>
-
 
  <div class="fix-match-info arena" id="tournament-name">-</div>
  <div class="fix-match-detail arena">

@@ -204,7 +204,7 @@
                     </div>
                     <div class="panel-footer">
                       <div class="d-flex gap-2">
-                          <div class="w-100">
+                          <div class="w-100 d-none">
                               <button class="pause btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
                                   <i class="bi bi-pause-fill me-2"></i> PAUSE
                               </button>

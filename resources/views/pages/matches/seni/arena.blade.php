@@ -70,8 +70,8 @@
 
                 <h1 class="fw-bold winner-title mb-4">CONGRATULATION</h1>
 
-                <div id="winner-name" class="fw-bold winner-name">Sena Kendali</div>
-                <div id="winner-contingent" class="fw-bold winner-contingent">Pabuaran Citayam Sport Club</div>
+                <div id="winner-name" class="fw-bold winner-name">-</div>
+                <div id="winner-contingent" class="fw-bold winner-contingent">-</div>
 
                 <div id="winner-corner-badge" class="mb-2" style="min-height:28px; display:none;">
                   <!-- contoh: <span class="badge bg-primary">BLUE</span> -->

@@ -52,7 +52,7 @@
     
 </div>
 
-<div class="container-fluid" style="background-color:#000000 !important; padding:20px; ">
+<div class="container-fluid" style="background-color:#FFF !important; padding:20px; ">
     <div class="row">
         <div class="col-12">
         

@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Cache;
 use App\Events\VerificationRequested;
 use App\Events\VerificationResulted;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Events\TandingWinnerAnnounced;
+use Illuminate\Support\Str;
 
 class LocalMatchController extends Controller
 {
@@ -369,6 +371,195 @@ class LocalMatchController extends Controller
     }
 
     public function endMatch(Request $request, $id)
+    {
+        $match = LocalMatch::findOrFail($id);
+
+        $blueScore = \App\Models\LocalValidScore::where('local_match_id', $match->id)->where('corner', 'blue')->sum('point');
+        $redScore  = \App\Models\LocalValidScore::where('local_match_id', $match->id)->where('corner', 'red')->sum('point');
+
+        $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $match->id)->where('corner', 'blue')->sum('point_change');
+        $redAdjustment  = \App\Models\LocalRefereeAction::where('local_match_id', $match->id)->where('corner', 'red')->sum('point_change');
+
+        $totalBlue = $blueScore + $blueAdjustment;
+        $totalRed  = $redScore  + $redAdjustment;
+
+        // Simpan status & skor akhir
+        $match->status = 'finished';
+        $match->participant_1_score = $totalBlue;
+        $match->participant_2_score = $totalRed;
+
+        // Validasi input winner & reason (jika dikirim)
+        if ($request->filled('winner') && $request->filled('reason')) {
+            $request->validate([
+                'winner' => 'in:red,blue,draw',
+                'reason' => 'string|max:255',
+            ]);
+
+            if ($request->winner === 'draw') {
+                $match->winner_corner     = null;
+                $match->winner_id         = null;
+                $match->winner_name       = null;
+                $match->winner_contingent = null;
+            } else {
+                $corner = $request->winner; // 'blue'|'red'
+                $match->winner_corner     = $corner;
+                $match->winner_id         = $match->{$corner . '_id'};
+                $match->winner_name       = $match->{$corner . '_name'};
+                $match->winner_contingent = $match->{$corner . '_contingent'};
+            }
+
+            $match->win_reason = $request->reason;
+        }
+
+        $match->save();
+
+        // Tutup ronde berjalan
+        $match->rounds()->where('status', 'in_progress')->update([
+            'status'   => 'finished',
+            'end_time' => now(),
+        ]);
+
+        // ===== (Optional) Sync ke server pusat - tetap dikomentari sesuai kode kamu =====
+        /*
+        $baseUrl = $this->live_server;
+        $client = new \GuzzleHttp\Client();
+        try {
+            $client->post($baseUrl . '/api/update-tanding-match-status', [
+                'json' => [
+                    'remote_match_id'     => $match->remote_match_id,
+                    'status'              => 'finished',
+                    'participant_1_score' => $totalBlue,
+                    'participant_2_score' => $totalRed,
+                    'winner_id'           => $match->winner_id,
+                    'winner_corner'       => $match->winner_corner,
+                    'win_reason'          => $match->win_reason,
+                ],
+                'timeout' => 5,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('⚠️ Gagal kirim status finished ke server pusat', [
+                'remote_match_id' => $match->remote_match_id,
+                'error'           => $e->getMessage(),
+            ]);
+        }
+        */
+
+        // Promote pemenang ke pertandingan berikutnya (seperti kode kamu)
+        if ($match->winner_corner && $match->winner_corner !== 'draw') {
+            $nextMatches = LocalMatch::where(function ($query) use ($match) {
+                $query->where('parent_match_red_id', $match->id)
+                    ->orWhere('parent_match_blue_id', $match->id);
+            })->get();
+
+            foreach ($nextMatches as $nextMatch) {
+                $slot = null;
+
+                if ($nextMatch->parent_match_red_id == $match->id) {
+                    $nextMatch->red_id         = $match->winner_id;
+                    $nextMatch->red_name       = $match->winner_name;
+                    $nextMatch->red_contingent = $match->winner_contingent;
+                    $slot = 2; // merah = participant_2
+                }
+
+                if ($nextMatch->parent_match_blue_id == $match->id) {
+                    $nextMatch->blue_id         = $match->winner_id;
+                    $nextMatch->blue_name       = $match->winner_name;
+                    $nextMatch->blue_contingent = $match->winner_contingent;
+                    $slot = 1; // biru = participant_1
+                }
+
+                $nextMatch->save();
+
+                // (Optional) update server pusat - tetap dikomentari
+                /*
+                if ($nextMatch->remote_match_id && $slot) {
+                    try {
+                        $client->post($baseUrl . '/api/update-next-match-slot', [
+                            'json' => [
+                                'remote_match_id' => $nextMatch->remote_match_id,
+                                'slot'            => $slot,
+                                'winner_id'       => $match->winner_id,
+                            ],
+                            'timeout' => 5,
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Log::warning('⚠️ Gagal update next match di server pusat', [
+                            'remote_match_id' => $nextMatch->remote_match_id,
+                            'slot'            => $slot,
+                            'error'           => $e->getMessage(),
+                        ]);
+                    }
+                }
+                */
+            }
+        }
+
+        // ======== ✅ Broadcast pengumuman pemenang ke channel arena.match.{slug} ========
+        try {
+            // Map label alasan (biar rapi di UI)
+            $map = [
+                'mutlak'         => 'Menang Mutlak',
+                'undur_diri'     => 'Menang Undur Diri',
+                'diskualifikasi' => 'Menang Diskualifikasi',
+                'wo'             => 'Menang WO',
+                'walkover'       => 'Menang WO',
+                'disqualified'   => 'Menang Diskualifikasi',
+                'draw'           => 'Seri',
+            ];
+            $reasonRaw   = (string) ($match->win_reason ?? '');
+            $reasonKey   = Str::of($reasonRaw)->lower()->replace(' ', '_')->value();
+            $reasonLabel = $map[$reasonKey] ?? Str::title(str_replace('_', ' ', $reasonRaw));
+
+            $isDraw = ($match->winner_corner === null) || ($request->winner === 'draw');
+
+            $payload = [
+                'match_id'        => $match->id,
+                'tournament_name' => $match->tournament_name ?? ($match->tournament ?? ''),
+                'arena_name'      => $match->arena_name ?? '',
+                'corner'          => $isDraw ? null : ($match->winner_corner ? strtolower($match->winner_corner) : null),
+                'winner_id'       => $isDraw ? null : ($match->winner_id ?? null),
+                'winner_name'     => $isDraw ? 'DRAW' : ($match->winner_name ?? '-'),
+                'contingent'      => $isDraw ? '' : ($match->winner_contingent ?? '-'),
+                'reason'          => $isDraw ? 'draw' : $reasonKey,
+                'reason_label'    => $isDraw ? 'Seri' : $reasonLabel,
+                'score' => [
+                    'blue' => (int) $match->participant_1_score,
+                    'red'  => (int) $match->participant_2_score,
+                ],
+                'participants' => [
+                    'blue' => [
+                        'id'         => $match->blue_id ?? null,
+                        'name'       => $match->blue_name ?? null,
+                        'contingent' => $match->blue_contingent ?? null,
+                    ],
+                    'red' => [
+                        'id'         => $match->red_id ?? null,
+                        'name'       => $match->red_name ?? null,
+                        'contingent' => $match->red_contingent ?? null,
+                    ],
+                ],
+            ];
+
+            // Hanya broadcast jika status finished (harusnya iya)
+            if ($match->status === 'finished') {
+                event(new TandingWinnerAnnounced(
+                    $match->tournament_name ?? ($match->tournament ?? ''),
+                    $match->arena_name ?? '',
+                    $payload
+                ));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('⚠️ Gagal broadcast TandingWinnerAnnounced', [
+                'match_id' => $match->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json(['message' => 'Pertandingan diakhiri dan pemenang disimpan.']);
+    }
+
+
+    public function endMatch_mau_lss(Request $request, $id)
     {
         $match = LocalMatch::findOrFail($id);
 

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.tanding_layout')
 @section('content')
 <div class="modal fade" id="nextRoundModal" tabindex="-1" aria-labelledby="nextRoundLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -128,12 +128,29 @@
   </div>
 </div>
 
-<div class="fix-match-info dark" id="tournament-name">-</div>
+<div class="modal fade" id="matchListModal" tabindex="-1" aria-labelledby="matchListModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-sm">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="matchListModalLabel">Daftar Partai</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-2">
+        <ul class="list-group list-group-flush" id="match-list">
+          <!-- Isi list di JS -->
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!--div class="fix-match-info dark" id="tournament-name">-</div>
 <div class="fix-match-detail">
-    <div class="detail-item" id="match-code">-</div>
+    <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
     <div class="detail-item" id="stage">-</div>
     <div class="detail-item" id="class-name">-</div>
-</div>
+</div-->
 
 <div class="match-header">
     <input type="hidden" id="round-id">
@@ -161,7 +178,7 @@
 <div class="match-content">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-6">
+            <div class="col-8">
                 <div class="match-panel text-center">
                     <div class="d-flex flex-column gap-2 mb-2 duration d-none">
                         <label for="round-duration" class="text-white text-center">Durasi Ronde (menit)</label>
@@ -186,23 +203,47 @@
                         <div class="timer roboto-bold" id="timer" style="color:#000; ">00:00</div>
                     </div>
                     <div class="panel-footer">
-                        <div class="d-flex gap-2">
-                            <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-pause-fill"></i> PAUSE</button>
-                            <button class="start btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-play-fill"></i> START</button>
-                            <button class="reset btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-arrow-clockwise"></i> RESET</button>
-                        </div>
-                        <div class="d-flex mt-2">
-                            <button class="stop-round btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-circle" style="margin-right: 4px; "></i> END ROUND</button>
-                        </div>
-                        
+                      <div class="d-flex gap-2">
+                          <div class="w-100">
+                              <button class="pause btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                                  <i class="bi bi-pause-fill me-2"></i> PAUSE
+                              </button>
+                          </div>
+                          <div class="w-100">
+                            <button class="start btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                              <i class="bi bi-play-fill me-2"></i>
+                              <span class="label">START</span>
+                            </button>
 
-                        <div class="d-flex mt-2">
-                            <button class="end-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0"><i class="bi bi-stop-fill"></i> END MATCH</button>
-                        </div>
-                        <div class="d-flex mt-2">
-                            <button class="next-match btn d-flex justify-content-center align-items-center text-white roboto-bold border-0 mt-4"> NEXT MATCH</button>
-                        </div>
-                    </div>
+                              
+                          </div>
+                          <div class="w-100">
+                              <button class="stop-round btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                                  <i class="bi bi-stop-circle me-2"></i> END ROUND
+                              </button>
+                          </div>
+                      </div>
+
+                      <div class="d-flex gap-2 mt-2">
+                          <div class="w-100">
+                              <button class="reset btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                                  <i class="bi bi-arrow-clockwise me-2"></i> RESET
+                              </button>
+                          </div>
+                          <div class="w-100">
+                              <button class="end-match btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                                  <i class="bi bi-stop-fill me-2"></i> END MATCH
+                              </button>
+                          </div>
+                          <div class="w-100">
+                              <button class="next-match btn w-100 d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                                  NEXT MATCH
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+
+
                 </div>
             </div>
         </div>
