@@ -64,22 +64,250 @@ $(document).ready(function () {
         }
     }
 
+    function applyCornerBackground(corner) {
+
+        $(".seni-participant-detail").css('border-bottom', 'none');
+        $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
+       
+        var clsBlue = 'corner-blue-bg';
+        var clsRed  = 'corner-red-bg';
+        var clsNone = 'corner-none-bg';
+
+        var $targets = $('#contingent-name, #participant-1, #participant-2, #participant-3');
+        $targets.removeClass(clsBlue + ' ' + clsRed + ' ' + clsNone);
+
+        var c = (corner || '').toString().toLowerCase();
+        if (c === 'blue') {
+            $targets.addClass(clsBlue);
+        } else if (c === 'red') {
+            $targets.addClass(clsRed);
+        }
+    }
+
+    let currentMatchData = null;
+
+    // ==== Helper ambil nama + kontingen (pakai field baru) ====
+    function getParticipantName(data, key) {
+    // key: '1' | '2' | '3'
+    const v = data?.[`participant_${key}`];
+    return (typeof v === 'string' && v.trim() !== '') ? v.trim() : null;
+    }
+    function getContingentName(data) {
+    // langsung pakai contingent_name
+    const v = data?.contingent_name;
+    return (typeof v === 'string' && v.trim() !== '') ? v.trim() : '-';
+    }
+
+    // ==== Tentukan corner untuk participant_key ====
+    // Prioritas:
+    // 1) data.blue_participant_key / data.red_participant_key (angka/key)
+    // 2) data[`participant_${key}_corner`] kalau ada
+    // 3) Fallback urutan non-null: 1st = blue, 2nd = red
+    function inferCornerForKey(data, key, fallbackOrderMap) {
+    const k = parseInt(key, 10);
+
+    if (data?.blue_participant_key && parseInt(data.blue_participant_key, 10) === k) return 'blue';
+    if (data?.red_participant_key  && parseInt(data.red_participant_key, 10)  === k) return 'red';
+
+    const cornerField = data?.[`participant_${k}_corner`];
+    if (cornerField === 'blue' || cornerField === 'red') return cornerField;
+
+    const order = fallbackOrderMap[key]; // 1-based
+    if (order === 1) return 'blue';
+    if (order === 2) return 'red';
+
+    return null; // >2 peserta → sisanya ga punya corner
+    }
+
+    // ==== Build opsi "Nama (Kontingen) – Corner" ====
+    // Handle tunggal/ganda/regu:
+    // - tunggal: cuma participant_1
+    // - ganda: participant_1 & participant_2 (dua peserta/entry) → dapat Blue/Red
+    // - regu: kalau memang 3 entry, fallback urutan. Kalau ini sebenarnya anggota tim,
+    //   tetap akan ambil 2 pertama (Blue/Red) via fallback.
+    function buildWinnerOptions(data) {
+    const cont = getContingentName(data);
+
+    const participants = [
+        { key: '1', name: getParticipantName(data, '1') },
+        { key: '2', name: getParticipantName(data, '2') },
+        { key: '3', name: getParticipantName(data, '3') },
+    ].filter(p => !!p.name);
+
+    // fallback mapping urutan non-null: 1st -> blue, 2nd -> red
+    const fallbackOrderMap = {};
+    let idx = 0;
+    for (const p of participants) {
+        idx += 1;
+        fallbackOrderMap[p.key] = idx;
+    }
+
+    const options = [];
+    for (const p of participants) {
+        const corner = inferCornerForKey(data, p.key, fallbackOrderMap);
+        if (!corner) continue; // skip kalau corner ga kebaca (entry > 2)
+        options.push({
+        value: `${p.key}|${corner}`,
+        label: `${p.name} – ${corner === 'blue' ? 'Biru' : 'Merah'}`,
+        });
+    }
+
+    // Safety: kalau kosong tapi ada peserta → paksa 2 pertama jadi Blue/Red
+    if (options.length === 0 && participants.length > 0) {
+        if (participants[0]) {
+        options.push({
+            value: `${participants[0].key}|blue`,
+            label: `${participants[0].name} – Biru`,
+        });
+        }
+        if (participants[1]) {
+        options.push({
+            value: `${participants[1].key}|red`,
+            label: `${participants[1].name} – Merah`,
+        });
+        }
+    }
+
+    return options;
+    }
+
+    // ==== Open modal & isi select ====
+    $(document).on('click', '.set-winner', async function () {
+        const matchId = $("#match-id").val();
+        if (!matchId) return;
+
+        const $sel = $("#winner-participant").empty();
+        $("#set-winner-error").addClass('d-none').text('');
+
+        try {
+            const res = await fetch(`${url}/api/seni-battle/matches/${matchId}/group-contestants`, {
+            headers: { 'Accept': 'application/json' }
+            });
+            const json = await res.json();
+            const list = Array.isArray(json.contestants) ? json.contestants : [];
+
+            // Wajib 2 peserta
+            if (list.length < 2) {
+            $("#nextMatchModalBody").html(`
+                <div class="text-start">
+                <div class="fw-bold mb-1">Peserta belum lengkap</div>
+                <div>Belum ada 2 peserta di battle group <strong>${json.battle_group ?? '-'}</strong>.</div>
+                </div>
+            `);
+            new bootstrap.Modal(document.getElementById('nextMatchModalInfo')).show();
+            return;
+            }
+
+            // Build label: "Nama (Kontingen) – Corner"
+            for (const c of list) {
+            const cont = (c.contingent_name || '').trim();
+            const label = `${c.display_name} – ${c.corner === 'red' ? 'Merah' : 'Biru'}`;
+            // value kirim kombinasi match_id|corner (aman buat submit ke API lu nanti)
+            $sel.append(new Option(label, `${c.match_id}|${c.corner}`));
+            }
+            $sel.prop('disabled', false);
+
+            // Tampilkan modal
+            new bootstrap.Modal(document.getElementById('setWinnerModal')).show();
+
+        } catch (e) {
+            console.error(e);
+            $sel.append(new Option('Gagal memuat peserta', '', true, true));
+            $sel.prop('disabled', true);
+            new bootstrap.Modal(document.getElementById('nextMatchModalInfo')).show();
+        }
+        });
+
+
+    // ==== Submit (UI only) tetap sama ====
+    $(document).on('click', '#submit-set-winner', async function () {
+        const $btn = $(this);
+        const selected = $("#winner-participant").val(); // ideal: "123|blue" (winner_match_id|corner)
+        const reason = $("#winner-reason").val();
+
+        // Ambil match id dari #set-winner-match-id ATAU #match-id (fallback)
+        const baseMatchId = $("#set-winner-match-id").val() || $("#match-id").val();
+
+        if (!selected) {
+            $("#set-winner-error").removeClass('d-none').text('Pilih pemenang terlebih dahulu.');
+            return;
+        }
+        if (!baseMatchId) {
+            $("#set-winner-error").removeClass('d-none').text('Match ID tidak ditemukan.');
+            return;
+        }
+
+        // Parse value option
+        const [a, cornerMaybe] = selected.split('|'); // a bisa angka (winner_match_id) atau '1'/'2'/'3'
+        const isNumeric = /^\d+$/.test(a);
+        const payload = isNumeric
+            ? { winner_match_id: Number(a), reason }                       // ✅ format baru
+            : { participant_key: a, corner: cornerMaybe || 'blue', reason } // 🔙 fallback lama
+
+        // Loading state
+        $btn.prop('disabled', true).data('ori', $btn.text()).text('Menyimpan...');
+            $("#set-winner-error").addClass('d-none').text('');
+
+            try {
+                const res = await fetch(`${url}/api/seni-battle/matches/${baseMatchId}/set-winner`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+                });
+
+                const json = await res.json();
+                if (!res.ok) throw new Error(json?.message || 'Gagal menyimpan pemenang');
+
+                // Tutup modal set winner
+                const modalEl = document.getElementById('setWinnerModal');
+                const inst = bootstrap.Modal.getInstance(modalEl);
+                if (inst) inst.hide();
+
+                // Info sukses
+                $("#nextMatchModalBody").html(
+                `<div class="text-start">
+                    <div class="mb-1">Pemenang: <strong>${json.winner_name || '-'}</strong></div>
+                    <div class="mb-1">Alasan: <em>${json.reason_label || '-'}</em></div>
+                </div>`
+                );
+                new bootstrap.Modal(document.getElementById('nextMatchModalInfo')).show();
+
+                // Kunci kontrol & munculkan NEXT MATCH
+                //$('.start, .pause, .reset, .skip-match, .set-winner, .end-match').prop('disabled', true);
+                $('.next-match').removeClass('d-none');
+
+                // Refresh UI match
+                if (typeof fetchMatch === 'function') fetchMatch();
+
+            } catch (err) {
+                $("#set-winner-error").removeClass('d-none').text(err.message || 'Terjadi kesalahan');
+            } finally {
+                $btn.prop('disabled', false).text($btn.data('ori') || 'Simpan');
+            }
+});
+
+
+
+
     function fetchMatch() {
         $(".loader-bar").show();
         $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
-             if(data.is_display_timer != 0){
-               
-                $("#timer").show();
-            }else{
-                /* perbaiki ini */
-                $("#display-timer").css('height', '0');
-                $("#timer").hide();
+            currentMatchData = data;
+            if (data.is_display_timer != 0) {
+            $("#timer").show();
+            } else {
+            $("#display-timer").css('height', '0');
+            $("#timer").hide();
             }
-            
+
             $("#match-id").val(data.id);
 
             currentArena = data.arena_name;
-           
+
             $("#tournament-name").text(data.tournament_name);
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
@@ -87,30 +315,134 @@ $(document).ready(function () {
             $("#gender").text(data.category + "  " + (data.gender === 'male' ? 'PUTRA' : 'PUTRI'));
             $("#contingent-name").text(data.contingent);
 
-            //isPaused = data.status === 'paused';
-
-            // 🔥 Reset semua dulu
+            // reset peserta
             $("#participant-1").text('-').hide();
             $("#participant-2").text('-').hide();
             $("#participant-3").text('-').hide();
 
-            // ✅ Tampilkan peserta sesuai match_type
+            // tampilkan peserta sesuai tipe
             if (data.match_type === 'seni_tunggal' || data.match_type === 'solo_kreatif') {
-                $("#participant-1").text(data.team_members[0] || '-').show();
+            $("#participant-1").text(data.team_members[0] || '-').show();
             } else if (data.match_type === 'seni_ganda') {
-                $("#participant-1").text(data.team_members[0] || '-').show();
-                $("#participant-2").text(data.team_members[1] || '-').show();
+            $("#participant-1").text(data.team_members[0] || '-').show();
+            $("#participant-2").text(data.team_members[1] || '-').show();
             } else if (data.match_type === 'seni_regu') {
-                $("#participant-1").text(data.team_members[0] || '-').show();
-                $("#participant-2").text(data.team_members[1] || '-').show();
-                $("#participant-3").text(data.team_members[2] || '-').show();
+            $("#participant-1").text(data.team_members[0] || '-').show();
+            $("#participant-2").text(data.team_members[1] || '-').show();
+            $("#participant-3").text(data.team_members[2] || '-').show();
             }
+
+            // <<< APPLY WARNA SESUAI CORNER DARI DB >>>
+            // pastikan API detail balikin field `corner` = 'blue' | 'red' | null
+            applyCornerBackground(data.corner);
 
             $(".loader-bar").hide();
         });
     }
 
+    // helper: buang zero-width chars biar gak “kosong tapi ada”
+    const stripZW = s => (typeof s === 'string'
+    ? s.replace(/[\u200B-\u200D\u2060]/g, '').trim()
+    : s);
+
+    // helper: ambil kontingen (dukung 2 bentuk response)
+    function getContingent(match){
+        // v1: {contingent: {name: "..."}}  | v2: {contingent_name: "..."} | fallback: {contingent: "..."}
+        return stripZW(
+            match?.contingent?.name ??
+            match?.contingent_name ??
+            match?.contingent ??
+            '-'
+        ) || '-';
+    }
+
+    // helper: ambil daftar peserta (dukung 2 bentuk response)
+    function getParticipants(match){
+        // v1: team_member1.name / team_member2.name / team_member3.name
+        const v1 = [
+            stripZW(match?.team_member1?.name || ''),
+            stripZW(match?.team_member2?.name || ''),
+            stripZW(match?.team_member3?.name || ''),
+        ].filter(Boolean);
+
+        if (v1.length) return v1;
+
+        // v2: participant_1 / participant_2 / participant_3 (string)
+        const v2 = [
+            stripZW(match?.participant_1 || ''),
+            stripZW(match?.participant_2 || ''),
+            stripZW(match?.participant_3 || ''),
+        ].filter(Boolean);
+
+        // v3 (fallback): participant_name (dipisah koma / pipe)
+        if (!v2.length && match?.participant_name) {
+            const parts = String(match.participant_name)
+            .split(/[,|]/).map(x => stripZW(x)).filter(Boolean);
+            if (parts.length) return parts;
+        }
+
+        return [];
+    }
+
     $("#match-code").on("click", function () {
+        const matchList = $("#match-list");
+        matchList.empty();
+
+        $.get(`${url}/api/local-matches/seni`, function (data) {
+            const arenaMatches = [];
+
+            // flatten sesuai struktur response lu
+            (data || []).forEach(categoryGroup => {
+            (categoryGroup.age_categories || []).forEach(ageGroup => {
+                (ageGroup.pools || []).forEach(pool => {
+                (pool.matches || []).forEach(m => arenaMatches.push(m));
+                });
+            });
+            });
+
+            arenaMatches.sort((a, b) => (a.match_order ?? 0) - (b.match_order ?? 0));
+
+            arenaMatches.forEach(match => {
+            const contingent  = getContingent(match);
+            const participantsArr = getParticipants(match);
+            const participants = participantsArr.join(', ');
+            const corner = (match.corner || '').toString().trim();
+
+            let label = `PARTAI ${match.match_order}`;
+            // tambah kontingen & peserta kalau ada
+            if (contingent !== '-' || participants) {
+                label += ` — ${contingent}`;
+                if (participants) label += ` (${participants})`;
+            }
+            // tambah corner kalau ada
+            if (corner) {
+                label += ` [${corner.toUpperCase()}]`;
+            }
+
+            const li = $(`
+                <li class="list-group-item list-group-item-action bg-dark text-white"
+                    style="cursor:pointer;" data-id="${match.id}">
+                ${label}
+                </li>
+            `);
+
+            li.on("click", function () {
+                const selectedId = $(this).data("id");
+                $("#matchListModal").modal("hide");
+                window.location.href = url + `/matches/seni/${selectedId}`;
+            });
+            
+
+            matchList.append(li);
+            });
+
+            $("#matchListModal").modal("show");
+        });
+    });
+
+
+
+    $("#match-code__").on("click", function () {
         const matchList = $("#match-list");
         matchList.empty();
 
@@ -201,16 +533,25 @@ $(document).ready(function () {
                 clearInterval(interval);
                 // ⏱️ Auto finish jika lewat 3 menit
 
-                $.ajax({
+                 $.ajax({
                     url: `${url}/api/local-seni-matches/${matchId}/finish`,
                     method: 'PATCH',
-                    success: function () {
-                        console.log("⏱️ Pertandingan seni selesai otomatis (max 3 menit)");
-                        $(".end-match").addClass("d-none");
-                        $(".next-match").removeClass("d-none");
+                    data: {
+                    duration: maxDuration   // ← kirim durasi final
+                    },
+                    success: function (resp) {
+                    console.log("⏱️ Auto-finish seni (max 3 menit)");
+                    stopTimer();
+                    $("#timer").text("SELESAI");
+                    $(".end-match").addClass("d-none");
+                    $(".next-match").removeClass("d-none");
+                    // (Cadangan) sama seperti di manual, boleh cek resp.battle_group_completed
                     },
                     error: function (err) {
-                        console.error("❌ Gagal finish pertandingan otomatis:", err);
+                    console.error("❌ Gagal finish otomatis:", err);
+                    // fallback UI
+                    stopTimer();
+                    $("#timer").text("SELESAI");
                     }
                 });
 
@@ -274,9 +615,149 @@ $(document).ready(function () {
         });
     });
 
+    // Normalisasi input waktu (ganti koma -> titik) dan hitung detik
+    function parsePerformanceTime(raw) {
+        if (!raw) return { ok:false, msg:'Waktu tidak boleh kosong.' };
+
+        let s = String(raw).trim();
+        // ganti koma menjadi titik
+        s = s.replace(',', '.');
+
+        // Format mm:ss
+        if (s.includes(':')) {
+            const parts = s.split(':');
+            if (parts.length !== 2) {
+                return { ok:false, msg:'Format tidak valid. Gunakan mm:ss atau menit desimal (mis. 3.5).' };
+            }
+            const m = parseInt(parts[0], 10);
+            const sec = parseInt(parts[1], 10);
+            if (isNaN(m) || isNaN(sec) || m < 0 || sec < 0 || sec >= 60) {
+                return { ok:false, msg:'Format mm:ss tidak valid.' };
+            }
+            const totalSeconds = (m * 60) + sec;
+            return { ok:true, normalized: `${m}:${String(sec).padStart(2,'0')}`, seconds: totalSeconds };
+        }
+
+        // Format desimal menit (contoh: 3.5)
+        // Hanya angka + titik diperbolehkan
+        if (!/^\d+(\.\d+)?$/.test(s)) {
+            return { ok:false, msg:'Hanya angka, titik, atau format mm:ss yang diperbolehkan.' };
+        }
+
+        const minutesFloat = parseFloat(s);
+        if (isNaN(minutesFloat) || minutesFloat < 0) {
+            return { ok:false, msg:'Nilai menit tidak valid.' };
+        }
+
+        // 3.5 menit = 3 menit 30 detik
+        const totalSeconds = Math.round(minutesFloat * 60);
+
+        // normalized pakai titik (sudah)
+        return { ok:true, normalized: s, seconds: totalSeconds };
+    }
 
 
     $(document).on("click", ".stop", function () {
+        // Simpan ref button kalau perlu restore UI
+        const $btnStop = $(this).data('ref', $(this));
+        // Buka modal input waktu
+        const modal = new bootstrap.Modal(document.getElementById('performanceTimeModal'));
+        $('#performance-time-input').val('');                // reset input
+        $('#performance-time-error').addClass('d-none').text('');
+        modal.show();
+
+        // Fokus ke input saat modal tampil
+        setTimeout(() => { $('#performance-time-input').trigger('focus'); }, 250);
+    });
+
+    $(document).on('click', '#save-performance-time', function () {
+        const $btn = $(this);
+        const matchId = $("#match-id").val();
+        if (!matchId) return;
+
+        const val = $('#performance-time-input').val();
+        const res = parsePerformanceTime(val);
+
+        const $err = $('#performance-time-error');
+        if (!res.ok) {
+            $err.removeClass('d-none').text(res.msg);
+            return;
+        }
+        $err.addClass('d-none').text('');
+
+        // Optional: validasi batas (misal 0s - 10 menit)
+        if (res.seconds < 0 || res.seconds > 10 * 60) {
+            $err.removeClass('d-none').text('Durasi di luar batas wajar (0 - 10 menit).');
+            return;
+        }
+
+        // Disable tombol dan tampilkan spinner
+        const original = $btn.html();
+        $btn.prop('disabled', true).html(`
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Menyimpan...
+        `);
+
+        // Tutup timer lokal, set label SELESAI lebih dulu biar responsif
+        stopTimer();
+        $("#timer").text("SELESAI");
+
+        // Kirim ke backend bareng data waktu (detik + normalized string)
+        $.ajax({
+            url: `${url}/api/local-seni-matches/${matchId}/finish`,
+            method: 'PATCH',
+            data: {
+                performance_time_seconds: res.seconds,
+                performance_time_input: res.normalized
+            }
+        }).done(function () {
+            // Tutup modal
+            const modalEl = document.getElementById('performanceTimeModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+
+            // Ubah tombol STOP jadi START lagi
+            const $startStopBtn = $(".panel-footer .stop, .panel-footer .start");
+            $startStopBtn
+                .removeClass("stop btn-danger")
+                .addClass("start btn-success")
+                .html('<i class="bi bi-play-fill me-1"></i> START');
+
+            $(".end-match").addClass("d-none");
+            $(".next-match").removeClass("d-none");
+        }).fail(function (xhr) {
+            // Revert UI kalau gagal
+            $("#timer").text(formatTime(elapsed || 0));
+            $err.removeClass('d-none').text(xhr.responseJSON?.message || 'Gagal menyimpan waktu perform.');
+        }).always(function () {
+            $btn.prop('disabled', false).html(original);
+        });
+    });
+
+    // Enter untuk submit di modal
+    $('#performanceTimeModal').on('shown.bs.modal', function () {
+    $('#performance-time-input').off('keydown').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+        e.preventDefault();
+        $('#save-performance-time').click();
+        }
+    });
+    });
+
+    // Realtime: ganti koma -> titik
+    $(document).on('input', '#performance-time-input', function () {
+    const v = $(this).val();
+    if (v.includes(',')) {
+        $(this).val(v.replace(',', '.'));
+    }
+    });
+
+
+
+
+
+
+    $(document).on("click", ".stop_backup", function () {
         const matchId = $("#match-id").val();
         const btn = $(this);
         if (!matchId) return;
@@ -286,23 +767,42 @@ $(document).ready(function () {
         $.ajax({
             url: `${url}/api/local-seni-matches/${matchId}/finish`,
             method: 'PATCH',
-            success: function () {
-                stopTimer();
-                timerEl.text("SELESAI");
-
-                // Balik jadi START
-                btn
-                    .removeClass("stop btn-danger")
-                    .addClass("start btn-success")
-                    .html('<i class="bi bi-play-fill me-1"></i> START');
-
-                $(".end-match").addClass("d-none");
-                $(".next-match").removeClass("d-none");
-            },
-            complete: function () {
-                btn.prop("disabled", false);
+            data: {
+                duration: res.seconds   // ← kirim detik hasil parse (dari 3,5 / 3.5 / 3:30)
             }
-        });
+            }).done(function (resp) {
+            // Tutup modal
+            const modalEl = document.getElementById('performanceTimeModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+
+            // UI selesai
+            stopTimer();
+            $("#timer").text("SELESAI");
+
+            const $startStopBtn = $(".panel-footer .stop, .panel-footer .start");
+            $startStopBtn
+                .removeClass("stop btn-danger")
+                .addClass("start btn-success")
+                .html('<i class="bi bi-play-fill me-1"></i> START');
+
+            $(".end-match").addClass("d-none");
+            $(".next-match").removeClass("d-none");
+
+            // (Cadangan) Kalau backend kasih sinyal grup selesai, boleh redirect di sini juga
+            if (resp?.battle_group_completed && resp?.winners?.length) {
+                // optional: window.location.href = resp.result_url;  // kalau kamu ikut balikin result_url
+                // tapi utamanya kita mengandalkan broadcast event ke Display Arena
+            }
+            }).fail(function (xhr) {
+            $("#timer").text(formatTime(elapsed || 0));
+            $('#performance-time-error').removeClass('d-none').text(
+                xhr.responseJSON?.message || 'Gagal menyimpan waktu perform.'
+            );
+            }).always(function () {
+            $btn.prop('disabled', false).html(original);
+            });
+
     });
 
 
@@ -579,6 +1079,61 @@ $(document).ready(function () {
             $(".next-match").removeClass("d-none");
         }).always(() => setButtonLoading(btn, false));
     });
+
+    $(document).on("click", ".skip-match", function () {
+        const matchId = $("#match-id").val();
+        if (!matchId) return;
+
+        const $btn = $(this);
+        const original = $btn.html();
+        $btn.prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Skipping...
+        `);
+
+        $.ajax({
+            url: `${url}/api/local-seni-matches/${matchId}/skip`,
+            method: 'PATCH',
+            data: { reason: 'no_show' } // opsional
+        })
+        .done(function (res) {
+            // Stop timer & mark selesai secara visual
+            if (typeof stopTimer === 'function') stopTimer();
+            $("#timer").text("SELESAI");
+
+            // Kalau masih ada match berikutnya -> langsung redirect
+            if (res.next_match_id) {
+            window.location.href = `${url}/matches/seni/${res.next_match_id}`;
+            return;
+            }
+
+            // Kalau battle group selesai -> ARENA yang akan buka result via broadcast.
+            // Di operator cukup tampilkan info ringan (opsional) + munculkan tombol NEXT.
+            if (res.battle_group_completed) {
+            console.log("✅ Group completed. Arena akan buka result. battle_group:", res.battle_group);
+            // contoh info ringan (tanpa modal besar):
+            $("#nextMatchModalBody").text("Battle group selesai. Silakan cek Display Arena untuk hasil.");
+            new bootstrap.Modal(document.getElementById('nextMatchModalInfo')).show();
+            } else {
+            // Tidak ada next & belum complete group
+            $("#nextMatchModalBody").text("Tidak ada pertandingan berikutnya.");
+            new bootstrap.Modal(document.getElementById('nextMatchModalInfo')).show();
+            }
+
+            // Tampilkan tombol NEXT (biar operator punya kontrol)
+            $(".end-match, .skip-match, .disqualify").addClass("d-none");
+            $(".next-match").removeClass("d-none");
+        })
+        .fail(function (xhr) {
+            console.error("❌ Gagal skip:", xhr.responseJSON?.message || xhr.statusText);
+            alert(xhr.responseJSON?.message || "Gagal melakukan skip performance.");
+        })
+        .always(function () {
+            $btn.prop("disabled", false).html(original);
+        });
+        });
+
+
     
     
 

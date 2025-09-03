@@ -179,144 +179,55 @@ class LocalImportController extends Controller
 
         // 🧠 Ambil nama turnamen dari data pertama
         $tournamentName = $data[0]['tournament_name'] ?? null;
+
         if (!$tournamentName) {
             return response()->json(['error' => 'Tournament name is required.'], 422);
         }
 
         try {
-            DB::transaction(function () use ($data, $tournamentName) {
+            // 🔍 Ambil semua match ID lama untuk turnamen ini
+            $matchIdsToDelete = DB::table('local_seni_matches')
+                ->where('tournament_name', $tournamentName)
+                ->pluck('id');
 
-                // 1) Bersihkan data lama turnamen ini (sekali dalam transaksi)
-                $oldIds = DB::table('local_seni_matches')
-                    ->where('tournament_name', $tournamentName)
-                    ->pluck('id');
+            if ($matchIdsToDelete->isNotEmpty()) {
+                // 🧹 Bersihkan data terkait
+                DB::table('local_seni_component_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_seni_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_seni_penalties')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_seni_final_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_seni_component_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_seni_matches')->whereIn('id', $matchIdsToDelete)->delete();
+            }
 
-                if ($oldIds->isNotEmpty()) {
-                    DB::table('local_seni_component_scores')->whereIn('local_match_id', $oldIds)->delete();
-                    DB::table('local_seni_scores')->whereIn('local_match_id', $oldIds)->delete();
-                    DB::table('local_seni_penalties')->whereIn('local_match_id', $oldIds)->delete();
-                    DB::table('local_seni_final_scores')->whereIn('local_match_id', $oldIds)->delete();
-                    DB::table('local_seni_matches')->whereIn('id', $oldIds)->delete();
-                }
-
-                // 2) Siapkan insert baru (fase 1: tanpa parent pointers)
-                $now = now();
-                $rowsToInsert = [];
-                // simpan parent remote ids sementara utk fase-2
-                $parentLinks = []; // key: remote_match_id => ['red_remote' => ..., 'blue_remote' => ...]
-                $validCorner = ['red','blue'];
-
+            // 🚀 Mulai insert baru
+            DB::transaction(function () use ($data) {
                 foreach ($data as $match) {
-                    // Normalisasi
-                    $mode = in_array(($match['mode'] ?? 'default'), ['default','battle'], true)
-                            ? $match['mode'] : 'default';
-
-                    $corner = $match['corner'] ?? null;
-                    $corner = in_array($corner, $validCorner, true) ? $corner : null;
-
-                    $winnerCorner = $match['winner_corner'] ?? null;
-                    $winnerCorner = in_array($winnerCorner, $validCorner, true) ? $winnerCorner : null;
-
-                    // Kalau non-battle, kosongkan field battle yang tidak relevan
-                    $battleGroup   = $mode === 'battle' ? ($match['battle_group']   ?? null) : null;
-                    $round         = $mode === 'battle' ? ($match['round']          ?? null) : null;
-                    $roundLabel    = $match['round_label'] ?? null; // label dari JADWAL (boleh untuk default maupun battle)
-                    $roundPriority = $match['round_priority'] ?? null; // angka dari API (opsional)
-
-                    $rowsToInsert[] = [
-                        // remote mapping (yang lama)
-                        'remote_match_id'      => $match['remote_match_id']      ?? null,
-                        'remote_contingent_id' => $match['remote_contingent_id'] ?? null,
-                        'remote_team_member_1' => $match['remote_team_member_1'] ?? null,
-                        'remote_team_member_2' => $match['remote_team_member_2'] ?? null,
-                        'remote_team_member_3' => $match['remote_team_member_3'] ?? null,
-
-                        // identitas & context
-                        'tournament_name' => $match['tournament_name'] ?? '-',
-                        'arena_name'      => $match['arena_name']      ?? '-',
-                        'match_date'      => $match['match_date']      ?? null,
-                        'match_time'      => $match['match_time']      ?? null,
-                        'pool_name'       => $match['pool_name']       ?? '-',
-
-                        // nomor partai
-                        'match_order'     => $match['match_order']     ?? null,
-
-                        // kategori & peserta (yang lama)
-                        'category'        => $match['category']        ?? 'Unknown',
-                        'match_type'      => $match['match_type']      ?? 'unknown',
-                        'gender'          => $match['gender']          ?? null,
-                        'contingent_name' => $match['contingent_name'] ?? 'TBD',
-                        'participant_1'   => $match['participant_1']   ?? null,
-                        'participant_2'   => $match['participant_2']   ?? null,
-                        'participant_3'   => $match['participant_3']   ?? null,
-                        'age_category'    => $match['age_category']    ?? '-',
-
-                        // nilai & flag
-                        'final_score'      => $match['final_score'] ?? null,
+                    DB::table('local_seni_matches')->insert([
+                        'remote_match_id' => $match['remote_match_id'],
+                        'remote_contingent_id' => $match['remote_contingent_id'],
+                        'remote_team_member_1' => $match['remote_team_member_1'],
+                        'remote_team_member_2' => $match['remote_team_member_2'],
+                        'remote_team_member_3' => $match['remote_team_member_3'],
+                        'tournament_name' => $match['tournament_name'],
+                        'arena_name' => $match['arena_name'],
+                        'match_date' => $match['match_date'],
+                        'match_time' => $match['match_time'],
+                        'pool_name' => $match['pool_name'],
+                        'match_order' => $match['match_order'],
+                        'category' => $match['category'],
+                        'match_type' => $match['match_type'],
+                        'gender' => $match['gender'],
+                        'contingent_name' => $match['contingent_name'],
+                        'participant_1' => $match['participant_1'],
+                        'participant_2' => $match['participant_2'],
+                        'participant_3' => $match['participant_3'],
+                        'age_category' => $match['age_category'],
+                        'final_score' => $match['final_score'] ?? null,
                         'is_display_timer' => filter_var($match['is_display_timer'] ?? false, FILTER_VALIDATE_BOOLEAN),
-
-                        // ====== FIELD BARU (battle-ready) ======
-                        'mode'            => $mode,           // 'default'|'battle'
-                        'battle_group'    => $battleGroup,    // int|null
-                        'round'           => $round,          // int|null
-                        'round_label'     => $roundLabel,     // string|null (dari JADWAL)
-                        'round_priority'  => $roundPriority,  // int|null
-                        'corner'          => $corner,         // 'red'|'blue'|null
-                        'winner_corner'   => $winnerCorner,   // 'red'|'blue'|null
-
-                        // parent pointer DIISI NANTI (fase-2) pakai local id
-                        'parent_match_red_id'  => null,
-                        'parent_match_blue_id' => null,
-
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-
-                    // simpan remote parent untuk fase-2 mapping
-                    $parentLinks[$match['remote_match_id']] = [
-                        'red_remote'  => $match['parent_match_red_id']  ?? null,
-                        'blue_remote' => $match['parent_match_blue_id'] ?? null,
-                    ];
-                }
-
-                // Insert batch (chunk biar aman)
-                foreach (array_chunk($rowsToInsert, 500) as $chunk) {
-                    DB::table('local_seni_matches')->insert($chunk);
-                }
-
-                // 3) Fase-2: isi parent pointer (map remote → local)
-                // Ambil mapping remote_match_id -> local_id utk turnamen ini
-                $localMap = DB::table('local_seni_matches')
-                    ->where('tournament_name', $tournamentName)
-                    ->pluck('id', 'remote_match_id'); // ['remote_id' => local_id]
-
-                // Update tiap baris dengan parent local id (kalau ada)
-                // Ambil semua baris turnamen ini biar dapat pair local id & remote id-nya
-                $locals = DB::table('local_seni_matches')
-                    ->select('id', 'remote_match_id')
-                    ->where('tournament_name', $tournamentName)
-                    ->get();
-
-                foreach ($locals as $row) {
-                    $remoteId = $row->remote_match_id;
-                    $links    = $parentLinks[$remoteId] ?? null;
-                    if (!$links) continue;
-
-                    $parentRedRemote  = $links['red_remote'];
-                    $parentBlueRemote = $links['blue_remote'];
-
-                    $update = [];
-                    if ($parentRedRemote && isset($localMap[$parentRedRemote])) {
-                        $update['parent_match_red_id'] = $localMap[$parentRedRemote];
-                    }
-                    if ($parentBlueRemote && isset($localMap[$parentBlueRemote])) {
-                        $update['parent_match_blue_id'] = $localMap[$parentBlueRemote];
-                    }
-
-                    if (!empty($update)) {
-                        $update['updated_at'] = $now;
-                        DB::table('local_seni_matches')->where('id', $row->id)->update($update);
-                    }
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
                 }
             });
 
@@ -326,7 +237,6 @@ class LocalImportController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
 
 
 

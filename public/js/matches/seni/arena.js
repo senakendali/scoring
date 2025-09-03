@@ -14,6 +14,9 @@ $(document).ready(function () {
     const arenaSlug = slugify(arena);
 
     let currentArena = null;
+    let currentCorner = null;
+
+    
 
     
 
@@ -44,14 +47,378 @@ $(document).ready(function () {
     //const globalChannel = pusher.subscribe(`arena.seni.match.${matchId}`);
     const slugArena = $("#session-arena").val()?.toLowerCase().replace(/\s+/g, '-');
     const globalChannel = pusher.subscribe(`arena.seni.match.${slugArena}`);
+
+    //showModalById('winnerModal');
     
-    
+    //alert(slugArena);
 
     // ✅ Global Match Change
     globalChannel.bind('seni.match.changed', function (data) {
         console.log("🎯 Match changed:", data);
         window.location.href = url + `/matches/seni/display-arena/${data.new_match_id}`; // Sesuaikan path kalau perlu
     });
+
+    /*globalChannel.bind('seni.group.completed', function (data) {
+        alert("Group selesai!");
+        console.log("🏁 Group completed:", data);
+        if (data?.result_url) {
+            window.location.href = data.result_url;
+        }
+    });*/
+
+    // ---- TEMPLATE skeleton untuk modal result (header + 2 tabel) ----
+const GROUP_RESULT_TEMPLATE = `
+    <div class="result-match-header">
+            <div class="result-match-item">
+                <div class="d-flex w-100">
+                    <!-- BLUE -->
+                    <div class="result-item flex-fill corner-blue-bg p-3">
+                      <div id="participant-blue-name" class="fw-bold" style="font-size: 40px;">-</div>
+                      <div id="participant-blue-contingent" class="small opacity-75 mt-1" style="font-size: 20px;">-</div>
+                    </div>
+                    <!-- RED -->
+                    <div class="result-item flex-fill corner-red-bg p-3">
+                      <div id="participant-red-name" class="fw-bold" style="font-size: 40px;">-</div>
+                      <div id="participant-red-contingent" class="small opacity-75 mt-1" style="font-size: 20px;">-</div>
+                    </div>
+                      
+                </div>
+            </div>
+          </div>
+
+            <div class="d-flex w-100 flex-column flex-md-row gap-3 mt-3 result-tables">
+                        <!-- BLUE SIDE -->
+                        <div class="flex-fill">
+                        <table class="table result table-bordered table-sm mb-0">
+                            
+                            <tbody>
+                            <tr>
+                                <td class="w-50 corner-blue-bg text-white roboto-bold text-uppercase">Time</td>
+                                <td id="blue-performance" class="text-end roboto-bold text-uppercase">-</td>
+                            </tr>
+                            <tr>
+                                <td class="corner-blue-bg text-white roboto-bold text-uppercase">Penalty</td>
+                                <td id="blue-penalty" class="text-end roboto-bold text-uppercase">-</td>
+                            </tr>
+                            <tr>
+                                <td class="corner-blue-bg text-white roboto-bold text-uppercase">Winning Point</td>
+                                <td id="blue-winning" class="text-end roboto-bold text-uppercase">-</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        </div>
+
+                        <!-- RED SIDE -->
+                        <div class="flex-fill">
+                        <table class="table result table-bordered table-sm mb-0">
+                            
+                            <tbody>
+                            <tr>
+                                <td class="w-50 corner-red-bg text-white roboto-bold text-uppercase">Time</td>
+                                <td id="red-performance" class="text-end roboto-bold text-uppercase">-</td>
+                            </tr>
+                            <tr>
+                                <td class="corner-red-bg text-white roboto-bold text-uppercase">Penalty</td>
+                                <td id="red-penalty" class="text-end roboto-bold text-uppercase">-</td>
+                            </tr>
+                            <tr>
+                                <td class="corner-red-bg text-white roboto-bold text-uppercase">Winning Point</td>
+                                <td id="red-winning" class="text-end roboto-bold text-uppercase">-</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+`;
+
+// ---- helper render header participants ----
+function setHeaderNames(res) {
+  try {
+    const blue = res?.participants?.blue ?? {};
+    const red  = res?.participants?.red ?? {};
+
+    // isi nama peserta (gabungan array jadi string)
+    $('#participant-blue-name').text(blue.participants_joined || '-');
+    $('#participant-red-name').text(red.participants_joined || '-');
+
+    
+
+    // isi kontingen
+    $('#participant-blue-contingent').text(blue.contingent || '-');
+    $('#participant-red-contingent').text(red.contingent || '-');
+  } catch (e) {
+    console.error('setHeaderNames error:', e, res);
+  }
+}
+
+function determineWinnerCornerFromRes(res) {
+  const blue = res?.participants?.blue || {};
+  const red  = res?.participants?.red  || {};
+
+
+
+  // 1) Cek winner dari payload per-corner dulu
+  //    (kalau backend udah set)
+  if (blue.winning_corner === 'blue') return 'blue';
+  if (red.winning_corner === 'red')   return 'red';
+
+  // 2) Fallback: hitung lokal
+  const bp = Number(blue.winning_point ?? 0); // string "9.900000" -> number
+  const rp = Number(red.winning_point ?? 0);
+
+  if (!Number.isNaN(bp) && !Number.isNaN(rp)) {
+    if (bp > rp) return 'blue';
+    if (rp > bp) return 'red';
+  }
+
+  const bpen = Number(blue.penalty ?? 0);
+  const rpen = Number(red.penalty ?? 0);
+  if (bp === rp) {
+    if (bpen < rpen) return 'blue';
+    if (rpen < bpen) return 'red';
+  }
+
+  const ideal = 180; // 3 menit—ubah kalau aturannya beda
+  const bt = Math.abs(Number(blue.performance_time ?? 0) - ideal);
+  const rt = Math.abs(Number(red.performance_time ?? 0)  - ideal);
+  if (bp === rp && bpen === rpen) {
+    if (bt < rt) return 'blue';
+    if (rt < bt) return 'red';
+  }
+
+  return null; // draw / butuh keputusan manual
+}
+
+
+function applyWinner(res) {
+  const corner = determineWinnerCornerFromRes(res);
+  console.log("🎯 Winner corner:", corner);
+
+  // Ambil elemen kolom biru & merah
+  const $blueCol = $('.result-tables .flex-fill').eq(0);
+  const $redCol  = $('.result-tables .flex-fill').eq(1);
+
+  // Sel value
+  const $blueVals = $blueCol.find('#blue-performance, #blue-penalty, #blue-winning');
+  const $redVals  = $redCol.find('#red-performance, #red-penalty, #red-winning');
+
+  // Sel label (td kiri tiap baris)
+  const $blueLabels = $blueCol.find('tbody tr td:first-child');
+  const $redLabels  = $redCol.find('tbody tr td:first-child');
+
+  // Bersihkan semua kelas warna
+  $blueVals.add($blueLabels).removeClass('corner-blue-bg corner-red-bg text-white loser-dim');
+  $redVals.add($redLabels).removeClass('corner-blue-bg corner-red-bg text-white loser-dim');
+
+  // Helper untuk set pemenang
+  function setWinner($labels, $vals, color) {
+    const bg = color === 'blue' ? 'corner-blue-bg' : 'corner-red-bg';
+    $labels.addClass(bg + ' text-white');
+    $vals.addClass(bg + ' text-white');
+  }
+
+  // Helper untuk set kalah
+  function setLoser($labels, $vals) {
+    $labels.addClass('loser-dim');
+    $vals.addClass('loser-dim');
+  }
+
+  if (corner === 'blue') {
+    setWinner($blueLabels, $blueVals, 'blue');
+    setLoser($redLabels, $redVals);
+  } else if (corner === 'red') {
+    setWinner($redLabels, $redVals, 'red');
+    setLoser($blueLabels, $blueVals);
+  } else {
+    // draw → dua-duanya redup
+    setLoser($blueLabels, $blueVals);
+    setLoser($redLabels, $redVals);
+  }
+}
+
+
+
+
+
+
+
+
+// ---- helper format detik -> mm:ss ----
+function fmtTime(s) {
+  s = +s || 0;
+  const m = String(Math.floor(s/60)).padStart(2,'0');
+  const sec = String(s%60).padStart(2,'0');
+  return `${m}:${sec}`;
+}
+
+// ---- fungsi utama: render skeleton + fetch data ----
+function loadGroupResults(group) {
+  if (group === null || group === undefined || group === '') {
+    console.warn('⚠️ loadGroupResults: group kosong, batal fetch.');
+    return;
+  }
+
+  const base = (typeof APP !== 'undefined' && APP.baseUrl) ? APP.baseUrl : '';
+  const reqUrl = `${base}/api/local-matches/seni/battle-group/${encodeURIComponent(group)}`;
+  const tournament = $("#session-tournament").val();
+  const arena      = $("#session-arena").val();
+
+  console.log('🔄 Fetch battle result:', { group, reqUrl, tournament, arena });
+
+  // Tampilkan modal & langsung render skeleton (bukan loader plain text)
+  const modalEl = document.getElementById('groupResultModal');
+  if (!modalEl) {
+    console.error('❌ #groupResultModal tidak ditemukan.');
+    return;
+  }
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+  // Render skeleton supaya element #blue-*, #red-* sudah ada
+  $('#groupResultBody').html(GROUP_RESULT_TEMPLATE);
+
+  // Baru fetch data dan isi nilai
+  $.get(reqUrl, { tournament, arena })
+    .done(function (res) {
+      console.log('✅ Battle result loaded:', res);
+        
+      setHeaderNames(res);
+      applyWinner(res);
+
+      const blue = res?.participants?.blue ?? {};
+      const red  = res?.participants?.red ?? {};
+
+      $('#blue-performance').text(blue.performance_time != null ? fmtTime(blue.performance_time) : '-');
+      $('#blue-penalty').text(blue.penalty ?? '-');
+      $('#blue-winning').text(
+        blue.winning_point != null ? Number(blue.winning_point).toFixed(6) : '-'
+      );
+
+      $('#red-performance').text(red.performance_time != null ? fmtTime(red.performance_time) : '-');
+      $('#red-penalty').text(red.penalty ?? '-');
+      $('#red-winning').text(
+        red.winning_point != null ? Number(red.winning_point).toFixed(6) : '-'
+      );
+    })
+    .fail(function (xhr, status, err) {
+      console.error('❌ Gagal load battle result:', { reqUrl, status, err, response: xhr?.responseText });
+      $('#groupResultBody').html(
+        `<div class="text-center py-5 text-danger">
+           Gagal memuat hasil group.<br>
+           <small>${xhr?.status || ''} ${xhr?.statusText || ''}</small>
+         </div>`
+      );
+    });
+}
+
+// ==== jalan saat halaman direload (ada ?battle_group=...) ====
+(function checkUrlBattleGroupOnLoad() {
+  try {
+    const u = new URL(window.location.href);
+    const battleGroup = u.searchParams.get('battle_group');
+    if (battleGroup) {
+      console.log('🔗 battle_group terdeteksi di URL:', battleGroup);
+      loadGroupResults(battleGroup);
+    }
+  } catch (e) {
+    console.warn('URL parse error (on load):', e);
+  }
+})();
+
+// ==== jalan saat broadcast ====
+globalChannel.bind('seni.group.completed', function (data) {
+  console.log('🏁 Group completed (event payload):', data);
+
+  const group = data?.battle_group ?? data?.battle_group_id ?? data?.group;
+  if (!group && group !== 0) {
+    console.warn('⚠️ Event tidak membawa battle_group. Keys:', Object.keys(data || {}));
+    return;
+  }
+
+  // Update URL tanpa reload
+  try {
+    const current = new URL(window.location.href);
+    current.searchParams.set('battle_group', group);
+    window.history.replaceState({ battle_group: group }, '', current.toString());
+    console.log('🔗 URL updated with ?battle_group=', group);
+  } catch (e) {
+    console.warn('replaceState error:', e);
+  }
+
+  // Load & render
+  loadGroupResults(group);
+});
+
+function showModalById(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const inst = bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: false });
+  inst.show();
+  return inst;
+}
+function hideModalById(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const inst = bootstrap.Modal.getInstance(el);
+  if (inst) inst.hide();
+}
+
+function renderWinnerModal(data) {
+    //alert('Gagal mendiskualifikasi peserta!');
+    console.log('🏆 Winner announced:', data);
+
+  // data: { winner_name, contingent, corner('blue'|'red'|null), reason_label, ... }
+  const nameEl = document.getElementById('winner-name');
+  const contEl = document.getElementById('winner-contingent');
+  const badgeEl = document.getElementById('winner-corner-badge');
+  const reasonEl = document.getElementById('winner-reason');
+
+  if (!nameEl || !contEl || !badgeEl || !reasonEl) {
+    console.warn('Winner modal elements not found');
+    return;
+  }
+
+  const name = (data?.winner_name || '-').toString();
+  const cont = (data?.contingent || '-').toString();
+  const corner = (data?.corner || '').toLowerCase();
+  const reasonLabel = (data?.reason_label || '').toString();
+
+  
+
+  nameEl.textContent = name;
+  contEl.textContent = cont;
+
+
+
+  reasonEl.textContent = reasonLabel;
+}
+
+globalChannel.bind('seni.battle.winner.announced', function (data) {
+  console.log('🏆 Winner announced:', data);
+
+  // 1) Tutup modal hasil group jika lagi terbuka
+  hideModalById('groupResultModal');
+
+  // 2) Isi konten winner & buka winner modal
+  renderWinnerModal(data);
+  showModalById('winnerModal');
+
+  // 3) (opsional) bersihkan query ?battle_group di URL
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.has('battle_group')) {
+      u.searchParams.delete('battle_group');
+      window.history.replaceState({}, '', u.toString());
+    }
+  } catch (e) {}
+});
+
+
+
+
+
+
+
 
     function slugify(text) {
         return text.toString().toLowerCase()
@@ -196,6 +563,17 @@ $(document).ready(function () {
         return `${min}:${sec}`;
     }
 
+    function applyCornerBackground(corner) {
+        $("#tournament-name").css('background', 'linear-gradient(to bottom, #2a2a2a, #000000)');
+       $(".seni-participant-detail").css('border-bottom', 'none');
+       $(".seni-participant-detail").css('height', '70px');
+        const classes = ['corner-blue', 'corner-red', 'corner-none'];
+        const c = (corner || '').toString().toLowerCase();
+        const picked = c === 'blue' ? 'corner-blue' : c === 'red' ? 'corner-red' : 'corner-none';
+        $('body').removeClass(classes.join(' ')).addClass(picked);
+    }
+
+
     function fetchMatchData() {
         $(".loader-bar").show();
          $.get(`${url}/api/local-matches/seni/${matchId}`, function (data) {
@@ -209,7 +587,9 @@ $(document).ready(function () {
                
             }else{
                 /* perbaiki ini */
+                $("#timer-container").remove();
                 $("#timer").hide();
+
             }
 
             // Set UI
@@ -219,7 +599,11 @@ $(document).ready(function () {
 
             currentArena = data.arena_name;
 
-            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
+            $("#tournament-name").text(data.tournament_name).css({
+                    'font-size': '23px',
+                    'font-weight': 'bold',
+                    'width': '774px'
+                });
 
           
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
@@ -230,6 +614,13 @@ $(document).ready(function () {
             $("#contingent-name").text(data.contingent).css({
                     'font-size': '23px',
                     'font-weight': 'bold'
+                });
+
+            $(".detail-item").css({
+                    'font-size': '23px',
+                    'font-weight': 'bold',
+                    'height': '70px',
+                    'width':'250px'
                 });
 
 
@@ -269,9 +660,56 @@ $(document).ready(function () {
                 });
             }
 
-             pollSeniJudgeScores(matchId, tournament, arena);
+            pollSeniJudgeScores(matchId, tournament, arena);
+
+            currentCorner = (data.corner || '').toString().toLowerCase();
+            applyCornerBackground(data.corner);
             $(".loader-bar").hide();
         });
+    }
+
+    // helper: buang zero-width chars biar gak “kosong tapi ada”
+    const stripZW = s => (typeof s === 'string'
+    ? s.replace(/[\u200B-\u200D\u2060]/g, '').trim()
+    : s);
+
+    // helper: ambil kontingen (dukung 2 bentuk response)
+    function getContingent(match){
+        // v1: {contingent: {name: "..."}}  | v2: {contingent_name: "..."} | fallback: {contingent: "..."}
+        return stripZW(
+            match?.contingent?.name ??
+            match?.contingent_name ??
+            match?.contingent ??
+            '-'
+        ) || '-';
+    }
+
+    // helper: ambil daftar peserta (dukung 2 bentuk response)
+    function getParticipants(match){
+        // v1: team_member1.name / team_member2.name / team_member3.name
+        const v1 = [
+            stripZW(match?.team_member1?.name || ''),
+            stripZW(match?.team_member2?.name || ''),
+            stripZW(match?.team_member3?.name || ''),
+        ].filter(Boolean);
+
+        if (v1.length) return v1;
+
+        // v2: participant_1 / participant_2 / participant_3 (string)
+        const v2 = [
+            stripZW(match?.participant_1 || ''),
+            stripZW(match?.participant_2 || ''),
+            stripZW(match?.participant_3 || ''),
+        ].filter(Boolean);
+
+        // v3 (fallback): participant_name (dipisah koma / pipe)
+        if (!v2.length && match?.participant_name) {
+            const parts = String(match.participant_name)
+            .split(/[,|]/).map(x => stripZW(x)).filter(Boolean);
+            if (parts.length) return parts;
+        }
+
+        return [];
     }
 
     $("#match-code").on("click", function () {
@@ -281,34 +719,49 @@ $(document).ready(function () {
         $.get(`${url}/api/local-matches/seni`, function (data) {
             const arenaMatches = [];
 
-            data.forEach(categoryGroup => {
-                categoryGroup.age_categories.forEach(ageGroup => {
-                    ageGroup.pools.forEach(pool => {
-                        arenaMatches.push(...pool.matches);
-                    });
+            // flatten sesuai struktur response lu
+            (data || []).forEach(categoryGroup => {
+            (categoryGroup.age_categories || []).forEach(ageGroup => {
+                (ageGroup.pools || []).forEach(pool => {
+                (pool.matches || []).forEach(m => arenaMatches.push(m));
                 });
             });
+            });
 
-            arenaMatches.sort((a, b) => a.match_order - b.match_order);
+            arenaMatches.sort((a, b) => (a.match_order ?? 0) - (b.match_order ?? 0));
 
             arenaMatches.forEach(match => {
-                const li = $(`
-                    <li class="list-group-item list-group-item-action bg-dark text-white"
-                        style="cursor:pointer;" data-id="${match.id}">
-                        PARTAI ${match.match_order}
-                    </li>
-                `);
+            const contingent  = getContingent(match);
+            const participantsArr = getParticipants(match);
+            const participants = participantsArr.join(', ');
+            const corner = (match.corner || '').toString().trim();
 
-                li.on("click", function () {
-                    const selectedId = $(this).data("id");
-                    
+            let label = `PARTAI ${match.match_order}`;
+            // tambah kontingen & peserta kalau ada
+            if (contingent !== '-' || participants) {
+                label += ` — ${contingent}`;
+                if (participants) label += ` (${participants})`;
+            }
+            // tambah corner kalau ada
+            if (corner) {
+                label += ` [${corner.toUpperCase()}]`;
+            }
 
-                    $("#matchListModal").modal("hide");
+            const li = $(`
+                <li class="list-group-item list-group-item-action bg-dark text-white"
+                    style="cursor:pointer;" data-id="${match.id}">
+                ${label}
+                </li>
+            `);
 
-                    window.location.href = `${url}/matches/seni/display-arena/${selectedId}`;
-                });
+            li.on("click", function () {
+                const selectedId = $(this).data("id");
+                $("#matchListModal").modal("hide");
+                window.location.href = url + `/matches/seni/display-arena/${selectedId}`;
+            });
+            
 
-                matchList.append(li);
+            matchList.append(li);
             });
 
             $("#matchListModal").modal("show");
@@ -322,11 +775,13 @@ $(document).ready(function () {
         for (let i = 1; i <= juriCount; i++) {
             const judgeHtml = `
                 <div class="flex-fill judge-score-detail">
-                    <div class="judge-title fw-bold">J${i}</div>
-                    <div class="judge-score fw-bold" id="judge-score-${i}">${baseScore.toFixed(2)}</div>
+                    <div class="judge-title roboto-bold" style="font-size: 30px;">J${i}</div>
+                    <div class="judge-score roboto-bold" id="judge-score-${i}" style="font-size: 30px;">${baseScore.toFixed(2)}</div>
                 </div>
             `;
             $container.append(judgeHtml);
+
+             
         }
     }
 
@@ -343,6 +798,8 @@ $(document).ready(function () {
             const baseScore = ['tunggal', 'regu'].includes(matchCategory) ? 9.90 : 9.10;
 
             renderSeniJudges(juriCount, baseScore);
+
+            
         }).fail(function () {
             console.error("❌ Gagal fetch juri atau match");
             $(".seni-judges").html('<div class="text-danger">Gagal memuat juri</div>');
@@ -404,7 +861,8 @@ $(document).ready(function () {
 
                 const totalScore = data.final_score ?? (mean - totalPenalty);
 
-                $("#total-score").text(median.toFixed(6));
+                //$("#total-score").text(median.toFixed(6));
+                $("#total-score").text(totalScore.toFixed(6));
             });
         }, 1500);
     }

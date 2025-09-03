@@ -17,7 +17,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-success text-white text-center">
       <div class="modal-header border-0">
-        <h5 class="modal-title w-100">Informasi</h5>
+        <h5 class="modal-title w-100">Waktu Habis</h5>
       </div>
       <div class="modal-body">
         Penampilan telah selesai.
@@ -42,54 +42,6 @@
     </div>
   </div>
 </div>
-
-<div class="modal fade" id="groupResultModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-fullscreen">
-    <div class="modal-content" style="
-            background: url('{{ asset('images/bg-result.png') }}') no-repeat center center;
-            background-size: cover;">
-      
-      <div class="modal-body" id="groupResultBody">
-          
-          
-
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Winner Popup (Arena) -->
-<div class="modal fade" id="winnerModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-fullscreen">
-     <div class="modal-content" style="
-            background: url('{{ asset('images/bg-result.png') }}') no-repeat center center;
-            background-size: cover;">
-
-            <div class="modal-body d-flex align-items-center justify-content-center" id="winnerModalBody">
-              <div class="d-flex flex-column text-center">
-
-                <h1 class="fw-bold winner-title mb-4">CONGRATULATION</h1>
-
-                <div id="winner-name" class="fw-bold winner-name">Sena Kendali</div>
-                <div id="winner-contingent" class="fw-bold winner-contingent">Pabuaran Citayam Sport Club</div>
-
-                <div id="winner-corner-badge" class="mb-2" style="min-height:28px; display:none;">
-                  <!-- contoh: <span class="badge bg-primary">BLUE</span> -->
-                </div>
-
-                <div id="winner-reason" class="mt-2 h5" style="display:none;">-</div>
-
-              </div>
-            </div>
-
-
-      
-    </div>
-  </div>
-</div>
-
-
-
 
 
  <div class="fix-match-info" id="tournament-name">-</div>
@@ -151,7 +103,7 @@
             <div id="total-score" class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
                -
             </div>
-            <div id="timer-container" class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
+            <div class="flex-fill text-white fw-bold d-flex align-items-center justify-content-center seni-footer">
                 <div id="timer" class="timer">
                     00:00
                 </div>

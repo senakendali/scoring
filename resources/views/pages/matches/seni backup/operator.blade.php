@@ -1,4 +1,4 @@
-@extends('layouts.seni_layout')
+@extends('layouts.app')
 @section('content')
 <input type="hidden" id="match-id" value="">
 <div class="modal fade" id="confirmResetModal" tabindex="-1" aria-hidden="true">
@@ -85,81 +85,23 @@
   </div>
 </div>
 
-<!-- Modal Input Waktu Perform -->
-<div class="modal fade" id="performanceTimeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
-      <div class="modal-header border-0">
-        <h5 class="modal-title">Waktu Perform</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
-      </div>
-      <div class="modal-body">
-        <label for="performance-time-input" class="form-label">Masukkan durasi perform</label>
-        <input 
-          type="text" 
-          id="performance-time-input" 
-          class="form-control bg-secondary text-white" 
-          placeholder="contoh: 3,5  atau  3.5  atau  3:30"
-          inputmode="decimal"
-        />
-        <div class="form-text text-light mt-2">
-          Format yang didukung:
-          <ul class="mb-0">
-            <li><code>3,5</code> atau <code>3.5</code> = 3,5 menit</li>
-            <li><code>3:30</code> = 3 menit 30 detik</li>
-          </ul>
-          (Tanda koma otomatis diubah jadi titik)
-        </div>
-        <div id="performance-time-error" class="text-danger mt-2 d-none"></div>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        <button type="button" id="save-performance-time" class="btn btn-primary">
-          Simpan & Akhiri
-        </button>
-      </div>
-    </div>
-  </div>
+
+<div class="fix-match-info dark" id="tournament-name">-</div>
+<div class="fix-match-detail">
+    <div class="detail-item" id="match-code" style="cursor:pointer;">-</div>
+    <div class="detail-item" id="age-category">-</div>
+    <div class="detail-item" id="gender">-</div>
 </div>
-
-<!-- Modal Set Winner -->
-<div class="modal fade" id="setWinnerModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white">
-      <div class="modal-header border-0">
-        <h5 class="modal-title">Set Winner</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="set-winner-match-id" value="">
-        <div class="mb-3">
-          <label class="form-label">Pilih Pemenang</label>
-          <select id="winner-participant" class="form-select bg-secondary text-white">
-            <!-- diisi via JS: option value=participant_key (1/2/3), text=nama -->
-          </select>
-        </div>
-       
-        <div class="mb-3">
-          <label class="form-label">Alasan Menang</label>
-          <select id="winner-reason" class="form-select bg-secondary text-white">
-             <option value="mutlak">Menang Mutlak</option>
-            <option value="undur_diri">Menang Undur Diri</option>
-            <option value="diskualifikasi">Menang Diskualifikasi</option>
-          </select>
-        </div>
-        <div id="set-winner-error" class="text-danger d-none"></div>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        <button type="button" id="submit-set-winner" class="btn btn-primary">Simpan</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 <div class="match-header">
     <input type="hidden" id="round-id">
+
+    
+    <!--div class="match-details">
+        <div class="detail-item" id="match-code">-</div>
+        <div class="detail-item" id="age-category">-</div>
+        <div class="detail-item" id="gender">-</div>
+    </div-->
+
     <div class="match-item">
         <div class="seni-participant-detail">
             <div id="contingent-name" class="contingent-name item">-</div>
@@ -195,26 +137,21 @@
                         <div class="timer roboto-bold" id="timer">00:00</div>
                     </div>
                     <div class="panel-footer">
-                          <div class="d-flex gap-2">
-                              <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0">PAUSE</button>
-                              <button class="start btn btn-success d-flex justify-content-center align-items-center text-white roboto-bold border-0">
-                                  <i class="bi bi-play-fill me-1"></i> START
-                              </button>
-                              <button class="btn reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
-                          </div>
-
-                          <div class="d-flex mt-2 gap-2">
-                              <!--button class="btn skip-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">SKIP PERFORMANCE</button-->
-                              <button class="btn set-winner d-flex justify-content-center align-items-center text-white roboto-bold border-0">SET WINNER</button>
-                          </div>
-                          
-                          <div class="d-flex mt-2">
-                              <button class="btn end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">DISQUALIFY</button>
-                          </div>
-                          <div class="d-flex mt-2">
-                              <button class="btn next-match d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none">NEXT MATCH</button>
-                          </div>
-                      </div>
+                        <div class="d-flex gap-2">
+                            <button class="pause btn d-flex justify-content-center align-items-center text-white roboto-bold border-0">PAUSE</button>
+                            <button class="start btn btn-success d-flex justify-content-center align-items-center text-white roboto-bold border-0">
+                                <i class="bi bi-play-fill me-1"></i> START
+                            </button>
+                            <button class="btn reset d-flex justify-content-center align-items-center text-white roboto-bold border-0">RESET</button>
+                        </div>
+                        
+                        <div class="d-flex mt-2">
+                            <button class="btn end-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">DISQUALIFY</button>
+                        </div>
+                        <div class="d-flex mt-2">
+                            <button class="btn next-match d-flex justify-content-center align-items-center text-white roboto-bold border-0 d-none">NEXT MATCH</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

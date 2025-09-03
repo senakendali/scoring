@@ -26,6 +26,7 @@ class LocalSeniMatch extends Model
         'match_type',
         'disqualified',
         'disqualification_reason',
+        'winner_corner',
         // tambahkan kolom lain yang boleh diisi massal
     ];
 

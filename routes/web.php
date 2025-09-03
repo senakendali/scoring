@@ -94,6 +94,10 @@ Route::prefix('api')->group(function () {
     Route::get('/local-matches/seni', [LocalMatchSeniController::class, 'index']);
     Route::get('/local-matches/seni/live', [LocalMatchSeniController::class, 'fetchLiveMatches']);
     Route::get('/local-matches/seni/{id}', [LocalMatchSeniController::class, 'show']);
+    Route::get('/seni-battle/matches/{match}/group-contestants', [LocalMatchSeniController::class, 'groupContestants']);
+    Route::post('/seni-battle/matches/{match}/set-winner', [LocalMatchSeniController::class, 'setWinner']);
+
+    Route::get('/local-matches/seni/battle-group/{battle_group}', [LocalMatchSeniController::class, 'getBattleResults']);
     Route::patch('/local-seni-matches/{id}/disqualify', [LocalMatchSeniController::class, 'disqualify']);
     Route::patch('/local-seni-matches/{id}/finish', [SeniMatchSetupController::class, 'finish']);
 
@@ -105,6 +109,8 @@ Route::prefix('api')->group(function () {
     Route::post('/matches/seni/{id}/pause', [SeniMatchSetupController::class, 'pause']);
     Route::post('/matches/seni/{id}/resume', [SeniMatchSetupController::class, 'resume']);
     Route::post('/matches/seni/{id}/reset', [SeniMatchSetupController::class, 'reset']);
+    // routes/api.php
+    Route::patch('/local-seni-matches/{id}/skip', [SeniMatchSetupController::class, 'skipPerformance']);
     Route::post('/local-seni-matches/{id}/next', [SeniMatchSetupController::class, 'changeToNextMatch']);
     Route::post('/local-seni-matches/{id}/change', [SeniMatchSetupController::class, 'changeToMatch']);
 

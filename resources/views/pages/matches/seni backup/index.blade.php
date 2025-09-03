@@ -1,4 +1,4 @@
-@extends('layouts._app')
+@extends('layouts.app')
 @section('content')
 <!-- Modal Bracket -->
 <div class="modal fade" id="bracketModal" tabindex="-1" aria-labelledby="bracketModalLabel" aria-hidden="true">
@@ -56,17 +56,16 @@
 <input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">
 <input type="hidden" id="session-role" value="{{ session('role') }}">
 <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
-
-@if(session('role') === 'operator' || session('role') === 'admin')
 <div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
+@if(session('role') === 'operator' || session('role') === 'admin')
 <div class="container-fluid">
-    <!--div class="row mt-4">
+    <div class="row mt-4">
       <div class="col-lg-12 d-flex justify-content-end">
         <button id="btn-create-match-final" class="btn btn-primary mb-4">
             Buat Match Antar Juara Pool
         </button>
       </div>
-    </div-->
+    </div>
     <div class="row">
         <div class="col-12">
         <div class="content">
@@ -77,13 +76,10 @@
     </div>
 </div>
 @else
-<div class="bg-white text-dark d-flex align-items-center justify-content-center" 
-     style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('{{ asset('images/bg-hero.png') }}') no-repeat center center;
-            background-size: cover;">
-    <h1 class="roboto-bold text-uppercase">{{ session('tournament_name') }}</h1>
+<div class="bg-white text-dark d-flex align-items-center justify-content-center" style="height: calc(100vh - 180px);">
+    <h4 id="typing-text" class="roboto-bold text-uppercase"></h4>
 </div>
-
+    
 @endif    
     
 @endsection

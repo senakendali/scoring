@@ -373,26 +373,6 @@ $(document).ready(function () {
         
     }
 
-    function applyCornerBackground(corner) {
-
-        $(".seni-participant-detail").css('border-bottom', 'none');
-        $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
-       
-        var clsBlue = 'corner-blue-bg';
-        var clsRed  = 'corner-red-bg';
-        var clsNone = 'corner-none-bg';
-
-        var $targets = $('#contingent-name, #participant-1, #participant-2, #participant-3');
-        $targets.removeClass(clsBlue + ' ' + clsRed + ' ' + clsNone);
-
-        var c = (corner || '').toString().toLowerCase();
-        if (c === 'blue') {
-            $targets.addClass(clsBlue);
-        } else if (c === 'red') {
-            $targets.addClass(clsRed);
-        }
-    }
-
     function fetchMatchData() {
         $(".loader-bar").show();
         
@@ -418,7 +398,7 @@ $(document).ready(function () {
             $("#match-id").val(data.id);
             currentArena = data.arena_name;
             
-            $("#tournament-name").text(data.tournament_name);
+            $("#tournament-name").text(data.tournament_name.replace("Pencak Silat", "").trim());
             $("#match-code").text(data.arena_name + " Partai " + data.match_order);
             $("#class-name").text(data.category);
             $("#age-category").text(data.age_category);
@@ -445,54 +425,9 @@ $(document).ready(function () {
                 $("#participant-3").text(data.team_members[2] || '-').show();
             }
 
-            applyCornerBackground(data.corner);
             $(".loader-bar").hide();
         });
     }  
-
-    // helper: buang zero-width chars biar gak “kosong tapi ada”
-    const stripZW = s => (typeof s === 'string'
-    ? s.replace(/[\u200B-\u200D\u2060]/g, '').trim()
-    : s);
-
-    // helper: ambil kontingen (dukung 2 bentuk response)
-    function getContingent(match){
-        // v1: {contingent: {name: "..."}}  | v2: {contingent_name: "..."} | fallback: {contingent: "..."}
-        return stripZW(
-            match?.contingent?.name ??
-            match?.contingent_name ??
-            match?.contingent ??
-            '-'
-        ) || '-';
-    }
-
-    // helper: ambil daftar peserta (dukung 2 bentuk response)
-    function getParticipants(match){
-        // v1: team_member1.name / team_member2.name / team_member3.name
-        const v1 = [
-            stripZW(match?.team_member1?.name || ''),
-            stripZW(match?.team_member2?.name || ''),
-            stripZW(match?.team_member3?.name || ''),
-        ].filter(Boolean);
-
-        if (v1.length) return v1;
-
-        // v2: participant_1 / participant_2 / participant_3 (string)
-        const v2 = [
-            stripZW(match?.participant_1 || ''),
-            stripZW(match?.participant_2 || ''),
-            stripZW(match?.participant_3 || ''),
-        ].filter(Boolean);
-
-        // v3 (fallback): participant_name (dipisah koma / pipe)
-        if (!v2.length && match?.participant_name) {
-            const parts = String(match.participant_name)
-            .split(/[,|]/).map(x => stripZW(x)).filter(Boolean);
-            if (parts.length) return parts;
-        }
-
-        return [];
-    }
 
     $("#match-code").on("click", function () {
         const matchList = $("#match-list");
@@ -501,50 +436,34 @@ $(document).ready(function () {
         $.get(`${url}/api/local-matches/seni`, function (data) {
             const arenaMatches = [];
 
-            // flatten sesuai struktur response lu
-            (data || []).forEach(categoryGroup => {
-            (categoryGroup.age_categories || []).forEach(ageGroup => {
-                (ageGroup.pools || []).forEach(pool => {
-                (pool.matches || []).forEach(m => arenaMatches.push(m));
+            data.forEach(categoryGroup => {
+                categoryGroup.age_categories.forEach(ageGroup => {
+                    ageGroup.pools.forEach(pool => {
+                        arenaMatches.push(...pool.matches);
+                    });
                 });
             });
-            });
 
-            arenaMatches.sort((a, b) => (a.match_order ?? 0) - (b.match_order ?? 0));
+            arenaMatches.sort((a, b) => a.match_order - b.match_order);
 
             arenaMatches.forEach(match => {
-            const contingent  = getContingent(match);
-            const participantsArr = getParticipants(match);
-            const participants = participantsArr.join(', ');
-            const corner = (match.corner || '').toString().trim();
+                const li = $(`
+                    <li class="list-group-item list-group-item-action bg-dark text-white"
+                        style="cursor:pointer;" data-id="${match.id}">
+                        PARTAI ${match.match_order}
+                    </li>
+                `);
 
-            let label = `PARTAI ${match.match_order}`;
-            // tambah kontingen & peserta kalau ada
-            if (contingent !== '-' || participants) {
-                label += ` — ${contingent}`;
-                if (participants) label += ` (${participants})`;
-            }
-            // tambah corner kalau ada
-            if (corner) {
-                label += ` [${corner.toUpperCase()}]`;
-            }
+                li.on("click", function () {
+                    const selectedId = $(this).data("id");
+                    
 
-            const li = $(`
-                <li class="list-group-item list-group-item-action bg-dark text-white"
-                    style="cursor:pointer;" data-id="${match.id}">
-                ${label}
-                </li>
-            `);
+                    $("#matchListModal").modal("hide");
 
-            li.on("click", function () {
-                const selectedId = $(this).data("id");
-                $("#matchListModal").modal("hide");
-               
-                window.location.href = `${url}/matches/seni/judges/${selectedId}`;
-            });
-            
+                    window.location.href = `${url}/matches/seni/judges/${selectedId}`;
+                });
 
-            matchList.append(li);
+                matchList.append(li);
             });
 
             $("#matchListModal").modal("show");

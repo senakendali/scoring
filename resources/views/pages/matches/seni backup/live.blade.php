@@ -1,4 +1,4 @@
-@extends('layouts._app')
+@extends('layouts.app')
 @section('content')
 <!-- Modal Bracket -->
 <div class="modal fade" id="bracketModal" tabindex="-1" aria-labelledby="bracketModalLabel" aria-hidden="true">
@@ -21,10 +21,10 @@
 </div>
 
 <div class="modal fade" id="rankingModal" tabindex="-1">
-  <div class="modal-dialog modal-fullscreen">
+  <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content bg-dark text-white">
       <div class="modal-header">
-        <h5 class="modal-title" id="rankingModalLabel">Ranking</h5>
+        <h5 class="modal-title">Top 3 Peringkat</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -34,39 +34,16 @@
   </div>
 </div>
 
-<div class="modal fade" id="modal-final-match" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Pilih Juara Tiap Pool</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="final-match-body">
-        <!-- Diisi lewat jQuery -->
-      </div>
-      <div class="modal-footer">
-        <button id="submit-final-match" class="btn btn-success">Buat Match</button>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <input type="hidden" id="session-arena" value="{{ session('arena_name') }}">
 <input type="hidden" id="session-role" value="{{ ucfirst(session('role')) }}">
 <input type="hidden" id="session-juri-number" value="{{ session('juri_number') }}">
 <input type="hidden" id="session-role" value="{{ session('role') }}">
 <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
-
-@if(session('role') === 'operator' || session('role') === 'admin')
 <div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
+@if(session('role') === 'operator')
 <div class="container-fluid">
-    <!--div class="row mt-4">
-      <div class="col-lg-12 d-flex justify-content-end">
-        <button id="btn-create-match-final" class="btn btn-primary mb-4">
-            Buat Match Antar Juara Pool
-        </button>
-      </div>
-    </div-->
     <div class="row">
         <div class="col-12">
         <div class="content">
@@ -77,13 +54,10 @@
     </div>
 </div>
 @else
-<div class="bg-white text-dark d-flex align-items-center justify-content-center" 
-     style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('{{ asset('images/bg-hero.png') }}') no-repeat center center;
-            background-size: cover;">
-    <h1 class="roboto-bold text-uppercase">{{ session('tournament_name') }}</h1>
+<div class="bg-white text-dark d-flex align-items-center justify-content-center" style="height: calc(100vh - 180px);">
+    <h4 id="typing-text" class="roboto-bold text-uppercase"></h4>
 </div>
-
+    
 @endif    
     
 @endsection
