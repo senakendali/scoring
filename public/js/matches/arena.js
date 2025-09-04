@@ -618,6 +618,7 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $.get(url + `/api/local-matches/${matchId}`, function (data) {
             if(data.is_display_timer != 0){
+                
                 $("#timer").show();
                 $(".timer").css('color', '#000000');
             }else{

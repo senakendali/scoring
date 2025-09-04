@@ -21,7 +21,7 @@
            <a href="{{ url('/') }}"><img src="{{ asset('images/ipsi.png') }}" alt="IPSI"></a>
 
             @if(request()->segment(2) == 'display-arena')
-                <div id="timer" class="timer arena roboto-bold text-white">
+                <div id="timer" class="timer arena fw-bold">
                     00:00
                 </div>
             @endif
