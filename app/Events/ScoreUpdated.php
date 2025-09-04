@@ -43,55 +43,71 @@ class ScoreUpdated implements ShouldBroadcast
     // Tambahan (di dalam broadcastWith)
     public function broadcastWith()
     {
-        // Ambil total penalti dari referee actions
-        $bluePenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('corner', 'blue')
-            ->where('action', '!=', 'jatuhan')
-            ->sum('point_change');
+        $q = \App\Models\LocalRefereeAction::query()
+            ->where('local_match_id', $this->matchId);
 
-        $redPenalty = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('corner', 'red')
-            ->where('action', '!=', 'jatuhan')
-            ->sum('point_change');
+        // Jatuhan
+        $blueFallCount = (clone $q)->where('corner','blue')->whereRaw("LOWER(action) = 'jatuhan'")->count();
+        $redFallCount  = (clone $q)->where('corner','red') ->whereRaw("LOWER(action) = 'jatuhan'")->count();
 
-         // 💡 Ambil jumlah jatuhan
-        $blueFallCount = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('corner', 'blue')
-            ->where('action', 'jatuhan')
-            ->count();
+        // Helper: count penalti = (poin negatif) OR (action termasuk pola penalti), dan bukan 'jatuhan'
+        $countPenalty = function (string $corner) use ($q) {
+            return (clone $q)
+                ->where('corner', $corner)
+                ->where(function ($qq) {
+                    $qq->where('point_change', '<', 0)
+                    ->orWhere(function ($q2) {
+                        // tambahkan pola lain kalau perlu
+                        $q2->whereRaw("LOWER(action) LIKE 'binaan%'")
+                            ->orWhereRaw("LOWER(action) LIKE 'teguran%'")
+                            ->orWhereRaw("LOWER(action) LIKE 'peringatan%'");
+                    });
+                })
+                ->whereRaw("LOWER(action) <> 'jatuhan'")
+                ->count();
+        };
 
-        $redFallCount = \App\Models\LocalRefereeAction::where('local_match_id', $this->matchId)
-            ->where('corner', 'red')
-            ->where('action', 'jatuhan')
-            ->count();
+        $bluePenaltyCount = $countPenalty('blue');
+        $redPenaltyCount  = $countPenalty('red');
 
-
-        // Tentukan pemenang realtime
+        // Winner realtime: skor → jatuhan → penalti (lebih sedikit menang)
         $winner = null;
         if ($this->blueScore > $this->redScore) {
             $winner = 'blue';
         } elseif ($this->redScore > $this->blueScore) {
             $winner = 'red';
         } else {
-            if ($bluePenalty < $redPenalty) {
+            if ($blueFallCount > $redFallCount) {
                 $winner = 'blue';
-            } elseif ($redPenalty < $bluePenalty) {
+            } elseif ($redFallCount > $blueFallCount) {
                 $winner = 'red';
+            } else {
+                if ($bluePenaltyCount < $redPenaltyCount) {
+                    $winner = 'blue';
+                } elseif ($redPenaltyCount < $bluePenaltyCount) {
+                    $winner = 'red';
+                } else {
+                    $winner = null; // tetap imbang
+                }
             }
         }
 
         return [
-            'match_id' => $this->matchId,
-            'round_id' => $this->roundId,
-            'blueScore' => $this->blueScore,
-            'redScore' => $this->redScore,
-            'blueAdjustment' => $this->blueAdjustment,
-            'redAdjustment' => $this->redAdjustment,
-             'blueFallCount' => $blueFallCount, // 🔥 tambahin ini
-            'redFallCount' => $redFallCount,
-            'winner_corner' => $winner,
+            'match_id'          => $this->matchId,
+            'round_id'          => $this->roundId,
+            'blueScore'         => $this->blueScore,
+            'redScore'          => $this->redScore,
+            'blueAdjustment'    => $this->blueAdjustment,
+            'redAdjustment'     => $this->redAdjustment,
+            'blueFallCount'     => $blueFallCount,
+            'redFallCount'      => $redFallCount,
+            'bluePenaltyCount'  => $bluePenaltyCount,
+            'redPenaltyCount'   => $redPenaltyCount,
+            'winner_corner'     => $winner,
         ];
     }
+
+
 
     
 

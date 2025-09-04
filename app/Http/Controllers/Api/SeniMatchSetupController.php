@@ -668,7 +668,152 @@ class SeniMatchSetupController extends Controller
         ]);
     }
 
-    public function changeToNextMatch($currentId)
+   public function changeToNextMatch($currentId)
+{
+    $currentMatch = \App\Models\LocalSeniMatch::findOrFail($currentId);
+
+    // Helper: normalisasi flag DQ berbagai format
+    $isDQ = function ($m): bool {
+        if (!\Schema::hasColumn($m->getTable(), 'disqualified')) return false;
+        $v = $m->disqualified ?? null;
+        if ($v === null) return false;
+        if (is_bool($v)) return $v;
+        if (is_numeric($v)) return (int)$v === 1;
+        $s = strtolower((string)$v);
+        return in_array($s, ['1','yes','true','dq'], true);
+    };
+
+    // ===== Scope dasar: turnamen + arena yg sama =====
+    $q = \App\Models\LocalSeniMatch::query()
+        ->where('tournament_name', $currentMatch->tournament_name)
+        ->where('arena_name', $currentMatch->arena_name);
+
+    // 🔹 PERBEDAAN UTAMA:
+    // Battle: JANGAN disaring pakai battle_group — urut global by match_order (1 1, 2 2, 3 3, ...)
+    // Non-battle: kalau ada pool_name, batasi ke pool yang sama
+    $isBattle = !empty($currentMatch->battle_group);
+    if (!$isBattle && \Schema::hasColumn($currentMatch->getTable(), 'pool_name')) {
+        $poolName = trim((string)($currentMatch->pool_name ?? ''));
+        if ($poolName !== '') {
+            $q->where('pool_name', $poolName);
+        }
+    }
+
+    // Urutan stabil: match_order → (corner blue/red kalau ada) → id
+    $q->orderByRaw('CAST(match_order AS UNSIGNED) ASC');
+
+    if (\Schema::hasColumn($currentMatch->getTable(), 'corner')) {
+        $q->orderByRaw(
+            "CASE LOWER(COALESCE(corner,'')) " .
+            "WHEN 'blue' THEN 0 WHEN 'merah' THEN 1 WHEN 'red' THEN 1 ELSE 2 END"
+        );
+    }
+
+    $q->orderBy('id', 'ASC');
+
+    $matches = $q->get();
+
+    // Fallback: kalau scope kosong (mis. pool_name belum ke-set), pakai seluruh arena+turnamen
+    if ($matches->isEmpty()) {
+        $fallback = \App\Models\LocalSeniMatch::query()
+            ->where('tournament_name', $currentMatch->tournament_name)
+            ->where('arena_name', $currentMatch->arena_name)
+            ->orderByRaw('CAST(match_order AS UNSIGNED) ASC');
+
+        if (\Schema::hasColumn($currentMatch->getTable(), 'corner')) {
+            $fallback->orderByRaw(
+                "CASE LOWER(COALESCE(corner,'')) " .
+                "WHEN 'blue' THEN 0 WHEN 'merah' THEN 1 WHEN 'red' THEN 1 ELSE 2 END"
+            );
+        }
+
+        $matches = $fallback->orderBy('id', 'ASC')->get();
+    }
+
+    // Posisi current dalam list
+    $index = $matches->search(fn($m) => (int)$m->id === (int)$currentMatch->id);
+
+    // Cek kandidat valid
+    $isCandidate = function ($m) use ($isDQ) {
+        return ($m->status !== 'finished') && !$isDQ($m);
+    };
+
+    // Cari di bawah current
+    $nextMatch = null;
+    if ($index !== false) {
+        $nextMatch = $matches->slice($index + 1)->first($isCandidate);
+    }
+
+    // Kalau belum ketemu → muter dari awal s/d current
+    if (!$nextMatch) {
+        $sliceEnd = ($index !== false) ? $index : 0;
+        $nextMatch = $matches->slice(0, $sliceEnd)->first($isCandidate);
+    }
+
+    // Fallback terakhir: cari global (tanpa pool filter), tetap urut match_order
+    if (!$nextMatch) {
+        $fallbackQ = \App\Models\LocalSeniMatch::query()
+            ->where('tournament_name', $currentMatch->tournament_name)
+            ->where('arena_name', $currentMatch->arena_name)
+            ->where('status', '!=', 'finished')
+            ->orderByRaw('CAST(match_order AS UNSIGNED) ASC');
+
+        if (\Schema::hasColumn($currentMatch->getTable(), 'corner')) {
+            $fallbackQ->orderByRaw(
+                "CASE LOWER(COALESCE(corner,'')) " .
+                "WHEN 'blue' THEN 0 WHEN 'merah' THEN 1 WHEN 'red' THEN 1 ELSE 2 END"
+            );
+        }
+
+        if (\Schema::hasColumn($currentMatch->getTable(), 'disqualified')) {
+            $fallbackQ->where(function ($qq) {
+                $qq->whereNull('disqualified')
+                   ->orWhereIn('disqualified', [0, '0', 'no', 'false']);
+            });
+        }
+
+        $nextMatch = $fallbackQ->orderBy('id', 'ASC')->first();
+    }
+
+    // === Ketemu kandidat ===
+    if ($nextMatch) {
+        // Promote status kalau masih idle
+        if (in_array($nextMatch->status, ['pending','not_started','paused','stopped','awaiting_time'], true)) {
+            $nextMatch->status = 'ongoing';
+            $nextMatch->save();
+        }
+
+        // Broadcast perubahan active match
+        broadcast(new \App\Events\SeniActiveMatchChanged(
+            $nextMatch->id,
+            $currentMatch->arena_name
+        ))->toOthers();
+
+        return response()->json([
+            'message'      => 'Match switched',
+            'new_match_id' => $nextMatch->id,
+            'no_next'      => false,
+        ]);
+    }
+
+    // === Tidak ada kandidat sama sekali ===
+    \Log::info('ℹ️ changeToNextMatch: no candidate', [
+        'current_id' => $currentMatch->id,
+        'arena'      => $currentMatch->arena_name,
+        'tournament' => $currentMatch->tournament_name,
+        'scoped'     => $matches->pluck('id'),
+    ]);
+
+    return response()->json([
+        'message'      => 'Tidak ada match berikutnya di arena ini.',
+        'new_match_id' => null,
+        'no_next'      => true, // biar FE bisa diam tanpa popup error
+    ], 200);
+}
+
+
+
+    public function changeToNextMatch_sebelum_lss($currentId)
     {
         $currentMatch = \App\Models\LocalSeniMatch::findOrFail($currentId);
 

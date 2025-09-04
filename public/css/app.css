@@ -1099,7 +1099,7 @@ body{
     justify-content: center;
     text-transform: uppercase;
     border-radius: 8px;
-    font-size: 1.5rem;
+    font-size: 15px;
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
@@ -1454,7 +1454,7 @@ th, td {
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
-    font-size: 1.5rem;
+    font-size: 15px;
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;

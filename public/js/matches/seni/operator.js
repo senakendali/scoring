@@ -68,6 +68,7 @@ $(document).ready(function () {
         if(corner){
              $(".seni-participant-detail").css('border-bottom', 'none');
             $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
+            $(".set-winner").addClass('d-flex');
         }
        
        

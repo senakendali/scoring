@@ -188,92 +188,128 @@ $(document).ready(function () {
 
     // ✅ Score Updated
     channel.bind('score.updated', function (data) {
-    try {
         console.log("🎯 Score updated:", data);
 
-        // guard defaults biar gak ReferenceError
-        window.lockScore   = window.lockScore   || { blue: false, red: false };
-        window.fallCounter = window.fallCounter || { blue: 0,     red: 0     };
+        const blueScore = parseInt(data.blueScore) || 0;
+        const redScore = parseInt(data.redScore) || 0;
 
-        const blueScore  = Number(data.blueScore)  || 0;
-        const redScore   = Number(data.redScore)   || 0;
-        const blueFalls  = Number(data.blueFallCount)   || 0;
-        const redFalls   = Number(data.redFallCount)    || 0;
-        const bluePens   = Number(data.bluePenaltyCount)|| 0;
-        const redPens    = Number(data.redPenaltyCount) || 0;
-
-        // Skor + animasi (hormati lock)
+        // 🔥 Update Blue Score kalau tidak lock
         if (!lockScore.blue) {
-        $("#blue-score").text(blueScore).addClass("bounce");
-        setTimeout(() => $("#blue-score").removeClass("bounce"), 600);
+            $("#blue-score")
+                .text(blueScore)
+                .addClass("bounce");
+
+            setTimeout(() => {
+                $("#blue-score").removeClass("bounce");
+            }, 600);
         }
+
+        // 🔥 Update Red Score kalau tidak lock
         if (!lockScore.red) {
-        $("#red-score").text(redScore).addClass("bounce");
-        setTimeout(() => $("#red-score").removeClass("bounce"), 600);
+            $("#red-score")
+                .text(redScore)
+                .addClass("bounce");
+
+            setTimeout(() => {
+                $("#red-score").removeClass("bounce");
+            }, 600);
         }
 
-        // Jatuhan
-        fallCounter.blue = blueFalls;
-        fallCounter.red  = redFalls;
-        $("#blue-fall-count").text(fallCounter.blue);
-        $("#red-fall-count").text(fallCounter.red);
+        if (typeof data.blueFallCount !== 'undefined') {
+            fallCounter.blue = data.blueFallCount;
+            $("#blue-fall-count").text(fallCounter.blue);
+        }
+        if (typeof data.redFallCount !== 'undefined') {
+            fallCounter.red = data.redFallCount;
+            $("#red-fall-count").text(fallCounter.red);
+        }
 
-        // Penyesuaian (pakai elemen yang sama dgn yg kamu style: .additional-score)
-        const fmtAdj = n => (Number(n) > 0 ? `+${Number(n)}` : `${Number(n) || 0}`);
-        $(".arena-container .blue .additional-score").text(fmtAdj(data.blueAdjustment));
-        $(".arena-container .red  .additional-score").text(fmtAdj(data.redAdjustment));
+        // 🔥 Tetap update penyesuaian
+        $(".arena-container .blue .score").text(data.blueAdjustment > 0 ? "+" + data.blueAdjustment : data.blueAdjustment);
+        $(".arena-container .red .score").text(data.redAdjustment > 0 ? "+" + data.redAdjustment : data.redAdjustment);
 
-        // --- Tentukan siapa yang di-highlight ---
-        let winner = null;
+        // 🔥 Update background berdasarkan skor
         if (blueScore > redScore) {
-        winner = 'blue';
+            $("#blue-score").css({
+                backgroundColor: "#4E25FF",
+                color: "#FFFFFF",
+            });
+            $(".blue .additional-score").css({
+                backgroundColor: "#4E25FF",
+                color: "#FFFFFF",
+            });
+
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+            $(".red .additional-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+
         } else if (redScore > blueScore) {
-        winner = 'red';
+            $("#red-score").css({
+                backgroundColor: "#E8003F",
+                color: "#FFFFFF",
+            });
+            $(".red .additional-score").css({
+                backgroundColor: "#E8003F",
+                color: "#FFFFFF",
+            });
+
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+            $(".blue .additional-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+
         } else {
-        // Jika backend sudah kasih winner_corner, pakai itu
-        if (data.winner_corner === 'blue' || data.winner_corner === 'red') {
-            winner = data.winner_corner;
-        } else {
-            // Fallback FE: jatuhan dulu, lalu penalti (lebih sedikit menang)
-            if (blueFalls > redFalls) winner = 'blue';
-            else if (redFalls > blueFalls) winner = 'red';
-            else if (bluePens < redPens) winner = 'blue';
-            else if (redPens < bluePens) winner = 'red';
-            // else tetap null → draw
+            // Kalau imbang, reset warna dulu
+            $("#blue-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+            $(".blue .additional-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#4E25FF"
+            });
+
+            $("#red-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+            $(".red .additional-score").css({
+                backgroundColor: "#FFFFFF",
+                color: "#D32F2F"
+            });
+
+            // 💥 Jika ada winner_corner saat skor imbang, tampilkan highlight pemenang
+            if (data.winner_corner === 'blue') {
+                $("#blue-score").css({
+                    backgroundColor: "#4E25FF",
+                    color: "#FFFFFF"
+                });
+                $(".blue .additional-score").css({
+                    backgroundColor: "#4E25FF",
+                    color: "#FFFFFF"
+                });
+
+            } else if (data.winner_corner === 'red') {
+                $("#red-score").css({
+                    backgroundColor: "#E8003F",
+                    color: "#FFFFFF"
+                });
+                $(".red .additional-score").css({
+                    backgroundColor: "#E8003F",
+                    color: "#FFFFFF"
+                });
+            }
         }
-        }
-
-        // Helper warna
-        const setSide = (mainSel, addSel, activeBg, activeFg, neutralFg, active) => {
-        $(mainSel).css({
-            backgroundColor: active ? activeBg : "#FFFFFF",
-            color:           active ? activeFg : neutralFg
-        });
-        $(addSel).css({
-            backgroundColor: active ? activeBg : "#FFFFFF",
-            color:           active ? activeFg : neutralFg
-        });
-        };
-
-        // Default netral
-        let blueActive = (winner === 'blue');
-        let redActive  = (winner === 'red');
-
-        setSide("#blue-score", ".blue .additional-score", "#4E25FF", "#FFFFFF", "#4E25FF", blueActive);
-        setSide("#red-score",  ".red  .additional-score", "#E8003F", "#FFFFFF", "#D32F2F", redActive);
-
-        // (Opsional) tampilkan badge draw kalau tetap null
-        if (!blueActive && !redActive) {
-        $("#draw-badge").removeClass("d-none");   // siapkan elemennya di HTML
-        } else {
-        $("#draw-badge").addClass("d-none");
-        }
-
-    } catch (e) {
-        console.error("❌ score.updated handler error:", e);
-    }
     });
-
 
     
     
