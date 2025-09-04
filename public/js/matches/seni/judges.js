@@ -375,8 +375,11 @@ $(document).ready(function () {
 
     function applyCornerBackground(corner) {
 
-        $(".seni-participant-detail").css('border-bottom', 'none');
-        $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
+        
+        if(corner){
+             $(".seni-participant-detail").css('border-bottom', 'none');
+            $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
+        }
        
         var clsBlue = 'corner-blue-bg';
         var clsRed  = 'corner-red-bg';

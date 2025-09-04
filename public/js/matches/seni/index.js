@@ -73,203 +73,227 @@ $(document).ready(function () {
         $(".loader-bar").show();
         $('#match-tables').empty();
 
-        (data || []).forEach(function (categoryGroup) {
-            var categoryLabel = categoryGroup.category + ' - ' + (categoryGroup.gender === 'male' ? 'PUTRA' : 'PUTRI');
+        // 1) Flatten semua match + meta
+        const flat = [];
+        (data || []).forEach((catGroup) => {
+            const catLabel = `${catGroup.category} - ${catGroup.gender === 'male' ? 'PUTRA' : 'PUTRI'}`;
+            (catGroup.age_categories || []).forEach((ageGroup) => {
+            const ageLabel = ageGroup.age_category || 'TANPA USIA';
+            (ageGroup.pools || []).forEach((pool) => {
+                const poolName = pool.name || '-';
+                (pool.matches || []).forEach((m) => {
+                flat.push({
+                    row: m,
+                    meta: { cat: catLabel, age: ageLabel, pool: poolName }
+                });
+                });
+            });
+            });
+        });
 
-            (categoryGroup.age_categories || []).forEach(function (ageGroup) {
-            var ageCategory = ageGroup.age_category || 'TANPA USIA';
+        if (flat.length === 0) {
+            $('#match-tables').html(`<div class="text-center text-muted py-5">Belum ada pertandingan.</div>`);
+            $(".loader-bar").hide();
+            return;
+        }
 
-            var groupHtml = `
-                <h4 class="text-uppercase text-primary mb-2">${categoryLabel}</h4>
-                <h5 class="text-uppercase text-secondary mb-3">${String(ageCategory).toUpperCase()}</h5>
+        // 2) Grouping dengan COMPOSITE KEY supaya battle_group tidak nyampur antar gender/usia/pool
+        const groupsMap = {};
+        flat.forEach((item, idx) => {
+            const m = item.row;
+            const meta = item.meta || {};
+            const mode = (m.mode || 'default').toLowerCase();
+            const cornerStr = (m.corner || '').toLowerCase();
+            const hasCorner = (cornerStr === 'blue' || cornerStr === 'red');
+
+            // metaKey memastikan scope pairing tetap dalam bracket yg sama
+            const metaKey = `${meta.cat}||${meta.age}||${meta.pool}`;
+
+            let key;
+            if (mode === 'battle' && m.battle_group != null) {
+            // Composite battle key
+            key = `B|${metaKey}|${m.battle_group}`;
+            } else if (hasCorner && m.match_order != null) {
+            // Non-battle pairing by order tapi tetap per scope meta
+            key = `O|${metaKey}|${m.match_order}`;
+            } else {
+            // Single row (default)
+            key = `S|${metaKey}|${m.id ?? `X${idx}`}`;
+            }
+
+            if (!groupsMap[key]) groupsMap[key] = [];
+            groupsMap[key].push(item);
+        });
+
+        // Helper urutan grup
+        const minOrderOfGroup = (arr) => {
+            const nums = arr.map(it => parseInt(it.row.match_order, 10)).filter(n => !isNaN(n));
+            return nums.length ? Math.min(...nums) : Number.MAX_SAFE_INTEGER;
+        };
+        const maxRoundPrio = (arr) => {
+            const nums = arr.map(it => parseInt(it.row.round_priority, 10)).filter(n => !isNaN(n));
+            return nums.length ? Math.max(...nums) : -1;
+        };
+
+        // 3) Urutkan grup (berdasarkan match_order terkecil, lalu round_priority)
+        const groupKeys = Object.keys(groupsMap).sort((a, b) => {
+            const A = groupsMap[a], B = groupsMap[b];
+            const ao = minOrderOfGroup(A);
+            const bo = minOrderOfGroup(B);
+            if (ao !== bo) return ao - bo;
+
+            const ap = maxRoundPrio(A);
+            const bp = maxRoundPrio(B);
+            if (ap !== bp) return bp - ap;
+
+            return a.localeCompare(b);
+        });
+
+        // 4) Build satu tabel global
+        let html = `
+            <div class="mb-5">
+            <table class="table table-dark mt-2">
+                <thead>
+                <tr class="table-sub-header" style="height:60px;">
+                    <th style="width:90px;">Match</th>
+                    <th class="contingent-col">Kontingen</th>
+                    <th class="participant-col">Peserta 1</th>
+                    <th class="participant-col">Peserta 2</th>
+                    <th class="participant-col">Peserta 3</th>
+                    <th style="width:120px;">Score</th>
+                    <th style="width:120px;">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+        `;
+
+        groupKeys.forEach((gk) => {
+            const items = groupsMap[gk].slice();
+            const isBattle = gk.startsWith('B|');
+
+            // Fallback corner hanya untuk battle group yang berpasangan (2 baris)
+            if (isBattle && items.length === 2) {
+            items.forEach((it, idx) => {
+                const c = (it.row.corner || '').toLowerCase();
+                if (c !== 'blue' && c !== 'red') it.row.corner = (idx === 0) ? 'blue' : 'red';
+            });
+            }
+
+            // Urutkan: BLUE → RED → others
+            items.sort((A, B) => {
+            const rank = (v) => {
+                const s = (v || '').toLowerCase();
+                if (s === 'blue') return 0;
+                if (s === 'red')  return 1;
+                return 2;
+            };
+            const ra = rank(A.row.corner), rb = rank(B.row.corner);
+            if (ra !== rb) return ra - rb;
+            const ia = A.row.id || 0, ib = B.row.id || 0;
+            return ia - ib;
+            });
+
+            const sepOrder = minOrderOfGroup(items);
+            const head = items[0] || {};
+            const r0   = head.row || {};
+            const meta = head.meta || {};
+            const roundLabel = r0.round_label || '';
+
+            // Badge info (tetap tampilkan info agar konteks nggak hilang, walau tabelnya global)
+            const bCat  = meta.cat  ? ` <span class="match-pill">${meta.cat}</span>`   : '';
+            const bAge  = meta.age  ? ` <span class="match-pill">${meta.age}</span>`         : '';
+            const bPool = meta.pool ? ` <span class="match-pill">${meta.pool}</span>` : '';
+
+            html += `
+            <tr class="battle-group-sep">
+                <td colspan="7">
+                <span class="match-pill">Match ${Number.isFinite(sepOrder) ? sepOrder : '-'}</span>
+                
+                ${bCat}${bAge}${bPool}
+                </td>
+            </tr>
             `;
 
-            (ageGroup.pools || []).forEach(function (pool) {
-                var poolName = pool.name || '-';
+            // Render isi grup (pairing terjaga: Blue dahulu, Red berikutnya)
+            items.forEach(({row: m}) => {
+            let rowClass = '';
+            if (isBattle) {
+                const c = (m.corner || '').toLowerCase();
+                if (c === 'blue') rowClass = 'battle-blue';
+                else if (c === 'red') rowClass = 'battle-red';
+            }
 
-                var tableHtml = `
-                <div class="mb-5">
-                    <table class="table table-dark mt-2">
-                    <thead>
-                        <tr>
-                        <th colspan="6" class="table-header text-uppercase">
-                            <span>${poolName}</span>
-                        </th>
-                        <th class="table-header text-end">
-                            <button
-                            class="btn btn-sm btn-outline-info btn-view-rank"
-                            data-category="${categoryLabel}"
-                            data-age="${ageCategory}"
-                            data-pool="${poolName}"
-                            data-matches='${JSON.stringify(pool.matches || [])}'>
-                            Lihat Peringkat
-                            </button>
-                        </th>
-                        </tr>
-                        <tr class="table-sub-header">
-                        <th>Match</th>
-                        <th>Kontingen</th>
-                        <th colspan="3">Peserta</th>
-                        <th>Score</th>
-                        <th>Action</th>
-                        </tr>
-                    </thead>
+            html += `<tr class="${rowClass}">`;
+
+            // Kolom Match (kosong — sudah di separator)
+            html += `<td></td>`;
+
+            // Kontingen
+            const conting = (m.contingent && m.contingent.name) ? m.contingent.name : (m.contingent_name || '-');
+            html += `<td class="contingent-col">${conting}</td>`;
+
+            // Peserta 1-3
+            const tm1 = (m.team_member1 && m.team_member1.name) ? m.team_member1.name : (m.participant_1 || '-');
+            const tm2 = (m.team_member2 && m.team_member2.name) ? m.team_member2.name : (m.participant_2 || '-');
+            const tm3 = (m.team_member3 && m.team_member3.name) ? m.team_member3.name : (m.participant_3 || '-');
+
+            if (m.match_type === 'seni_tunggal' || m.match_type === 'solo_kreatif') {
+                html += `<td class="participant-col">${tm1}</td><td class="participant-col">-</td><td class="participant-col">-</td>`;
+            } else if (m.match_type === 'seni_ganda') {
+                html += `<td class="participant-col">${tm1}</td><td class="participant-col">${tm2}</td><td class="participant-col">-</td>`;
+            } else if (m.match_type === 'seni_regu') {
+                html += `<td class="participant-col">${tm1}</td><td class="participant-col">${tm2}</td><td class="participant-col">${tm3}</td>`;
+            } else {
+                html += `<td class="participant-col">-</td><td class="participant-col">-</td><td class="participant-col">-</td>`;
+            }
+
+            // Score
+            const scoreVal  = parseFloat(m.final_score);
+            const scoreText = (m.status === 'finished' && !isNaN(scoreVal)) ? scoreVal.toFixed(6) : '-';
+            html += `<td>${scoreText}</td>`;
+
+            // Action
+            if (m.status === 'finished') {
+                html += `
+                <td>
+                    <button class="btn btn-sm btn-outline-warning btn-recap-match" data-id="${m.id}">
+                    Recap
+                    </button>
+                </td>
                 `;
-
-                var rows = (pool.matches || []).slice();
-
-                // Kelompokkan per pasangan:
-                // Kunci utama: battle_group kalau ada, fallback ke match_order (kalau dua baris share order → satu pasangan)
-                var groupsMap = {};
-                rows.forEach(function (m, i) {
-                var key = (m.battle_group != null) ? 'G' + m.battle_group
-                        : (m.match_order != null) ? 'O' + m.match_order
-                        : 'X' + i; // fallback unik
-                if (!groupsMap[key]) groupsMap[key] = [];
-                groupsMap[key].push(m);
-                });
-
-                // Urutkan grup berdasarkan angka di key
-                var groupKeys = Object.keys(groupsMap).sort(function (a, b) {
-                var na = parseInt(a.slice(1), 10);
-                var nb = parseInt(b.slice(1), 10);
-                if (isNaN(na) && isNaN(nb)) return a.localeCompare(b);
-                if (isNaN(na)) return 1;
-                if (isNaN(nb)) return -1;
-                return na - nb;
-                });
-
-                var tbodyHtml = '<tbody>';
-
-                groupKeys.forEach(function (gkey) {
-                var arr = groupsMap[gkey];
-
-                // Fallback: kalau corner kosong, tetapkan index 0=blue, 1=red
-                arr.forEach(function (r, idx) {
-                    var c = (r.corner || '').toString().toLowerCase();
-                    if (c !== 'blue' && c !== 'red') {
-                    if (idx === 0) r.corner = 'blue';
-                    else if (idx === 1) r.corner = 'red';
-                    }
-                    if (!r.mode && arr.length >= 2) r.mode = 'battle';
-                    if (r.battle_group == null) r.battle_group = parseInt(gkey.slice(1), 10);
-                });
-
-                // Sort isi grup: BLUE dulu, RED berikutnya, lainnya belakangan
-                arr.sort(function (a, b) {
-                    var rank = function (v) {
-                    var s = (v || '').toString().toLowerCase();
-                    if (s === 'blue') return 0;
-                    if (s === 'red')  return 1;
-                    return 2;
-                    };
-                    var ra = rank(a.corner);
-                    var rb = rank(b.corner);
-                    if (ra !== rb) return ra - rb;
-                    // tie-break stabil
-                    var ia = a.id || 0, ib = b.id || 0;
-                    return ia - ib;
-                });
-
-                // Separator sekali per grup
-                var first = arr[0] || {};
-                var numberForSep = (first.match_order != null) ? first.match_order : '-';
-                var roundLabel = first.round_label || '';
-                tbodyHtml += `
-                    <tr class="battle-group-sep">
-                    <td colspan="7">
-                        <span class="match-pill">Match ${numberForSep}</span>
-                        ${roundLabel ? `<span class="ms-2">${roundLabel}</span>` : ``}
-                    </td>
-                    </tr>
+            } else if (typeof isOperator !== 'undefined' && isOperator) {
+                const enterBtnClass = isBattle ? 'btn btn-sm btn-outline-light btn-enter-match'
+                                            : 'btn btn-sm btn-success btn-enter-match';
+                html += `
+                <td>
+                    <button
+                    class="${enterBtnClass}"
+                    data-id="${m.id}"
+                    data-arena="${typeof arenaName !== 'undefined' ? arenaName : ''}"
+                    data-tournament="${typeof tournament !== 'undefined' ? tournament : ''}">
+                    Masuk
+                    </button>
+                </td>
                 `;
+            } else {
+                html += `<td>-</td>`;
+            }
 
-                // Render baris: warna sesuai corner (BLUE dulu karena hasil sort)
-                arr.forEach(function (match) {
-                    var corner = (match.corner || '').toString().toLowerCase();
-                    var rowClass = corner === 'blue' ? 'battle-blue' : (corner === 'red' ? 'battle-red' : '');
-
-                    tbodyHtml += `<tr class="${rowClass}">`;
-
-                    // Kolom "Match": kosong karena sudah ada di separator grup
-                    tbodyHtml += `<td></td>`;
-
-                    var conting = (match.contingent && match.contingent.name)
-                    ? match.contingent.name
-                    : (match.contingent_name || '-');
-                    tbodyHtml += `<td>${conting}</td>`;
-
-                    var tm1 = (match.team_member1 && match.team_member1.name) ? match.team_member1.name : (match.participant_1 || '-');
-                    var tm2 = (match.team_member2 && match.team_member2.name) ? match.team_member2.name : (match.participant_2 || '-');
-                    var tm3 = (match.team_member3 && match.team_member3.name) ? match.team_member3.name : (match.participant_3 || '-');
-
-                    if (match.match_type === 'seni_tunggal' || match.match_type === 'solo_kreatif') {
-                    tbodyHtml += `<td>${tm1}</td><td colspan="2">-</td>`;
-                    } else if (match.match_type === 'seni_ganda') {
-                    tbodyHtml += `<td>${tm1}</td><td>${tm2}</td><td>-</td>`;
-                    } else if (match.match_type === 'seni_regu') {
-                    tbodyHtml += `<td>${tm1}</td><td>${tm2}</td><td>${tm3}</td>`;
-                    } else {
-                    tbodyHtml += `<td colspan="3">-</td>`;
-                    }
-
-                    var scoreVal = parseFloat(match.final_score);
-                    var scoreText = (match.status === 'finished' && !isNaN(scoreVal)) ? scoreVal.toFixed(6) : '-';
-                    tbodyHtml += `<td>${scoreText}</td>`;
-
-                    if (match.status === 'finished') {
-                    tbodyHtml += `
-                        <td>
-                        <button class="btn btn-sm btn-outline-warning btn-recap-match" data-id="${match.id}">
-                            Recap
-                        </button>
-                        </td>
-                    `;
-                    } else if (typeof isOperator !== 'undefined' && isOperator) {
-                        var isBattleRow =
-                            (match.mode && match.mode.toLowerCase() === 'battle') ||
-                            (['blue','red'].indexOf((match.corner || '').toLowerCase()) !== -1);
-
-                        // battle → tombol netral supaya kontras di baris biru/merah
-                        var enterBtnClass = isBattleRow
-                            ? 'btn btn-sm btn-outline-light btn-enter-match'
-                            : 'btn btn-sm btn-success btn-enter-match';
-
-                        tbodyHtml += `
-                            <td>
-                            <button
-                                class="${enterBtnClass}"
-                                data-id="${match.id}"
-                                data-arena="${typeof arenaName !== 'undefined' ? arenaName : ''}"
-                                data-tournament="${typeof tournament !== 'undefined' ? tournament : ''}">
-                                Masuk
-                            </button>
-                            </td>
-                        `;
-                    } else {
-                    tbodyHtml += `<td>-</td>`;
-                    }
-
-                    tbodyHtml += `</tr>`;
-                });
-                });
-
-                tbodyHtml += `</tbody>`;
-                tableHtml += tbodyHtml;
-                tableHtml += `
-                    </table>
-                </div>
-                `;
-
-                groupHtml += tableHtml;
-            });
-
-            $('#match-tables').append(groupHtml);
+            html += `</tr>`;
             });
         });
 
+        html += `
+                </tbody>
+            </table>
+            </div>
+        `;
+
+        $('#match-tables').append(html);
         $(".loader-bar").hide();
         });
+
+
 
 
 

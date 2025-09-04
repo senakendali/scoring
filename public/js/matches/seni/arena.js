@@ -859,9 +859,10 @@ globalChannel.bind('seni.battle.winner.announced', function (data) {
                 const stddev = Math.sqrt(variance);
                 $("#standar-deviasi").text(stddev.toFixed(6));
 
-                const totalScore = data.final_score ?? (mean - totalPenalty);
+                //const totalScore = data.final_score ?? (mean - totalPenalty); <--awal
+                const totalScore = data.final_score ?? (median - totalPenalty);
 
-                //$("#total-score").text(median.toFixed(6));
+                //$("#total-score").text(median.toFixed(6)); <-- revisi pak deny
                 $("#total-score").text(totalScore.toFixed(6));
             });
         }, 1500);

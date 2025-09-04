@@ -18,7 +18,7 @@
     
     <header class="app-header d-flex justify-content-start  light">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-           <img src="{{ asset('images/ipsi.png') }}" alt="IPSI">
+           <a href="{{ url('/') }}"><img src="{{ asset('images/ipsi.png') }}" alt="IPSI"></a>
 
             @if(request()->segment(2) == 'display-arena')
                 <div id="timer" class="timer arena roboto-bold text-white">

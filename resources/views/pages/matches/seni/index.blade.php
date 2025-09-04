@@ -77,11 +77,14 @@
     </div>
 </div>
 @else
-<div class="bg-white text-dark d-flex align-items-center justify-content-center" 
+<div class="bg-white text-dark d-flex flex-column align-items-center justify-content-center" 
      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: url('{{ asset('images/bg-hero.png') }}') no-repeat center center;
             background-size: cover;">
     <h1 class="roboto-bold text-uppercase">{{ session('tournament_name') }}</h1>
+    @if(session('juri_number'))
+    <div class="text-uppercase fw-bold" style="font-style:italic;">Juri {{ session('juri_number') }}</div>
+    @endif
 </div>
 
 @endif    

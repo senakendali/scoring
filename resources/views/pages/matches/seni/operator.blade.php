@@ -205,7 +205,7 @@
 
                           <div class="d-flex mt-2 gap-2">
                               <!--button class="btn skip-match d-flex justify-content-center align-items-center text-white roboto-bold border-0">SKIP PERFORMANCE</button-->
-                              <button class="btn set-winner d-flex justify-content-center align-items-center text-white roboto-bold border-0">SET WINNER</button>
+                              <button class="btn set-winner justify-content-center align-items-center text-white roboto-bold border-0">SET WINNER</button>
                           </div>
                           
                           <div class="d-flex mt-2">

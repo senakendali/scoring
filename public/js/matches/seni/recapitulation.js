@@ -142,7 +142,17 @@ $(document).ready(function () {
         $("#median").text(median.toFixed(6)).addClass("text-center");
         $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
         $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
-        $("#final-score").text(median.toFixed(6)).addClass("text-center");
+        //$("#final-score").text(median.toFixed(6)).addClass("text-center"); <-- Pak deni
+
+        // FINAL SCORE: pakai data.final_score kalau tersedia, kalau tidak pakai (median - penalty)
+        const backendFinalRaw = data?.final_score;
+        const computedFinal   = median - (Number.isFinite(totalPenalty) ? totalPenalty : 0);
+        const finalScore      = (backendFinalRaw !== undefined && backendFinalRaw !== null && !Number.isNaN(Number(backendFinalRaw)))
+        ? Number(backendFinalRaw)
+        : computedFinal;
+
+        $("#final-score").text(finalScore.toFixed(6)).addClass("text-center");
+
     }
 
 
@@ -168,8 +178,10 @@ $(document).ready(function () {
 
      function applyCornerBackground(corner) {
 
-        $(".seni-participant-detail").css('border-bottom', 'none');
-        $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
+        if(corner){
+             $(".seni-participant-detail").css('border-bottom', 'none');
+            $(".match-header .match-item .seni-participant-detail .item").css('background', 'none');
+        }
        
         var clsBlue = 'corner-blue-bg';
         var clsRed  = 'corner-red-bg';

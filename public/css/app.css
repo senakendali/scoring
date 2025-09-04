@@ -2183,7 +2183,7 @@ th, td {
 .table-dark tbody tr.battle-blue > td { background-color:#002FB9 !important;  }
 .table-dark tbody tr.battle-red  > td { background-color: #F80000 !important; }
 .table-dark tbody tr.battle-group-sep > td { background-color: rgba(255,255,255,.10) !important; font-weight: 600; }
-.match-pill { display:inline-block; padding:2px 8px; border-radius:5px; background:rgba(255,255,255,.12); font-size:12px; }
+.match-pill { display:inline-block; padding:2px 8px; border-radius:2px; background:#FFFFFF; font-size:12px; color: #000000; }
 
 
   
@@ -2204,8 +2204,8 @@ body.corner-none #contingent-name,
 body.corner-none #participant-1,
 body.corner-none #participant-2,
 body.corner-none #participant-3 {
-  background: transparent !important;
-  color: inherit !important;
+  
+  color: #FFF;
   border-left: 0 !important;
 }
 
@@ -2297,6 +2297,23 @@ body.corner-none #participant-3 {
 
 .option-blue { background-color:#0d6efd; color:white; }
 .option-red  { background-color:#dc3545; color:white; }
+
+#match-tables table td.contingent-col,
+#match-tables table th.contingent-col {
+width: 20%;
+white-space: nowrap;
+text-overflow: ellipsis;
+overflow: hidden;
+}
+
+/* Tiga kolom peserta berbagi rata */
+#match-tables table td.participant-col,
+#match-tables table th.participant-col {
+width: calc(80% / 3);
+white-space: nowrap;
+text-overflow: ellipsis;
+overflow: hidden;
+}
 
 
 
