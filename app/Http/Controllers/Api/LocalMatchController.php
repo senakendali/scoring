@@ -60,69 +60,155 @@ class LocalMatchController extends Controller
 
    public function fetchMatchForAdmin(Request $request)
     {
-        $arena = session('arena_name');
-        $tournament = session('tournament_name'); // ✅ ambil nama turnamen dari session
-       
+        $sessionArena = session('arena_name');            // default (opsional)
+        $tournament   = session('tournament_name');       // wajibnya turnamen
 
-        $query = LocalMatch::query();
+        // ⤵️ Filter dari FE (opsional)
+        $arenaFilter  = trim((string) $request->input('arena_name', ''));
+        $from         = $request->input('from');  // no partai awal
+        $to           = $request->input('to');    // no partai akhir
 
-        if ($arena) {
-            $query->where('arena_name', $arena);
-        }
+        $query = \App\Models\LocalMatch::query();
 
-        if ($tournament) {
+        if (!empty($tournament)) {
             $query->where('tournament_name', $tournament);
         }
 
-        // Urutkan berdasarkan arena, pool, kelas, dan round_level
-        $matches = $query->orderBy('arena_name')
+        // Prefer filter dari request; kalau kosong, baru fallback ke session arena (jika ada)
+        if ($arenaFilter !== '') {
+            $query->where('arena_name', $arenaFilter);
+        } elseif (!empty($sessionArena)) {
+            $query->where('arena_name', $sessionArena);
+        }
+
+        // Filter range partai (match_number)
+        if (is_numeric($from)) {
+            $query->where('match_number', '>=', (int) $from);
+        }
+        if (is_numeric($to)) {
+            $query->where('match_number', '<=', (int) $to);
+        }
+
+        // Urutan stabil
+        $matches = $query
+            ->orderBy('arena_name')
             ->orderBy('pool_name')
             ->orderBy('class_name')
             ->orderBy('round_level')
             ->orderBy('match_number')
             ->get();
 
-        // Group by arena → pool (1 pool = 1 kelas)
-        $grouped = $matches->groupBy(['arena_name', 'pool_name']);
+        // Group by arena → pool
+        $grouped = [];
+        foreach ($matches as $m) {
+            $arena = $m->arena_name ?: 'UNKNOWN ARENA';
+            $pool  = $m->pool_name  ?: '-';
+
+            if (!isset($grouped[$arena])) {
+                $grouped[$arena] = [];
+            }
+            if (!isset($grouped[$arena][$pool])) {
+                $grouped[$arena][$pool] = [];
+            }
+
+            // Kirim field yang dipakai FE (boleh tambah jika diperlukan)
+            $grouped[$arena][$pool][] = [
+                'id'                  => (int) $m->id,
+                'match_number'        => is_null($m->match_number) ? null : (int) $m->match_number,
+                'round_label'         => $m->round_label,
+                'class_name'          => $m->class_name,
+                'round_level'         => is_null($m->round_level) ? null : (int) $m->round_level,
+
+                'blue_name'           => $m->blue_name,
+                'red_name'            => $m->red_name,
+                'blue_contingent'     => $m->blue_contingent,
+                'red_contingent'      => $m->red_contingent,
+
+                'participant_1_score' => $m->participant_1_score,
+                'participant_2_score' => $m->participant_2_score,
+
+                'winner_name'         => $m->winner_name,
+                'status'              => $m->status,
+            ];
+        }
 
         return response()->json($grouped);
     }
 
-  public function exportLocalMatches()
+
+  public function exportLocalMatches(\Illuminate\Http\Request $request)
     {
-        $tournament = session('tournament_name');
-        $arena = session('arena_name');
+        $tournament = session('tournament_name');                 // wajibnya turnamen
+        $arenaReq   = trim((string) $request->input('arena_name', ''));
+        $arenaSess  = session('arena_name');                      // fallback kalau perlu
+
+        // filter range partai dari query
+        $from = $request->input('from'); // no partai awal
+        $to   = $request->input('to');   // no partai akhir
+
+        // normalisasi range kalau kebalik
+        if (is_numeric($from) && is_numeric($to) && (int)$from > (int)$to) {
+            [$from, $to] = [$to, $from];
+        }
 
         $query = \App\Models\LocalMatch::query();
 
-        if ($tournament) {
+        if (!empty($tournament)) {
             $query->where('tournament_name', $tournament);
         }
 
-        if ($arena) {
-            $query->where('arena_name', $arena);
+        // Kalau ada filter arena dari request → pakai itu; kalau tidak, fallback ke session
+        if ($arenaReq !== '') {
+            $query->where('arena_name', $arenaReq);
+        } elseif (!empty($arenaSess)) {
+            $query->where('arena_name', $arenaSess);
         }
 
-        $matches = $query->orderBy('arena_name')
+        // Terapkan filter range partai (match_number)
+        if (is_numeric($from)) {
+            $query->where('match_number', '>=', (int)$from);
+        }
+        if (is_numeric($to)) {
+            $query->where('match_number', '<=', (int)$to);
+        }
+
+        // Urutan stabil
+        $matches = $query
+            ->orderBy('arena_name')
             ->orderBy('pool_name')
             ->orderBy('class_name')
             ->orderBy('round_level')
             ->orderBy('match_number')
+            ->orderBy('id')
             ->get();
 
-        // ⛳️ Gabungkan semua pool per arena (sama seperti JS)
+        // Gabungkan per arena (JS di admin juga menggabungkan semua pool)
         $grouped = $matches->groupBy('arena_name')->map(function ($arenaMatches) {
-            return $arenaMatches->sortBy('match_number')->values();
+            return $arenaMatches->sortBy([
+                ['match_number', 'asc'],
+                ['id', 'asc'],
+            ])->values();
         });
 
+        // Info header PDF
+        $selectedArena = $arenaReq !== '' ? $arenaReq : ($arenaSess ?: null);
+
         $pdf = \PDF::loadView('exports.local-matches', [
-            'grouped' => $grouped, // sekarang: arena => [semua match urut]
-            'arena' => $arena,
+            'grouped'    => $grouped,         // "Arena X" => [match...]
+            'arena'      => $selectedArena,   // bisa null → tampilkan "Semua Arena"
             'tournament' => $tournament,
+            'from'       => is_numeric($from) ? (int)$from : null,
+            'to'         => is_numeric($to)   ? (int)$to   : null,
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download("daftar-pertandingan-{$tournament}.pdf");
+        $suffixArena = $selectedArena ? ('-'.$selectedArena) : '';
+        $suffixRange = (is_numeric($from) || is_numeric($to))
+            ? ('-partai'.($from ?? '').'-'.($to ?? ''))
+            : '';
+
+        return $pdf->download("daftar-pertandingan{$suffixArena}{$suffixRange}-{$tournament}.pdf");
     }
+
 
 
 

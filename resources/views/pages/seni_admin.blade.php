@@ -104,10 +104,34 @@
         <div class="col-12">
         <div class="content">
             <div class="text-end mb-3">
-                  <a href="{{ config('app_settings.path_prefix') }}/export/local-seni-matches" target="_blank" class="btn btn-outline-light">
-                      <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
+                  <a id="btn-export-seni"
+                    data-base-href="{{ config('app_settings.path_prefix') }}/export/local-seni-matches"
+                    href="{{ config('app_settings.path_prefix') }}/export/local-seni-matches"
+                    target="_blank"
+                    class="btn btn-outline-light">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
                   </a>
+
               </div>
+            <div id="seni-admin-filters" class="mb-3 row g-2 align-items-center">
+              <div class="col-auto" style="min-width:220px;">
+                <select id="filter-arena" class="form-select">
+                  <option value="">Semua Arena</option>
+                  <option value="Arena A">Arena A</option>
+                  <option value="Arena B">Arena B</option>
+                </select>
+              </div>
+              <div class="col-auto">
+                <input id="filter-from" type="number" class="form-control" placeholder="Dari partai">
+              </div>
+              <div class="col-auto">
+                <input id="filter-to" type="number" class="form-control" placeholder="Sampai partai">
+              </div>
+              <div class="col-auto">
+                <button id="apply-filter" class="btn btn-success">Terapkan</button>
+              </div>
+            </div>
+
             <div id="match-tables"></div>
         </div>
         </div>

@@ -343,8 +343,18 @@ class LocalMatchSeniController extends Controller
 
     public function fetchMatchForAdmin(Request $request)
 {
-    $tournamentName = session('tournament_name'); // ✅ wajibnya turnamen
-    $arenaFilter    = $request->input('arena_name'); // opsional: filter satu arena
+    $tournamentName = session('tournament_name'); // ✅ wajib: scope turnamen
+
+    // ---- FILTER INPUT DARI FE ----
+    $arenaFilter = trim((string) $request->input('arena_name', '')); // opsional: satu arena
+    $fromPartai  = $request->filled('from_partai') ? (int) $request->input('from_partai') : null;
+    $toPartai    = $request->filled('to_partai')   ? (int) $request->input('to_partai')   : null;
+
+    // normalisasi range kalau user kebalik
+    if (!is_null($fromPartai) && !is_null($toPartai) && $fromPartai > $toPartai) {
+        [$fromPartai, $toPartai] = [$toPartai, $fromPartai];
+    }
+    $hasRange = !is_null($fromPartai) || !is_null($toPartai);
 
     $query = \App\Models\LocalSeniMatch::query();
 
@@ -352,13 +362,27 @@ class LocalMatchSeniController extends Controller
         $query->where('tournament_name', $tournamentName);
     }
 
-    // NOTE: Admin biasanya lihat semua arena. Kalau mau filter satu arena, kirim ?arena_name=...
-    if (!empty($arenaFilter)) {
+    // ✅ Filter satu arena kalau dikirim ?arena_name=...
+    if ($arenaFilter !== '') {
         $query->where('arena_name', $arenaFilter);
     }
 
     // Khusus S E N I
     $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+
+    // ✅ Terapkan filter range partai di level DB
+    if ($hasRange) {
+        // singkirkan partai tanpa nomor (null/empty/non-numeric akan CAST jadi 0; paksa exclude)
+        $query->whereRaw("NULLIF(TRIM(match_order), '') IS NOT NULL")
+              ->whereRaw("CAST(match_order AS UNSIGNED) > 0");
+
+        if (!is_null($fromPartai)) {
+            $query->whereRaw('CAST(match_order AS UNSIGNED) >= ?', [$fromPartai]);
+        }
+        if (!is_null($toPartai)) {
+            $query->whereRaw('CAST(match_order AS UNSIGNED) <= ?', [$toPartai]);
+        }
+    }
 
     // Urut dasar by match_order numeric ASC
     $matches = $query->orderBy(\DB::raw('CAST(match_order AS UNSIGNED)'))->get();
@@ -376,7 +400,7 @@ class LocalMatchSeniController extends Controller
         return ($clean === 'TBD' || $clean === '' || $clean === '-');
     };
 
-    // ====== Bangun struktur per A R E N A (seperti ekspektasi FE admin) ======
+    // ====== Bangun struktur per A R E N A ======
     $groupedArena = [];
 
     foreach ($matches as $match) {
@@ -418,7 +442,7 @@ class LocalMatchSeniController extends Controller
             ];
         }
 
-        // Push match (lengkap dengan battle fields seperti di index())
+        // Push match (ikut battle fields)
         $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName]['matches'][] = [
             'id'                   => (int) $match->id,
             'match_order'          => is_null($match->match_order) ? null : (int) $match->match_order,
@@ -510,7 +534,7 @@ class LocalMatchSeniController extends Controller
                                 $r['mode'] = 'battle';
                             }
 
-                            // Replace "TBD" contingent name → "Pemenang Partai No #X" berdasar parent
+                            // Replace "TBD" → "Pemenang Partai No #X" berdasar parent
                             $currName = $r['contingent']['name'] ?? null;
                             if ($isTbd($currName)) {
                                 $parentId = null;
@@ -573,34 +597,61 @@ class LocalMatchSeniController extends Controller
 }
 
 
+
   
 
 public function exportSeniPdf(Request $request)
 {
-    $arenaName      = session('arena_name');
-    $matchType      = session('match_type');       // 'seni' atau 'tanding'
-    $tournamentName = session('tournament_name');
+    $sessionArena   = session('arena_name');       // default scope (opsional)
+    $matchType      = session('match_type');       // 'seni' | 'tanding'
+    $tournamentName = session('tournament_name');  // wajibnya turnamen
 
-    $query = LocalSeniMatch::query();
+    // ==== BACA FILTER DARI QUERY ====
+    // arena_name di query akan override session arena (biar sesuai dropdown di FE)
+    $arenaName  = $request->filled('arena_name') ? trim((string)$request->input('arena_name')) : $sessionArena;
 
-    if ($arenaName) {
-        $query->where('arena_name', $arenaName);
+    $fromPartai = $request->filled('from_partai') ? (int)$request->input('from_partai') : null;
+    $toPartai   = $request->filled('to_partai')   ? (int)$request->input('to_partai')   : null;
+
+    if (!is_null($fromPartai) && !is_null($toPartai) && $fromPartai > $toPartai) {
+        [$fromPartai, $toPartai] = [$toPartai, $fromPartai];
     }
+    $hasRange = !is_null($fromPartai) || !is_null($toPartai);
+
+    $query = \App\Models\LocalSeniMatch::query();
+
     if ($tournamentName) {
         $query->where('tournament_name', $tournamentName);
+    }
+    if (!empty($arenaName)) {
+        $query->where('arena_name', $arenaName);
     }
     if ($matchType === 'seni') {
         $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
     }
 
+    // ✅ Terapkan filter range partai di level DB (selaras FE)
+    if ($hasRange) {
+        // exclude yang kosong/non-numeric saat filter aktif
+        $query->whereRaw("NULLIF(TRIM(match_order), '') IS NOT NULL")
+              ->whereRaw("CAST(match_order AS UNSIGNED) > 0");
+
+        if (!is_null($fromPartai)) {
+            $query->whereRaw('CAST(match_order AS UNSIGNED) >= ?', [$fromPartai]);
+        }
+        if (!is_null($toPartai)) {
+            $query->whereRaw('CAST(match_order AS UNSIGNED) <= ?', [$toPartai]);
+        }
+    }
+
     $matches = $query
-        ->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))
+        ->orderBy(\DB::raw('CAST(match_order AS UNSIGNED)'))
         ->orderBy('id')
         ->get();
 
     // Map cepat: local_match_id => match_order (untuk fallback penamaan pemenang parent)
     $matchOrderById = $matches->pluck('match_order', 'id')
-        ->map(fn($o) => is_null($o) ? null : (int)$o)
+        ->map(fn($o) => is_null($o) ? null : (int) $o)
         ->toArray();
 
     // helper: cek “TBD” (bersihin zero-width char juga)
@@ -696,9 +747,7 @@ public function exportSeniPdf(Request $request)
                         return $ao <=> $bo;
                     });
 
-                    // Kelompok per GRUP:
-                    // - pakai battle_group jika ada
-                    // - fallback ke match_order jika tidak ada
+                    // Kelompok per GRUP → battle_group atau fallback match_order
                     $groupsMap = [];
                     foreach ($rows as $idx => $row) {
                         $key = !is_null($row['battle_group'])
@@ -715,30 +764,26 @@ public function exportSeniPdf(Request $request)
                         return $na <=> $nb;
                     });
 
-                    // Rekonstruksi rows final: BLUE → RED → lainnya, plus fallback corner/mode & replace TBD
+                    // Rekonstruksi rows final: BLUE → RED → lainnya, fallback corner/mode & replace TBD
                     $finalRows = [];
                     foreach ($groupKeys as $gkey) {
                         $arr = $groupsMap[$gkey];
 
                         foreach ($arr as $i => &$r) {
-                            // fallback battle_group dari key jika null
                             if (is_null($r['battle_group'])) {
                                 $r['battle_group'] = (int) substr($gkey, 1);
                             }
 
-                            // fallback corner jika battle (2 baris) tapi corner kosong
                             $corner = strtolower((string) ($r['corner'] ?? ''));
                             if ($corner !== 'blue' && $corner !== 'red' && count($arr) >= 2) {
                                 if     ($i === 0) { $r['corner'] = 'blue'; $corner = 'blue'; }
                                 elseif ($i === 1) { $r['corner'] = 'red';  $corner = 'red';  }
                             }
 
-                            // fallback mode = 'battle' jika dalam grup ada >= 2 baris
                             if (empty($r['mode']) && count($arr) >= 2) {
                                 $r['mode'] = 'battle';
                             }
 
-                            // Replace TBD contingent name → "Pemenang Partai No #X" (jika parent ada)
                             $currName = $r['contingent']['name'] ?? null;
                             if ($isTbd($currName)) {
                                 $parentId = null;
@@ -756,7 +801,6 @@ public function exportSeniPdf(Request $request)
                         }
                         unset($r);
 
-                        // Urutkan isi grup: BLUE → RED → lainnya, lalu by id
                         usort($arr, function ($a, $b) {
                             $rank = function ($v) {
                                 $s = strtolower((string) ($v ?? ''));
@@ -767,9 +811,7 @@ public function exportSeniPdf(Request $request)
                             $ra = $rank($a['corner']);
                             $rb = $rank($b['corner']);
                             if ($ra !== $rb) return $ra <=> $rb;
-                            $ida = $a['id'] ?? 0;
-                            $idb = $b['id'] ?? 0;
-                            return $ida <=> $idb;
+                            return ($a['id'] ?? 0) <=> ($b['id'] ?? 0);
                         });
 
                         foreach ($arr as $r) {
@@ -777,7 +819,6 @@ public function exportSeniPdf(Request $request)
                         }
                     }
 
-                    // Replace matches untuk pool ini
                     $pool['matches'] = $finalRows;
                     $pools[] = $pool;
                 }
@@ -799,13 +840,14 @@ public function exportSeniPdf(Request $request)
     }
 
     // ===== Generate PDF
-    $pdf = Pdf::loadView('exports.seni-matches', [
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.seni-matches', [
         'data'       => $finalResult,
         'tournament' => $tournamentName,
     ])->setPaper('a4', 'portrait');
 
     return $pdf->download('jadwal-pertandingan-seni.pdf');
 }
+
 
 
 public function setScoreManual(Request $request, $id)

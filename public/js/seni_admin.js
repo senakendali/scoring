@@ -369,6 +369,22 @@ $('#submit-score-btn').on('click', function () {
     $(".loader-bar").show();
     $('#match-tables').empty();
 
+    // --- BACA FILTER (opsional) ---
+    const parseIntSafe = (v) => {
+      const n = parseInt(String(v || '').trim(), 10);
+      return Number.isFinite(n) ? n : null;
+    };
+    const selectedArena = String($('#filter-arena').val() || '').trim(); // "" = semua arena
+    let fromPartai = parseIntSafe($('#filter-from').val());
+    let toPartai   = parseIntSafe($('#filter-to').val());
+
+    // normalisasi kalau user kebalik
+    if (fromPartai !== null && toPartai !== null && fromPartai > toPartai) {
+      const t = fromPartai; fromPartai = toPartai; toPartai = t;
+    }
+    const hasFrom = fromPartai !== null;
+    const hasTo   = toPartai   !== null;
+
     // Helper: escape JSON untuk atribut HTML
     const escAttr = (s) =>
       String(s ?? '')
@@ -378,8 +394,19 @@ $('#submit-score-btn').on('click', function () {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
+    // -- Filter daftar arena sesuai dropdown --
+    const arenaEntries = Object.entries(data || {}).filter(
+      ([arenaName]) => !selectedArena || arenaName === selectedArena
+    );
+
+    if (arenaEntries.length === 0) {
+      $('#match-tables').html(`<div class="text-center text-muted py-5">Belum ada pertandingan.</div>`);
+      $(".loader-bar").hide();
+      return;
+    }
+
     // 🔁 Loop per arena → SATU tabel per arena
-    Object.entries(data || {}).forEach(([arenaName, categoryGroups]) => {
+    arenaEntries.forEach(([arenaName, categoryGroups]) => {
       let arenaSection = `<div class="mb-4">
         <h3 class="text-white pb-2 mb-3">${(arenaName || '').toUpperCase()}</h3>`;
 
@@ -443,28 +470,47 @@ $('#submit-score-btn').on('click', function () {
         groupsMap[key].push(item);
       });
 
-      // 3) Urutkan antar grup: min(match_order) lalu round_priority (desc)
+      // 3) Urutkan & FILTER antar grup:
       const minOrderOfGroup = (arr) => {
-        const nums = arr.map(it => parseInt(it.row.match_order, 10)).filter(n => !isNaN(n));
-        return nums.length ? Math.min(...nums) : Number.MAX_SAFE_INTEGER;
+        const nums = arr.map(it => parseInt(it.row.match_order, 10)).filter(n => Number.isFinite(n));
+        return nums.length ? Math.min(...nums) : null; // null kalau tak bernomor
       };
       const maxRoundPrio = (arr) => {
-        const nums = arr.map(it => parseInt(it.row.round_priority, 10)).filter(n => !isNaN(n));
+        const nums = arr.map(it => parseInt(it.row.round_priority, 10)).filter(n => Number.isFinite(n));
         return nums.length ? Math.max(...nums) : -1;
       };
+      const inRange = (ord) => {
+        if (!Number.isFinite(ord)) {
+          // kalau filter aktif dan ord null → sembunyikan
+          return !(hasFrom || hasTo);
+        }
+        if (hasFrom && ord < fromPartai) return false;
+        if (hasTo   && ord > toPartai)   return false;
+        return true;
+      };
 
-      const groupKeys = Object.keys(groupsMap).sort((a, b) => {
-        const A = groupsMap[a], B = groupsMap[b];
-        const ao = minOrderOfGroup(A);
-        const bo = minOrderOfGroup(B);
-        if (ao !== bo) return ao - bo;
+      let groupKeys = Object.keys(groupsMap)
+        // Filter dulu berdasarkan range partai (pakai min match_order grup)
+        .filter(k => inRange(minOrderOfGroup(groupsMap[k])))
+        // Lalu sort stabil: min(match_order), round_priority desc, lalu key
+        .sort((a, b) => {
+          const A = groupsMap[a], B = groupsMap[b];
+          const ao = minOrderOfGroup(A);
+          const bo = minOrderOfGroup(B);
 
-        const ap = maxRoundPrio(A);
-        const bp = maxRoundPrio(B);
-        if (ap !== bp) return bp - ap;
+          // null (tak bernomor) dianggap di belakang
+          if (ao !== bo) {
+            if (ao === null) return 1;
+            if (bo === null) return -1;
+            return ao - bo;
+          }
 
-        return a.localeCompare(b);
-      });
+          const ap = maxRoundPrio(A);
+          const bp = maxRoundPrio(B);
+          if (ap !== bp) return bp - ap;
+
+          return a.localeCompare(b);
+        });
 
       // 4) Build SATU tabel global untuk arena ini
       let html = `
@@ -495,7 +541,7 @@ $('#submit-score-btn').on('click', function () {
           });
         }
 
-        // Urutkan isi grup: BLUE → RED → lainnya, lalu by match_order → id (supaya stabil)
+        // Urutkan isi grup: BLUE → RED → lainnya, lalu by match_order → id
         items.sort((A, B) => {
           const rank = (v) => {
             const s = (v || '').toLowerCase();
@@ -508,13 +554,16 @@ $('#submit-score-btn').on('click', function () {
 
           const oa = parseInt(A.row.match_order, 10);
           const ob = parseInt(B.row.match_order, 10);
-          if (!isNaN(oa) && !isNaN(ob) && oa !== ob) return oa - ob;
+          if (Number.isFinite(oa) && Number.isFinite(ob) && oa !== ob) return oa - ob;
 
           return (A.row.id || 0) - (B.row.id || 0);
         });
 
-        // Separator: tampilkan Match#, badges, dan tombol Rank (non-battle: 1x per pool)
-        const sepOrder = minOrderOfGroup(items);
+        // Separator: tampilkan Match#, badges, + tombol Rank (non-battle: 1x per pool)
+        const sepOrder = (function(){ 
+          const v = minOrderOfGroup(items); 
+          return (v === null ? NaN : v);
+        })();
         const head = items[0] || {};
         const r0   = head.row || {};
         const meta = head.meta || {};
@@ -636,6 +685,31 @@ $('#submit-score-btn').on('click', function () {
     $(".loader-bar").hide();
   });
 }
+
+
+$('#apply-filter').on('click', function () {
+  loadSeniMatchesAdmin();
+});
+
+$(document).on('click', '#btn-export-seni', function (e) {
+  e.preventDefault();
+
+  const base = $(this).data('base-href') || $(this).attr('href') || '/export/local-seni-matches';
+
+  const arena = ($('#filter-arena').val() || '').trim();
+  const from  = ($('#filter-from').val()   || '').trim();
+  const to    = ($('#filter-to').val()     || '').trim();
+
+  const qs = new URLSearchParams();
+  if (arena) qs.set('arena_name', arena);
+  if (from)  qs.set('from_partai', from);
+  if (to)    qs.set('to_partai', to);
+
+  const url = qs.toString() ? `${base}?${qs.toString()}` : base;
+  window.open(url, '_blank');
+});
+
+
 
 
 
