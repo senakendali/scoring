@@ -327,6 +327,8 @@ function loadGroupResults(group) {
 
 // ==== jalan saat broadcast ====
 globalChannel.bind('seni.group.completed', function (data) {
+    
+
   console.log('🏁 Group completed (event payload):', data);
 
   const group = data?.battle_group ?? data?.battle_group_id ?? data?.group;

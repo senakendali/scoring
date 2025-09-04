@@ -203,13 +203,14 @@ $(document).ready(function () {
             const bCat  = meta.cat  ? ` <span class="match-pill">${meta.cat}</span>`   : '';
             const bAge  = meta.age  ? ` <span class="match-pill">${meta.age}</span>`         : '';
             const bPool = meta.pool ? ` <span class="match-pill">${meta.pool}</span>` : '';
+            const bRound = ` <span class="match-pill text-uppercase">${roundLabel}</span>`;
 
             html += `
             <tr class="battle-group-sep">
                 <td colspan="7">
                 <span class="match-pill">Match ${Number.isFinite(sepOrder) ? sepOrder : '-'}</span>
                 
-                ${bCat}${bAge}${bPool}
+                ${bCat}${bRound}${bAge}${bPool}
                 </td>
             </tr>
             `;

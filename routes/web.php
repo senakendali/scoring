@@ -99,6 +99,7 @@ Route::prefix('api')->group(function () {
 
     Route::get('/local-matches/seni/battle-group/{battle_group}', [LocalMatchSeniController::class, 'getBattleResults']);
     Route::patch('/local-seni-matches/{id}/disqualify', [LocalMatchSeniController::class, 'disqualify']);
+    //Route::patch('/local-seni-matches/{id}/stop-performance', [SeniMatchSetupController::class, 'stopPerformance']);
     Route::patch('/local-seni-matches/{id}/finish', [SeniMatchSetupController::class, 'finish']);
 
     //Route::get('/local-match-rounds/{id}', [LocalMatchSeniController::class, 'show']);
