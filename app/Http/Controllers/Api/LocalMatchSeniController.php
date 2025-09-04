@@ -343,82 +343,111 @@ class LocalMatchSeniController extends Controller
 
     public function fetchMatchForAdmin(Request $request)
 {
-    $arenaName = session('arena_name');
-    $matchType = session('match_type'); // 'seni' atau 'tanding'
-    $tournamentName = session('tournament_name'); // ✅ ambil dari session
+    $tournamentName = session('tournament_name'); // ✅ wajibnya turnamen
+    $arenaFilter    = $request->input('arena_name'); // opsional: filter satu arena
 
     $query = \App\Models\LocalSeniMatch::query();
-
-    if ($arenaName) {
-        $query->where('arena_name', $arenaName);
-    }
 
     if ($tournamentName) {
         $query->where('tournament_name', $tournamentName);
     }
 
-    if ($matchType === 'seni') {
-        $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+    // NOTE: Admin biasanya lihat semua arena. Kalau mau filter satu arena, kirim ?arena_name=...
+    if (!empty($arenaFilter)) {
+        $query->where('arena_name', $arenaFilter);
     }
 
-    $matches = $query->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))->get();
+    // Khusus S E N I
+    $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
 
+    // Urut dasar by match_order numeric ASC
+    $matches = $query->orderBy(\DB::raw('CAST(match_order AS UNSIGNED)'))->get();
+
+    // Map cepat: local_match_id => match_order (untuk replace "TBD" → "Pemenang Partai No #X")
+    $matchOrderById = $matches->pluck('match_order', 'id')
+        ->map(fn($o) => is_null($o) ? null : (int) $o)
+        ->toArray();
+
+    // Helper "TBD" (bersihkan zero width)
+    $isTbd = function (?string $name): bool {
+        if ($name === null) return true;
+        $clean = preg_replace('/[\x{200B}\x{200C}\x{200D}\x{FEFF}\x{2060}]/u', '', $name);
+        $clean = strtoupper(trim($clean));
+        return ($clean === 'TBD' || $clean === '' || $clean === '-');
+    };
+
+    // ====== Bangun struktur per A R E N A (seperti ekspektasi FE admin) ======
     $groupedArena = [];
 
     foreach ($matches as $match) {
-        $arena = $match->arena_name ?? 'UNKNOWN ARENA';
-
-        $category = ucwords(strtolower(trim($match->category ?? '-')));
-        $gender = strtolower(trim($match->gender ?? '-'));
+        $arena       = $match->arena_name ?: 'UNKNOWN ARENA';
+        $category    = ucwords(strtolower(trim($match->category ?? '-')));
+        $gender      = strtolower(trim($match->gender ?? '-'));
         $ageCategory = ucwords(strtolower(trim($match->age_category ?? 'Tanpa Usia')));
-        $poolName = trim($match->pool_name ?? '-');
+        $poolName    = trim($match->pool_name ?? '-');
 
         $groupKey = $category . '|' . $gender . '|' . $ageCategory;
 
+        // Init arena bucket
         if (!isset($groupedArena[$arena])) {
             $groupedArena[$arena] = [];
         }
 
+        // Init kategori-gender-usia
         if (!isset($groupedArena[$arena][$groupKey])) {
             $groupedArena[$arena][$groupKey] = [
-                'category' => $category,
-                'gender' => $gender,
+                'category'       => $category,
+                'gender'         => $gender,
                 'age_categories' => []
             ];
         }
 
+        // Init usia
         if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory])) {
             $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory] = [
                 'age_category' => $ageCategory,
-                'pools' => []
+                'pools'        => []
             ];
         }
 
+        // Init pool
         if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName])) {
             $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName] = [
-                'name' => $poolName,
+                'name'    => $poolName,
                 'matches' => []
             ];
         }
 
+        // Push match (lengkap dengan battle fields seperti di index())
         $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName]['matches'][] = [
-            'id' => $match->id,
-            'match_order' => (int) $match->match_order,
-            'match_type' => $match->match_type,
-            'contingent' => ['name' => $match->contingent_name],
-            'final_score' => $match->final_score,
-            'medal' => $match->medal,
-            'status' => $match->status,
-            'team_member1' => ['name' => $match->participant_1],
-            'team_member2' => ['name' => $match->participant_2],
-            'team_member3' => ['name' => $match->participant_3],
-            'pool' => [
-                'age_category' => ['name' => $ageCategory]
-            ]
+            'id'                   => (int) $match->id,
+            'match_order'          => is_null($match->match_order) ? null : (int) $match->match_order,
+            'match_type'           => $match->match_type,
+            'contingent'           => ['name' => $match->contingent_name],
+            'final_score'          => $match->final_score,
+            'medal'                => $match->medal,
+            'status'               => $match->status,
+
+            'team_member1'         => ['name' => $match->participant_1],
+            'team_member2'         => ['name' => $match->participant_2],
+            'team_member3'         => ['name' => $match->participant_3],
+
+            'pool'                 => ['age_category' => ['name' => $ageCategory]],
+
+            // battle fields
+            'mode'                 => $match->mode,                 // 'default' | 'battle' | null
+            'battle_group'         => $match->battle_group,         // int|null
+            'round'                => is_null($match->round) ? null : (int) $match->round,
+            'round_label'          => $match->round_label,
+            'round_priority'       => is_null($match->round_priority) ? null : (int) $match->round_priority,
+            'corner'               => $match->corner,               // 'blue'|'red'|null
+            'winner_corner'        => $match->winner_corner,        // 'blue'|'red'|null
+            'parent_match_red_id'  => $match->parent_match_red_id,
+            'parent_match_blue_id' => $match->parent_match_blue_id,
         ];
     }
 
-    // Final struktur response per arena
+    // ====== Post-process: urutan & grouping per pool (samakan dengan index()) ======
     $finalResult = [];
 
     foreach ($groupedArena as $arena => $groupedMap) {
@@ -431,148 +460,353 @@ class LocalMatchSeniController extends Controller
                 $pools = [];
 
                 foreach ($ageData['pools'] as $pool) {
-                    usort($pool['matches'], fn($a, $b) => $a['match_order'] <=> $b['match_order']);
+                    $rows = $pool['matches'];
+
+                    // sort by match_order ASC (null di akhir)
+                    usort($rows, function ($a, $b) {
+                        $ao = $a['match_order'] ?? PHP_INT_MAX;
+                        $bo = $b['match_order'] ?? PHP_INT_MAX;
+                        if ($ao === $bo) return 0;
+                        return $ao <=> $bo;
+                    });
+
+                    // Kelompokkan per GRUP: battle_group jika ada, fallback match_order
+                    $groupsMap = [];
+                    foreach ($rows as $idx => $row) {
+                        $key = !is_null($row['battle_group'])
+                            ? 'G' . $row['battle_group']
+                            : (!is_null($row['match_order']) ? 'O' . $row['match_order'] : 'X' . $idx);
+                        $groupsMap[$key][] = $row;
+                    }
+
+                    // Sort grup by angka pada key
+                    $groupKeys = array_keys($groupsMap);
+                    usort($groupKeys, function ($a, $b) {
+                        $na = (int) substr($a, 1);
+                        $nb = (int) substr($b, 1);
+                        return $na <=> $nb;
+                    });
+
+                    // Rekonstruksi rows: fallback battle info + replace TBD + BLUE→RED
+                    $finalRows = [];
+                    foreach ($groupKeys as $gkey) {
+                        $arr = $groupsMap[$gkey];
+
+                        foreach ($arr as $i => &$r) {
+                            // isi battle_group dari key bila null
+                            if (is_null($r['battle_group'])) {
+                                $r['battle_group'] = (int) substr($gkey, 1);
+                            }
+
+                            // fallback corner (BLUE dulu, RED kedua)
+                            $corner = strtolower((string) ($r['corner'] ?? ''));
+                            if ($corner !== 'blue' && $corner !== 'red') {
+                                if ($i === 0)      { $r['corner'] = 'blue'; $corner = 'blue'; }
+                                elseif ($i === 1)  { $r['corner'] = 'red';  $corner = 'red';  }
+                            }
+
+                            // mode battle bila ada 2 baris dalam grup
+                            if (empty($r['mode']) && count($arr) >= 2) {
+                                $r['mode'] = 'battle';
+                            }
+
+                            // Replace "TBD" contingent name → "Pemenang Partai No #X" berdasar parent
+                            $currName = $r['contingent']['name'] ?? null;
+                            if ($isTbd($currName)) {
+                                $parentId = null;
+                                if ($corner === 'blue') {
+                                    $parentId = $r['parent_match_blue_id'] ?? null;
+                                } elseif ($corner === 'red') {
+                                    $parentId = $r['parent_match_red_id'] ?? null;
+                                }
+                                if ($parentId && isset($matchOrderById[$parentId]) && $matchOrderById[$parentId] !== null) {
+                                    $r['contingent']['name'] = 'Pemenang Partai No #' . (int) $matchOrderById[$parentId];
+                                } else {
+                                    $r['contingent']['name'] = 'Pemenang Partai Sebelumnya';
+                                }
+                            }
+                        }
+                        unset($r);
+
+                        // Urutkan isi grup: BLUE → RED → lainnya (stabil)
+                        usort($arr, function ($a, $b) {
+                            $rank = function ($v) {
+                                $s = strtolower((string) ($v ?? ''));
+                                if ($s === 'blue') return 0;
+                                if ($s === 'red')  return 1;
+                                return 2;
+                            };
+                            $ra = $rank($a['corner']);
+                            $rb = $rank($b['corner']);
+                            if ($ra !== $rb) return $ra <=> $rb;
+                            return ($a['id'] ?? 0) <=> ($b['id'] ?? 0);
+                        });
+
+                        foreach ($arr as $r) {
+                            $finalRows[] = $r;
+                        }
+                    }
+
+                    // Replace matches pool ini dengan hasil final
+                    $pool['matches'] = $finalRows;
                     $pools[] = $pool;
                 }
 
                 $ageCategories[] = [
                     'age_category' => $ageCategory,
-                    'pools' => $pools
+                    'pools'        => $pools
                 ];
             }
 
             $groupedList[] = [
-                'category' => $group['category'],
-                'gender' => $group['gender'],
+                'category'       => $group['category'],
+                'gender'         => $group['gender'],
                 'age_categories' => $ageCategories
             ];
         }
 
+        // Simpan per arena
         $finalResult[$arena] = $groupedList;
     }
 
     return response()->json($finalResult);
 }
 
-    public function exportSeniPdf(Request $request)
-    {
-        $arenaName = session('arena_name');
-        $matchType = session('match_type');
-        $tournamentName = session('tournament_name');
 
-        $query = LocalSeniMatch::query();
+  
 
-        if ($arenaName) {
-            $query->where('arena_name', $arenaName);
+public function exportSeniPdf(Request $request)
+{
+    $arenaName      = session('arena_name');
+    $matchType      = session('match_type');       // 'seni' atau 'tanding'
+    $tournamentName = session('tournament_name');
+
+    $query = LocalSeniMatch::query();
+
+    if ($arenaName) {
+        $query->where('arena_name', $arenaName);
+    }
+    if ($tournamentName) {
+        $query->where('tournament_name', $tournamentName);
+    }
+    if ($matchType === 'seni') {
+        $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+    }
+
+    $matches = $query
+        ->orderBy(DB::raw('CAST(match_order AS UNSIGNED)'))
+        ->orderBy('id')
+        ->get();
+
+    // Map cepat: local_match_id => match_order (untuk fallback penamaan pemenang parent)
+    $matchOrderById = $matches->pluck('match_order', 'id')
+        ->map(fn($o) => is_null($o) ? null : (int)$o)
+        ->toArray();
+
+    // helper: cek “TBD” (bersihin zero-width char juga)
+    $isTbd = function (?string $name): bool {
+        if ($name === null) return true;
+        $clean = preg_replace('/[\x{200B}\x{200C}\x{200D}\x{FEFF}\x{2060}]/u', '', $name);
+        $clean = strtoupper(trim($clean));
+        return ($clean === 'TBD' || $clean === '' || $clean === '-');
+    };
+
+    // ===================== Grouping awal by arena/category/age/pool =====================
+    $groupedArena = [];
+
+    foreach ($matches as $match) {
+        $arena       = $match->arena_name ?? 'UNKNOWN ARENA';
+        $category    = ucwords(strtolower(trim($match->category ?? '-')));
+        $gender      = strtolower(trim($match->gender ?? '-'));
+        $ageCategory = ucwords(strtolower(trim($match->age_category ?? 'Tanpa Usia')));
+        $poolName    = trim($match->pool_name ?? '-');
+
+        $groupKey = $category . '|' . $gender . '|' . $ageCategory;
+
+        if (!isset($groupedArena[$arena])) {
+            $groupedArena[$arena] = [];
         }
-
-        if ($tournamentName) {
-            $query->where('tournament_name', $tournamentName);
+        if (!isset($groupedArena[$arena][$groupKey])) {
+            $groupedArena[$arena][$groupKey] = [
+                'category'       => $category,
+                'gender'         => $gender,
+                'age_categories' => [],
+            ];
         }
-
-        if ($matchType === 'seni') {
-            $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
+        if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory])) {
+            $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory] = [
+                'age_category' => $ageCategory,
+                'pools'        => [],
+            ];
         }
-
-        //$query->whereRaw('CAST(match_order AS UNSIGNED) >= ?', [89]);
-
-$matches = $query
-    ->orderByRaw('CAST(match_order AS UNSIGNED)')
-    ->get();
-
-
-        // Grouping
-        $groupedArena = [];
-
-        foreach ($matches as $match) {
-            $arena = $match->arena_name ?? 'UNKNOWN ARENA';
-
-            $category = ucwords(strtolower(trim($match->category ?? '-')));
-            $gender = strtolower(trim($match->gender ?? '-'));
-            $ageCategory = ucwords(strtolower(trim($match->age_category ?? 'Tanpa Usia')));
-            $poolName = trim($match->pool_name ?? '-');
-
-            $groupKey = $category . '|' . $gender . '|' . $ageCategory;
-
-            if (!isset($groupedArena[$arena])) $groupedArena[$arena] = [];
-            if (!isset($groupedArena[$arena][$groupKey])) {
-                $groupedArena[$arena][$groupKey] = [
-                    'category' => $category,
-                    'gender' => $gender,
-                    'age_categories' => []
-                ];
-            }
-
-            if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory])) {
-                $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory] = [
-                    'age_category' => $ageCategory,
-                    'pools' => []
-                ];
-            }
-
-            if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName])) {
-                $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName] = [
-                    'name' => $poolName,
-                    'matches' => []
-                ];
-            }
-
-            $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName]['matches'][] = [
-                'id' => $match->id,
-                'match_order' => (int) $match->match_order,
-                'match_type' => $match->match_type,
-                'contingent' => ['name' => $match->contingent_name],
-                'final_score' => $match->final_score,
-                'medal' => $match->medal,
-                'status' => $match->status,
-                'team_member1' => ['name' => $match->participant_1],
-                'team_member2' => ['name' => $match->participant_2],
-                'team_member3' => ['name' => $match->participant_3],
-                'pool' => ['age_category' => ['name' => $ageCategory]]
+        if (!isset($groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName])) {
+            $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName] = [
+                'name'    => $poolName,
+                'matches' => [],
             ];
         }
 
-        // Final structure
-        $finalResult = [];
+        // Simpan match + field battle (biar siap diurutkan pair-aware)
+        $groupedArena[$arena][$groupKey]['age_categories'][$ageCategory]['pools'][$poolName]['matches'][] = [
+            'id'                   => (int) $match->id,
+            'match_order'          => is_null($match->match_order) ? null : (int) $match->match_order,
+            'match_type'           => $match->match_type,
+            'contingent'           => ['name' => $match->contingent_name],
+            'final_score'          => $match->final_score,
+            'medal'                => $match->medal,
+            'status'               => $match->status,
+            'team_member1'         => ['name' => $match->participant_1],
+            'team_member2'         => ['name' => $match->participant_2],
+            'team_member3'         => ['name' => $match->participant_3],
+            'pool'                 => ['age_category' => ['name' => $ageCategory]],
 
-        foreach ($groupedArena as $arena => $groupedMap) {
-            $groupedList = [];
+            // battle-info (dipakai untuk pengurutan)
+            'mode'                 => $match->mode,                 // 'default' | 'battle' | null
+            'battle_group'         => $match->battle_group,         // int|null
+            'round'                => is_null($match->round) ? null : (int) $match->round,
+            'round_label'          => $match->round_label,
+            'round_priority'       => is_null($match->round_priority) ? null : (int) $match->round_priority,
+            'corner'               => $match->corner,               // 'blue' | 'red' | null
+            'winner_corner'        => $match->winner_corner,        // 'blue' | 'red' | null
+            'parent_match_red_id'  => $match->parent_match_red_id,  // local id|null
+            'parent_match_blue_id' => $match->parent_match_blue_id, // local id|null
+        ];
+    }
 
-            foreach ($groupedMap as $group) {
-                $ageCategories = [];
+    // ===================== Rekonstruksi final (battle paired & ordered) =====================
+    $finalResult = [];
 
-                foreach ($group['age_categories'] as $ageCategory => $ageData) {
-                    $pools = [];
+    foreach ($groupedArena as $arena => $groupedMap) {
+        $groupedList = [];
 
-                    foreach ($ageData['pools'] as $pool) {
-                        usort($pool['matches'], fn($a, $b) => $a['match_order'] <=> $b['match_order']);
-                        $pools[] = $pool;
+        foreach ($groupedMap as $group) {
+            $ageCategories = [];
+
+            foreach ($group['age_categories'] as $ageCategory => $ageData) {
+                $pools = [];
+
+                foreach ($ageData['pools'] as $pool) {
+                    $rows = $pool['matches'];
+
+                    // Sort dasar by match_order ASC (null di akhir)
+                    usort($rows, function ($a, $b) {
+                        $ao = $a['match_order'] ?? PHP_INT_MAX;
+                        $bo = $b['match_order'] ?? PHP_INT_MAX;
+                        if ($ao === $bo) return 0;
+                        return $ao <=> $bo;
+                    });
+
+                    // Kelompok per GRUP:
+                    // - pakai battle_group jika ada
+                    // - fallback ke match_order jika tidak ada
+                    $groupsMap = [];
+                    foreach ($rows as $idx => $row) {
+                        $key = !is_null($row['battle_group'])
+                            ? 'G' . $row['battle_group']
+                            : (!is_null($row['match_order']) ? 'O' . $row['match_order'] : 'X' . $idx);
+                        $groupsMap[$key][] = $row;
                     }
 
-                    $ageCategories[] = [
-                        'age_category' => $ageCategory,
-                        'pools' => $pools
-                    ];
+                    // Urutkan antar grup berdasarkan angka key
+                    $groupKeys = array_keys($groupsMap);
+                    usort($groupKeys, function ($a, $b) {
+                        $na = (int) substr($a, 1);
+                        $nb = (int) substr($b, 1);
+                        return $na <=> $nb;
+                    });
+
+                    // Rekonstruksi rows final: BLUE → RED → lainnya, plus fallback corner/mode & replace TBD
+                    $finalRows = [];
+                    foreach ($groupKeys as $gkey) {
+                        $arr = $groupsMap[$gkey];
+
+                        foreach ($arr as $i => &$r) {
+                            // fallback battle_group dari key jika null
+                            if (is_null($r['battle_group'])) {
+                                $r['battle_group'] = (int) substr($gkey, 1);
+                            }
+
+                            // fallback corner jika battle (2 baris) tapi corner kosong
+                            $corner = strtolower((string) ($r['corner'] ?? ''));
+                            if ($corner !== 'blue' && $corner !== 'red' && count($arr) >= 2) {
+                                if     ($i === 0) { $r['corner'] = 'blue'; $corner = 'blue'; }
+                                elseif ($i === 1) { $r['corner'] = 'red';  $corner = 'red';  }
+                            }
+
+                            // fallback mode = 'battle' jika dalam grup ada >= 2 baris
+                            if (empty($r['mode']) && count($arr) >= 2) {
+                                $r['mode'] = 'battle';
+                            }
+
+                            // Replace TBD contingent name → "Pemenang Partai No #X" (jika parent ada)
+                            $currName = $r['contingent']['name'] ?? null;
+                            if ($isTbd($currName)) {
+                                $parentId = null;
+                                if ($corner === 'blue') {
+                                    $parentId = $r['parent_match_blue_id'] ?? null;
+                                } elseif ($corner === 'red') {
+                                    $parentId = $r['parent_match_red_id'] ?? null;
+                                }
+                                if ($parentId && isset($matchOrderById[$parentId]) && $matchOrderById[$parentId] !== null) {
+                                    $r['contingent']['name'] = 'Pemenang Partai No #' . (int) $matchOrderById[$parentId];
+                                } else {
+                                    $r['contingent']['name'] = 'Pemenang Partai Sebelumnya';
+                                }
+                            }
+                        }
+                        unset($r);
+
+                        // Urutkan isi grup: BLUE → RED → lainnya, lalu by id
+                        usort($arr, function ($a, $b) {
+                            $rank = function ($v) {
+                                $s = strtolower((string) ($v ?? ''));
+                                if ($s === 'blue') return 0;
+                                if ($s === 'red')  return 1;
+                                return 2;
+                            };
+                            $ra = $rank($a['corner']);
+                            $rb = $rank($b['corner']);
+                            if ($ra !== $rb) return $ra <=> $rb;
+                            $ida = $a['id'] ?? 0;
+                            $idb = $b['id'] ?? 0;
+                            return $ida <=> $idb;
+                        });
+
+                        foreach ($arr as $r) {
+                            $finalRows[] = $r;
+                        }
+                    }
+
+                    // Replace matches untuk pool ini
+                    $pool['matches'] = $finalRows;
+                    $pools[] = $pool;
                 }
 
-                $groupedList[] = [
-                    'category' => $group['category'],
-                    'gender' => $group['gender'],
-                    'age_categories' => $ageCategories
+                $ageCategories[] = [
+                    'age_category' => $ageCategory,
+                    'pools'        => $pools,
                 ];
             }
 
-            $finalResult[$arena] = $groupedList;
+            $groupedList[] = [
+                'category'       => $group['category'],
+                'gender'         => $group['gender'],
+                'age_categories' => $ageCategories,
+            ];
         }
 
-        // Generate PDF pakai Barryvdh\DomPDF\Facade\Pdf
-        $pdf = Pdf::loadView('exports.seni-matches', [
-            'data' => $finalResult,
-            'tournament' => $tournamentName
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download('jadwal-pertandingan-seni.pdf');
+        $finalResult[$arena] = $groupedList;
     }
+
+    // ===== Generate PDF
+    $pdf = Pdf::loadView('exports.seni-matches', [
+        'data'       => $finalResult,
+        'tournament' => $tournamentName,
+    ])->setPaper('a4', 'portrait');
+
+    return $pdf->download('jadwal-pertandingan-seni.pdf');
+}
+
 
 public function setScoreManual(Request $request, $id)
 {
