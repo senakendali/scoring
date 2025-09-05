@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule; 
+use Illuminate\Support\Facades\File;
 
 
 class LocalMatchSeniController extends Controller
@@ -606,10 +607,8 @@ public function exportSeniPdf(Request $request)
     $matchType      = session('match_type');       // 'seni' | 'tanding'
     $tournamentName = session('tournament_name');  // wajibnya turnamen
 
-    // ==== BACA FILTER DARI QUERY ====
-    // arena_name di query akan override session arena (biar sesuai dropdown di FE)
+    // ==== FILTER DARI QUERY ====
     $arenaName  = $request->filled('arena_name') ? trim((string)$request->input('arena_name')) : $sessionArena;
-
     $fromPartai = $request->filled('from_partai') ? (int)$request->input('from_partai') : null;
     $toPartai   = $request->filled('to_partai')   ? (int)$request->input('to_partai')   : null;
 
@@ -630,9 +629,8 @@ public function exportSeniPdf(Request $request)
         $query->whereIn('match_type', ['seni_tunggal', 'seni_ganda', 'seni_regu', 'solo_kreatif']);
     }
 
-    // ✅ Terapkan filter range partai di level DB (selaras FE)
+    // ✅ Filter range partai di level DB (selaras FE)
     if ($hasRange) {
-        // exclude yang kosong/non-numeric saat filter aktif
         $query->whereRaw("NULLIF(TRIM(match_order), '') IS NOT NULL")
               ->whereRaw("CAST(match_order AS UNSIGNED) > 0");
 
@@ -839,14 +837,37 @@ public function exportSeniPdf(Request $request)
         $finalResult[$arena] = $groupedList;
     }
 
-    // ===== Generate PDF
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.seni-matches', [
-        'data'       => $finalResult,
-        'tournament' => $tournamentName,
-    ])->setPaper('a4', 'portrait');
+    // ===== Dompdf TEMP & CACHE (fix imagepng permission) =====
+    $dompdfTmp = storage_path('app/dompdf_tmp');
+    if (!File::isDirectory($dompdfTmp)) {
+        File::makeDirectory($dompdfTmp, 0775, true);
+    }
 
-    return $pdf->download('jadwal-pertandingan-seni.pdf');
+    // ===== Generate PDF
+    $pdf = Pdf::setOptions([
+            'isRemoteEnabled' => true,      // aman untuk img/file local/remote
+            'temp_dir'        => $dompdfTmp,
+            'font_cache'      => $dompdfTmp,
+        ])
+        ->loadView('exports.seni-matches', [
+            'data'         => $finalResult,
+            'tournament'   => $tournamentName,
+            // (opsional) kirim balik filter untuk header template kalau perlu
+            'arena_name'   => $arenaName,
+            'from_partai'  => $fromPartai,
+            'to_partai'    => $toPartai,
+        ])
+        ->setPaper('a4', 'portrait');
+
+    // Nama file enak dibaca
+    $suffixArena = $arenaName ? ('-'.$arenaName) : '';
+    $suffixRange = ($hasRange)
+        ? ('-partai'.($fromPartai ?? '').'-'.($toPartai ?? ''))
+        : '';
+
+    return $pdf->download("jadwal-pertandingan-seni{$suffixArena}{$suffixRange}.pdf");
 }
+
 
 
 

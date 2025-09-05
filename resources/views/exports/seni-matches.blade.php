@@ -54,9 +54,7 @@
     <table style="width: 100%; margin-bottom: 10px;">
         <tr>
             <td style="width: 25%;">
-                @if (file_exists(public_path('images/ipsi.png')))
-                    <img src="{{ public_path('images/ipsi.png') }}" class="logo">
-                @endif
+               &nbsp;
             </td>
             <td style="width: 50%; text-align: center;">
                 <h4 class="uppercase fw-bold">JADWAL {{ $upper($arenaName) }}</h4>
