@@ -208,12 +208,12 @@
                     </td>
 
                     {{-- waktu kiri/kanan --}}
-                    <td class="text-center">{{ $row['blue']['time'] ?? '-' }}</td>
-                    <td class="text-center">{{ $row['red']['time']  ?? '-' }}</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">-</td>
 
                     {{-- score kiri/kanan --}}
-                    <td class="text-center">{{ $safeScore($row['blue']['score'] ?? null) }}</td>
-                    <td class="text-center">{{ $safeScore($row['red']['score']  ?? null) }}</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">-</td>
                 </tr>
             @endforeach
             </tbody>
