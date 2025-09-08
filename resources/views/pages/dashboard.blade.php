@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('content')
-<div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">

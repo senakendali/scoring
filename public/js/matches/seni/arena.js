@@ -244,12 +244,47 @@ function applyWinner(res) {
 
 
 // ---- helper format detik -> mm:ss ----
-function fmtTime(s) {
-  s = +s || 0;
-  const m = String(Math.floor(s/60)).padStart(2,'0');
-  const sec = String(s%60).padStart(2,'0');
-  return `${m}:${sec}`;
+function fmtTime(s, mode = 'auto') {
+  // Jika string, normalisasi dulu
+  if (typeof s === 'string') {
+    const raw = s.trim().replace(/\s+/g, '');
+    // Jika format mm:ss
+    const mmss = raw.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (mmss) {
+      const m = Math.max(0, parseInt(mmss[1], 10));
+      const sec = Math.max(0, Math.min(59, parseInt(mmss[2], 10)));
+      if (mode === 'm,dd' || mode === 'auto') {
+        return (m + sec / 60).toFixed(2).replace('.', ','); // 3,08
+      }
+      return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; // 03:08
+    }
+    // Jika format menit desimal (koma/titik)
+    const num = parseFloat(raw.replace(',', '.'));
+    if (!isNaN(num)) {
+      if (mode === 'mm:ss') {
+        const total = Math.round(num * 60);
+        const m = Math.floor(total / 60), sec = total % 60;
+        return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      }
+      // default & 'm,dd' → tampilkan desimal dengan koma
+      return num.toFixed(2).replace('.', ',');
+    }
+    // jatuh ke numeric handler di bawah kalau tidak cocok
+  }
+
+  // Anggap input dalam detik (number)
+  let totalSeconds = Math.max(0, Math.floor(+s || 0));
+  const m = Math.floor(totalSeconds / 60);
+  const sec = totalSeconds % 60;
+
+  if (mode === 'mm:ss') {
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; // 03:05
+  }
+  // default 'auto' dan 'm,dd' → menit desimal dengan koma
+  return (m + sec / 60).toFixed(2).replace('.', ','); // 3,08
 }
+
+
 
 // ---- fungsi utama: render skeleton + fetch data ----
 function loadGroupResults(group) {

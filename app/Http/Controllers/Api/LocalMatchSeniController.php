@@ -1450,7 +1450,7 @@ public function setScoreManual(Request $request, $id)
         ]);
     }
 
-    public function setWinner(Request $request, LocalSeniMatch $match)
+   public function setWinner(Request $request, LocalSeniMatch $match)
 {
     // 1) Validasi input
     $data = $request->validate([
@@ -1462,6 +1462,7 @@ public function setScoreManual(Request $request, $id)
     $group = LocalSeniMatch::query()
         ->where('mode', 'battle')
         ->where('battle_group', $match->battle_group)
+        ->where('tournament_name', $match->tournament_name)
         ->orderBy('id')
         ->get();
 
@@ -1525,67 +1526,104 @@ public function setScoreManual(Request $request, $id)
 
         if (Schema::hasColumn($loser->getTable(), 'winner_reason')) {
             $loser->winner_reason = $data['reason'];
-        }
-        $loser->save();
-
-        // 7) Medal assignment (final / bronze)
-        $roundLabel = strtolower((string)($match->round_label ?? ''));
-        $setMedal = function (?LocalSeniMatch $m, ?string $medal) {
-            if (!$m) return;
-            $m->medal = $medal; // 'emas'|'perak'|'perunggu'|null
-            $m->save();
-        };
-        $isFinal  = (str_contains($roundLabel, 'final') && !str_contains($roundLabel, 'semi') && !str_contains($roundLabel, '3') && !str_contains($roundLabel, 'bronze'));
-        $isBronze = (str_contains($roundLabel, 'bronze') || str_contains($roundLabel, '3'));
-        if ($isFinal) {
-            $setMedal($winner, 'emas');
-            $setMedal($loser,  'perak');
-        } elseif ($isBronze) {
-            $setMedal($winner, 'perunggu');
-            $setMedal($loser,  null);
+            $loser->save();
         }
 
-        // 8) PROMOTE → cari parent berdasarkan SEMUA id di battle group, RE-LINK & OVERWRITE SELALU
-        $groupIds = $group->pluck('id')->all();
+        // ======== MEDAL ASSIGNMENT (HARD FIX) ========
+        // Normalisasi label
+        $roundLabelRaw = (string) ($match->round_label ?? '');
+        $roundLabel    = strtolower(trim($roundLabelRaw));
 
-        $parents = LocalSeniMatch::query()
-            ->where(function ($q) use ($groupIds) {
-                $q->whereIn('parent_match_red_id',  $groupIds)
-                  ->orWhereIn('parent_match_blue_id', $groupIds);
+        // Deteksi jenis babak
+        $isBronzeLabel   = preg_match('/\b(bronze|juara\s*3|third|3rd|tempat\s*ketiga)\b/i', $roundLabel) === 1;
+        $isExactFinal    = preg_match('/^(grand\s*final|final)$/i', $roundLabel) === 1; // HANYA "Final" murni
+        $isSemiLabel     = preg_match('/\bsemi\b/i', $roundLabel) === 1;
+        // "1/4 Final", "1/8 Final", "1/16 Final", dst → dianggap BUKAN final
+        $isFractionFinal = preg_match('/\b1\/(4|8|16|32|64)\s*final\b/i', $roundLabel) === 1;
+
+        // Ada parent di atas? (kalau ada → bukan final puncak)
+        $hasParentAbove = LocalSeniMatch::where('tournament_name', $match->tournament_name)
+            ->where(function($q) use ($match){
+                $q->where('parent_match_red_id',  $match->id)
+                  ->orWhere('parent_match_blue_id', $match->id);
+            })->exists();
+
+        $topOfBracket = !$hasParentAbove;
+
+        // Apakah bracket ini pakai bronze match tersendiri?
+        $hasBronzeMatchInBracket = LocalSeniMatch::where('tournament_name', $match->tournament_name)
+            ->where('battle_group', $match->battle_group)
+            ->where(function($q){
+                $q->whereRaw('LOWER(COALESCE(round_label,"")) LIKE ?', ['%bronze%'])
+                  ->orWhereRaw('LOWER(COALESCE(round_label,"")) LIKE ?', ['%juara 3%'])
+                  ->orWhereRaw('LOWER(COALESCE(round_label,"")) LIKE ?', ['%3rd%'])
+                  ->orWhereRaw('LOWER(COALESCE(round_label,"")) LIKE ?', ['%third%'])
+                  ->orWhereRaw('LOWER(COALESCE(round_label,"")) LIKE ?', ['%tempat ketiga%']);
             })
+            ->exists();
+
+        // Bersihkan medal sebelumnya agar tidak carry-over salah
+        $winner->medal = null;
+        $loser->medal  = null;
+
+        // 1) Bronze / Third-place match → winner = perunggu
+        if ($isBronzeLabel) {
+            $winner->medal = 'perunggu';
+        }
+        // 2) Final puncak saja → winner = emas, loser = perak
+        //    Syarat: label EXACT final & tidak punya parent di atas & bukan fraction final
+        elseif ($isExactFinal && $topOfBracket && !$isFractionFinal) {
+            $winner->medal = 'emas';
+            $loser->medal  = 'perak';
+        }
+        // 3) Tidak ada bronze match → kedua semifinal LOSER = perunggu
+        elseif (!$hasBronzeMatchInBracket && $isSemiLabel) {
+            $loser->medal = 'perunggu';
+        }
+
+        $winner->save();
+        $loser->save();
+        // ============================================
+
+        // ======== PROMOTE — hanya parent yang LANGSUNG mereferensikan match ini ========
+        $parents = LocalSeniMatch::query()
             ->where('tournament_name', $winner->tournament_name)
+            ->where(function ($q) use ($match) {
+                $q->where('parent_match_red_id',  $match->id)
+                  ->orWhere('parent_match_blue_id', $match->id);
+            })
             ->get();
 
         $promotedParentIds = [];
 
         if ($parents->isEmpty()) {
-            \Log::info('ℹ️ [setWinner] Tidak ada parent match ditemukan untuk group', [
-                'group_ids' => $groupIds,
-                'arena'     => $winner->arena_name,
-                'tour'      => $winner->tournament_name,
-                'group'     => $winner->battle_group,
+            \Log::info('ℹ️ [setWinner] Tidak ada parent langsung untuk match ini', [
+                'match_id' => $match->id,
+                'arena'    => $winner->arena_name,
+                'tour'     => $winner->tournament_name,
+                'group'    => $winner->battle_group,
             ]);
         } else {
             foreach ($parents as $parent) {
-                // Tentukan slot parent yang terkait group ini
+                // Tentukan slot yang benar-benar menunjuk ke match ini
                 $slot = null;
-                if (in_array($parent->parent_match_red_id, $groupIds, true))  $slot = 'red';
-                if (in_array($parent->parent_match_blue_id, $groupIds, true)) $slot = $slot ?: 'blue'; // prioritas red jika dua-duanya match
+                if ((int)$parent->parent_match_red_id === (int)$match->id)  $slot = 'red';
+                if ((int)$parent->parent_match_blue_id === (int)$match->id) $slot = $slot ?: 'blue';
 
                 if (!$slot) {
-                    \Log::warning('⚠️ [setWinner] Parent terdeteksi tapi slot tidak jelas', [
-                        'parent_id'=>$parent->id, 'group_ids'=>$groupIds
+                    \Log::warning('⚠️ [setWinner] Parent ditemukan tapi tidak refer ke match ini?', [
+                        'parent_id' => $parent->id,
+                        'match_id'  => $match->id,
+                        'pref_red'  => $parent->parent_match_red_id,
+                        'pref_blue' => $parent->parent_match_blue_id,
                     ]);
                     continue;
                 }
 
-                // RE-LINK: pastikan parent menunjuk ke pemenang pada slot tersebut
                 $beforeLink = [
                     'red'  => $parent->parent_match_red_id,
                     'blue' => $parent->parent_match_blue_id,
                 ];
-                if ($slot === 'red'  && (int)$parent->parent_match_red_id  !== (int)$winner->id) $parent->parent_match_red_id  = $winner->id;
-                if ($slot === 'blue' && (int)$parent->parent_match_blue_id !== (int)$winner->id) $parent->parent_match_blue_id = $winner->id;
 
                 // Sanitizer karakter tak terlihat
                 $stripInv = function (?string $s): ?string {
@@ -1593,23 +1631,14 @@ public function setScoreManual(Request $request, $id)
                     return preg_replace('/[\x{200B}\x{200C}\x{200D}\x{2060}]/u', '', $s);
                 };
 
-                // Simpan keadaan lama (audit)
-                $alreadyFilled = [
-                    'contingent_name' => $parent->contingent_name,
-                    'participant_1'   => $parent->participant_1,
-                    'participant_2'   => $parent->participant_2,
-                    'participant_3'   => $parent->participant_3,
-                    'corner'          => $parent->corner,
-                ];
-
-                // OVERWRITE SELALU dengan data pemenang
+                // Overwrite data peserta pada parent SLOT tersebut
                 $parent->contingent_name = $stripInv($winner->contingent_name ?? $winner->contingent ?? null);
                 $parent->participant_1   = $stripInv($winner->participant_1 ?? null);
                 $parent->participant_2   = $stripInv($winner->participant_2 ?? null);
                 $parent->participant_3   = $stripInv($winner->participant_3 ?? null);
-                $parent->corner          = $slot;
+                $parent->corner          = $slot; // simpan slot yang diisi (red/blue)
 
-                // Reset supaya siap dimainkan
+                // Reset state agar siap dimainkan
                 $parent->final_score = null;
                 $parent->duration    = null;
                 $parent->start_time  = null;
@@ -1619,15 +1648,14 @@ public function setScoreManual(Request $request, $id)
                 $parent->save();
                 $promotedParentIds[] = $parent->id;
 
-                \Log::info('✍️ [setWinner] Parent di-overwrite & relink', [
-                    'parent_id'      => $parent->id,
-                    'slot'           => $slot,
-                    'before_link'    => $beforeLink,
-                    'after_link'     => [
+                \Log::info('✍️ [setWinner] Parent di-overwrite & relink (immediate parent only)', [
+                    'parent_id'   => $parent->id,
+                    'slot'        => $slot,
+                    'before_link' => $beforeLink,
+                    'after_link'  => [
                         'red'  => $parent->parent_match_red_id,
                         'blue' => $parent->parent_match_blue_id,
                     ],
-                    'was_filled'     => $alreadyFilled,
                     'now_contingent' => $parent->contingent_name,
                     'now_p1'         => $parent->participant_1,
                     'now_p2'         => $parent->participant_2,
@@ -1635,6 +1663,7 @@ public function setScoreManual(Request $request, $id)
                 ]);
             }
         }
+        // ==============================================================================
 
         // 9) Broadcast popup pemenang
         event(new SeniBattleWinnerAnnounced(
@@ -1737,6 +1766,9 @@ public function setScoreManual(Request $request, $id)
         ], 500);
     }
 }
+
+
+
 
 
 

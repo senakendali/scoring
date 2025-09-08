@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('content')
 <!-- Modal Notifikasi -->
 <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
@@ -20,50 +20,59 @@
 
 <!-- Modal Bracket -->
 <div class="container mt-5 text-white">
-    <input type="hidden" id="data_source" value="{{ $data_source }}">
-    <h2 class="mb-4">Import Data Pertandingan (Tanding)</h2>
+  <div class="row">
+    <div class="col-lg-6">
+      <input type="hidden" id="data_source" value="{{ $data_source }}">
+      <h2 class="mb-4">Import Data Pertandingan (Tanding)</h2>
 
-    <form id="import-form">
-        <div class="mb-3">
-            <label for="tournament_name" class="form-label">Pilih Tournament</label>
-            <select id="tournament_name_tanding" name="tournament_name" class="form-select">
-                <option value="">-- Pilih Tournament --</option>
-            </select>
-        </div>
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" id="display_timer_tanding" name="is_display_timer" value="1">
-          <label class="form-check-label" for="display_timer_tanding">
-            Tampilkan Timer di Display
-          </label>
-        </div>
-        <button type="submit" class="btn btn-success">Sync Data dari Server</button>
-    </form>
-</div>
+      <form id="import-form">
+          <div class="mb-3">
+              <label for="tournament_name" class="form-label">Pilih Tournament</label>
+              <select id="tournament_name_tanding" name="tournament_name" class="form-select">
+                  <option value="">-- Pilih Tournament --</option>
+              </select>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="display_timer_tanding" name="is_display_timer" value="1">
+            <label class="form-check-label" for="display_timer_tanding">
+              Tampilkan Timer di Display
+            </label>
+          </div>
+          <button type="submit" class="btn btn-success">Sync Data dari Server</button>
+      </form>
+    </div>
+    <div class="col-lg-6">
+      <h2 class="mb-4">Import Data Pertandingan (Seni)</h2>
 
-<div class="container mt-5 text-white">
-    <h2 class="mb-4">Import Data Pertandingan (Seni)</h2>
+      <form id="import-form-seni">
+          <div class="mb-3">
+              <label for="tournament_name" class="form-label">Pilih Tournament</label>
+              <select id="tournament_name_seni" name="tournament_name" class="form-select">
+                  <option value="">-- Pilih Tournament --</option>
+              </select>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="display_timer_seni" name="is_display_timer" value="1">
+            <label class="form-check-label" for="display_timer_seni">
+              Tampilkan Timer di Display
+            </label>
+          </div>
 
-    <form id="import-form-seni">
-        <div class="mb-3">
-            <label for="tournament_name" class="form-label">Pilih Tournament</label>
-            <select id="tournament_name_seni" name="tournament_name" class="form-select">
-                <option value="">-- Pilih Tournament --</option>
-            </select>
-        </div>
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" id="display_timer_seni" name="is_display_timer" value="1">
-          <label class="form-check-label" for="display_timer_seni">
-            Tampilkan Timer di Display
-          </label>
-        </div>
-
-
-       
 
         
 
-        <button type="submit" class="btn btn-success">Sync Data dari Server</button>
-    </form>
+          
+
+          <button type="submit" class="btn btn-success">Sync Data dari Server</button>
+      </form>
+
+    </div>
+  </div>
+    
+</div>
+
+<div class="container mt-5 text-white">
+    
 </div>
     
     

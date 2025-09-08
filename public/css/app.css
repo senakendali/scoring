@@ -20,6 +20,15 @@ body{
     background-color: var(--black);
 }
 
+.app-header.admin {
+    width: 100%;
+    background-color: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+}
+
 .app-header.light {
     width: 100%;
     background-color: #FFFFFF;
@@ -42,6 +51,15 @@ body{
 
 .app-header.light img {
     max-height: 180px;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    transition: all 0.3s ease;
+}
+
+.app-header.admin img {
+    max-height: 160px;
     height: auto;
     width: auto;
     object-fit: contain;
@@ -2086,8 +2104,8 @@ th, td {
   }
 
   .navbar{
-    background-color: #2a2a2a;
-    border-top: 5px solid var(--secondary-color);
+    background-color: #FFFFFF;
+   
     
   }
 

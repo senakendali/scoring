@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('content')
 <!-- Modal Bracket -->
 <div class="modal fade" id="bracketModal" tabindex="-1" aria-labelledby="bracketModalLabel" aria-hidden="true">
@@ -70,7 +70,7 @@
 <input type="hidden" id="session-role" value="{{ session('role') }}">
 <input type="hidden" id="session-tournament" value="{{ session('tournament_name') }}">
 
-<div class="fix-match-info dark" id="tournament-name">{{ session('tournament_name') }}</div>
+
 @if(session('role') === 'operator' || session('role') === 'admin')
 <div class="container-fluid">
     <div class="row">

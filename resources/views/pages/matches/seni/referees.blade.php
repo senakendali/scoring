@@ -1,5 +1,22 @@
 @extends('layouts.seni_layout')
 @section('content')
+
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white text-center">
+      <div class="modal-header border-0">
+        <h5 class="modal-title w-100">Informasi</h5>
+      </div>
+      <div class="modal-body">
+        Nilai Pengurangan sudah dikirimkan.
+      </div>
+      <div class="modal-footer justify-content-center border-0">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="disqualifiedModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-danger text-white text-center">
@@ -142,6 +159,12 @@
                     <td id="penalty-total">
                         <input type="text" class="form-control text-center" readonly value="0.00">
                     </td>
+                    </tr>
+                    <tr>
+                      <td colspan="3" class="text-center">
+                        <button id="submit-deduction" class="btn btn-lg btn-danger btn-sm w-50 roboto-bold">KIRIM NILAI PENGURANGAN</button>
+                      </td>
+                    
                     </tr>
                 </tfoot>
             </table>

@@ -121,6 +121,110 @@ class LocalImportController extends Controller
 
             foreach ($data as $match) {
                 $insert = [
+                    'match_date'        => $match['scheduled_date'] ?? null,
+                    'tournament_name'   => $tournamentName,
+                    'remote_match_id'   => $match['match_id'] ?? null,
+                    'arena_name'        => $match['arena_name'] ?? '-',
+                    'pool_name'         => $match['pool_name'] ?? '-',
+                    'class_name'        => $match['class_name'] ?? '-',
+                    'match_code'        => 'M-' . strtoupper(Str::random(5)),
+                    'total_rounds'      => 3,
+                    'round_level'       => $match['round_level'] ?? 0,
+                    'round_label'       => $match['round_label'] ?? '-',
+                    'match_number'      => $match['match_number'] ?? 0,
+                    'round_duration'    => $match['round_duration'] ?? 180,
+                    'status'            => 'not_started',
+                    'is_display_timer'  => !empty($match['is_display_timer']) && (string)$match['is_display_timer'] === '1' ? 1 : 0,
+
+                    'red_id'            => $match['red_id'] ?? null,
+                    'red_name'          => $match['red_name'] ?? 'TBD',
+                    'red_contingent'    => $match['red_contingent'] ?? 'TBD',
+
+                    'blue_id'           => $match['blue_id'] ?? null,
+                    'blue_name'         => $match['blue_name'] ?? 'TBD',
+                    'blue_contingent'   => $match['blue_contingent'] ?? 'TBD',
+
+                    'created_at'        => now(),
+                    'updated_at'        => now(),
+                ];
+
+                $localId = DB::table('local_matches')->insertGetId($insert);
+
+                if (isset($match['match_id'])) {
+                    $matchIdMap[$match['match_id']] = $localId;
+                }
+            }
+
+            // 🔁 Update parent match (FIX: swap mapping yang sebelumnya ketuker)
+            foreach ($data as $match) {
+                if (!isset($match['match_id'])) {
+                    continue;
+                }
+                $localId = $matchIdMap[$match['match_id']] ?? null;
+                if (!$localId) {
+                    continue;
+                }
+
+                // Remote kirim: parent_match_red_id & parent_match_blue_id
+                // Yang benar: local.parent_match_red_id <- remote.parent_match_blue_id
+                //             local.parent_match_blue_id <- remote.parent_match_red_id
+                $remoteRed  = $match['parent_match_red_id']  ?? null; // ini aslinya lawan untuk BLUE
+                $remoteBlue = $match['parent_match_blue_id'] ?? null; // ini aslinya lawan untuk RED
+
+                $localParentRedId  = $remoteBlue && isset($matchIdMap[$remoteBlue]) ? $matchIdMap[$remoteBlue] : null;
+                $localParentBlueId = $remoteRed  && isset($matchIdMap[$remoteRed])  ? $matchIdMap[$remoteRed]  : null;
+
+                DB::table('local_matches')->where('id', $localId)->update([
+                    'parent_match_red_id'  => $localParentRedId,
+                    'parent_match_blue_id' => $localParentBlueId,
+                    'updated_at'           => now(),
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Matches imported successfully.']);
+        } catch (\Throwable $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function store_lss(Request $request)
+    {
+        $data = $request->all();
+
+        // 🧠 Ambil nama turnamen dari data pertama
+        $tournamentName = $data[0]['tournament_name'] ?? null;
+
+        if (!$tournamentName) {
+            return response()->json(['error' => 'Tournament name is required.'], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 🧹 Hapus semua data yang berkaitan dengan turnamen yang sama
+            $matchIdsToDelete = DB::table('local_matches')
+                ->where('tournament_name', $tournamentName)
+                ->pluck('id');
+
+            if ($matchIdsToDelete->isNotEmpty()) {
+                DB::table('local_match_rounds')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_judge_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_valid_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('match_personnel_assignments')->where('tournament_name', $tournamentName)->delete();
+                DB::table('local_referee_actions')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+                DB::table('local_matches')->whereIn('id', $matchIdsToDelete)->delete();
+            }
+
+            // 🏗️ Mapping match_id pusat → id lokal
+            $matchIdMap = [];
+
+            foreach ($data as $match) {
+                $insert = [
                     'match_date' => $match['scheduled_date'],
                     'tournament_name' => $tournamentName,
                     'remote_match_id' => $match['match_id'],

@@ -104,7 +104,7 @@ $(document).ready(function () {
         $(".wrong-move").prop("disabled", true);
 
         // 🟢 Otomatis submit penalties saat pertandingan selesai
-        submitPenalties();
+        //submitPenalties();
 
         if (data.status === 'finished' && data.disqualified === true) {
             const disqualifiedModalEl = document.getElementById('disqualifiedModal');
@@ -120,6 +120,11 @@ $(document).ready(function () {
             }
         }
     });
+
+    $("#submit-deduction").on("click", function () {
+        $(this).text('Mengirim...').css('font-style', 'italic');
+        submitPenalties();
+    })
 
 
 
@@ -370,6 +375,12 @@ $(document).ready(function () {
             success: function (res) {
                 console.log("✅ Penalties submitted:", res);
                 $.post(url + `/api/recalculate-final-score/${matchId}`, function (response) {
+                    const confirmationModalEl = document.getElementById('confirmationModal');
+                    if (confirmationModalEl) {
+                        const modal = new bootstrap.Modal(confirmationModalEl);
+                        modal.show();
+                    }
+                    $("#submit-deduction").text('KIRIM NILAI PENGURANGAN').css('font-style', 'normal');
                     console.log("🎯 Final score recalculated:", response.final_score);
                 }).fail(function (err) {
                     console.error("❌ Gagal hitung ulang final score:", err);
