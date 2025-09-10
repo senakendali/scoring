@@ -456,7 +456,232 @@ class LocalMatchController extends Controller
         ]);
     }
 
-    public function endMatch(Request $request, $id)
+   public function endMatch(Request $request, $id)
+{
+    $match = LocalMatch::findOrFail($id);
+
+    // ===== 1) Hitung skor akhir =====
+    $blueScore = \App\Models\LocalValidScore::where('local_match_id', $match->id)->where('corner', 'blue')->sum('point');
+    $redScore  = \App\Models\LocalValidScore::where('local_match_id', $match->id)->where('corner', 'red')->sum('point');
+
+    $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $match->id)->where('corner', 'blue')->sum('point_change');
+    $redAdjustment  = \App\Models\LocalRefereeAction::where('local_match_id', $match->id)->where('corner', 'red')->sum('point_change');
+
+    $totalBlue = $blueScore + $blueAdjustment;
+    $totalRed  = $redScore  + $redAdjustment;
+
+    $match->status = 'finished';
+    $match->participant_1_score = $totalBlue; // BLUE
+    $match->participant_2_score = $totalRed;  // RED
+
+    // ===== 2) Winner & reason (NORMAL) =====
+    $request->validate([
+        'winner' => 'nullable|in:red,blue,draw',
+        'reason' => 'nullable|string|max:255',
+    ]);
+
+    // Tentukan corner pemenang (request > skor)
+    if ($request->filled('winner')) {
+        $match->winner_corner = $request->winner === 'draw' ? null : $request->winner;
+    } else {
+        if ($totalBlue > $totalRed)      $match->winner_corner = 'blue';
+        elseif ($totalRed > $totalBlue)  $match->winner_corner = 'red';
+        else                              $match->winner_corner = null; // draw
+    }
+
+    // Detail pemenang SESUAI corner (NORMAL)
+    if (is_null($match->winner_corner)) {
+        $match->winner_id         = null;
+        $match->winner_name       = null;
+        $match->winner_contingent = null;
+    } elseif ($match->winner_corner === 'blue') {
+        $match->winner_id         = $match->blue_id;
+        $match->winner_name       = $match->blue_name;
+        $match->winner_contingent = $match->blue_contingent;
+    } else { // 'red'
+        $match->winner_id         = $match->red_id;
+        $match->winner_name       = $match->red_name;
+        $match->winner_contingent = $match->red_contingent;
+    }
+
+    if ($request->filled('reason')) {
+        $match->win_reason = $request->reason;
+    }
+
+    $match->save();
+
+    // ===== 3) Tutup ronde berjalan =====
+    $match->rounds()->where('status', 'in_progress')->update([
+        'status'   => 'finished',
+        'end_time' => now(),
+    ]);
+
+    // ===== 4) PROMOTE (STRICT, ID-only, isi hanya slot target yang KOSONG) =====
+    if (!is_null($match->winner_corner)) {
+        DB::beginTransaction();
+        try {
+            $children = LocalMatch::where(function ($q) use ($match) {
+                $q->where('parent_match_red_id',   $match->id)   // → target RED
+                  ->orWhere('parent_match_blue_id', $match->id);  // → target BLUE
+            })->lockForUpdate()->get();
+
+            foreach ($children as $child) {
+                $winId   = $match->winner_id;           // bisa null; tetap propagate nama/contingent
+                $winName = $match->winner_name ?? '';
+                $winCont = $match->winner_contingent ?? '';
+
+                // Tentukan slot target BERDASARKAN PARENT (jangan dibalik)
+                $target = null; // 'red' | 'blue'
+                if ((int)$child->parent_match_red_id === (int)$match->id) {
+                    $target = 'red';   // parent_match_red_id → isi RED
+                } elseif ((int)$child->parent_match_blue_id === (int)$match->id) {
+                    $target = 'blue';  // parent_match_blue_id → isi BLUE
+                } else {
+                    \Log::warning('Child does not reference this parent (skipped promote)', [
+                        'parent_match_id' => $match->id,
+                        'child_match_id'  => $child->id,
+                        'parent_red_id'   => $child->parent_match_red_id,
+                        'parent_blue_id'  => $child->parent_match_blue_id,
+                    ]);
+                    continue;
+                }
+
+                // Kondisi slot sekarang (ID-only)
+                $blueId = $child->blue_id;
+                $redId  = $child->red_id;
+
+                $targetHasId = ($target === 'blue') ? !is_null($blueId) : !is_null($redId);
+                $oppHasSame  = ($target === 'blue')
+                    ? (!is_null($redId)  && !is_null($winId) && (int)$redId  === (int)$winId)
+                    : (!is_null($blueId) && !is_null($winId) && (int)$blueId === (int)$winId);
+
+                $write = function(LocalMatch $m, $slot, $id, $name, $cont) {
+                    if ($slot === 'blue') {
+                        $m->blue_id = $id; $m->blue_name = $name; $m->blue_contingent = $cont;
+                    } else {
+                        $m->red_id  = $id; $m->red_name  = $name; $m->red_contingent  = $cont;
+                    }
+                };
+                $clear = function(LocalMatch $m, $slot) {
+                    if ($slot === 'blue') {
+                        $m->blue_id = null; $m->blue_name = null; $m->blue_contingent = null;
+                    } else {
+                        $m->red_id  = null; $m->red_name  = null; $m->red_contingent  = null;
+                    }
+                };
+
+                // 1) Kalau target SUDAH berisi ID (kompetitor lain atau dia sendiri) → cek:
+                if ($targetHasId) {
+                    // jika sudah berisi ID yang sama, no-op; kalau beda → jangan overwrite
+                    if ($target === 'blue') {
+                        if (!is_null($winId) && !is_null($child->blue_id) && (int)$child->blue_id === (int)$winId) {
+                            // OK, sudah benar
+                        } else {
+                            \Log::info('Promote skipped: target BLUE already has an ID', [
+                                'child_match_id' => $child->id,
+                                'blue_id'        => $child->blue_id,
+                                'winner_id'      => $winId,
+                                'from_parent'    => $match->id,
+                            ]);
+                        }
+                    } else { // target red
+                        if (!is_null($winId) && !is_null($child->red_id) && (int)$child->red_id === (int)$winId) {
+                            // OK, sudah benar
+                        } else {
+                            \Log::info('Promote skipped: target RED already has an ID', [
+                                'child_match_id' => $child->id,
+                                'red_id'         => $child->red_id,
+                                'winner_id'      => $winId,
+                                'from_parent'    => $match->id,
+                            ]);
+                        }
+                    }
+                }
+                // 2) Target KOSONG (id null) → tulis pemenang
+                else {
+                    $write($child, $target, $winId, $winName, $winCont);
+                    // Jika pemenang kebetulan ada di slot lawan (by ID), kosongkan lawan
+                    if ($oppHasSame) {
+                        $clear($child, $target === 'blue' ? 'red' : 'blue');
+                    }
+                }
+
+                $child->save();
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error('❌ Gagal promote winner (strict, id-only, fill-empty)', [
+                'parent_match_id' => $match->id,
+                'error'           => $e->getMessage(),
+            ]);
+        }
+    }
+
+    // ===== 5) Broadcast winner ke UI (NORMAL) =====
+    try {
+        $map = [
+            'mutlak'         => 'Menang Mutlak',
+            'undur_diri'     => 'Menang Undur Diri',
+            'diskualifikasi' => 'Menang Diskualifikasi',
+            'wo'             => 'Menang WO',
+            'walkover'       => 'Menang WO',
+            'disqualified'   => 'Menang Diskualifikasi',
+            'draw'           => 'Seri',
+        ];
+        $reasonRaw   = (string) ($match->win_reason ?? '');
+        $reasonKey   = Str::of($reasonRaw)->lower()->replace(' ', '_')->value();
+        $reasonLabel = $map[$reasonKey] ?? Str::title(str_replace('_', ' ', $reasonRaw));
+
+        $isDraw = is_null($match->winner_corner);
+
+        $payload = [
+            'match_id'        => $match->id,
+            'tournament_name' => $match->tournament_name ?? ($match->tournament ?? ''),
+            'arena_name'      => $match->arena_name ?? '',
+            'corner'          => $isDraw ? null : strtolower($match->winner_corner),
+            'winner_id'       => $isDraw ? null : ($match->winner_id ?? null),
+            'winner_name'     => $isDraw ? 'DRAW' : ($match->winner_name ?? '-'),
+            'contingent'      => $isDraw ? '' : ($match->winner_contingent ?? '-'),
+            'reason'          => $isDraw ? 'draw' : $reasonKey,
+            'reason_label'    => $isDraw ? 'Seri' : $reasonLabel,
+            'score' => [
+                'blue' => (int)$match->participant_1_score,
+                'red'  => (int)$match->participant_2_score,
+            ],
+            'participants' => [
+                'blue' => [
+                    'id'         => $match->blue_id ?? null,
+                    'name'       => $match->blue_name ?? null,
+                    'contingent' => $match->blue_contingent ?? null,
+                ],
+                'red' => [
+                    'id'         => $match->red_id ?? null,
+                    'name'       => $match->red_name ?? null,
+                    'contingent' => $match->red_contingent ?? null,
+                ],
+            ],
+        ];
+
+        if ($match->status === 'finished') {
+            event(new TandingWinnerAnnounced(
+                $match->tournament_name ?? ($match->tournament ?? ''),
+                $match->arena_name ?? '',
+                $payload
+            ));
+        }
+    } catch (\Throwable $e) {
+        \Log::warning('⚠️ Gagal broadcast TandingWinnerAnnounced', [
+            'match_id' => $match->id,
+            'error'    => $e->getMessage(),
+        ]);
+    }
+
+    return response()->json(['message' => 'Pertandingan diakhiri & pemenang dipromosikan (strict, id-only, fill empty target).']);
+}
+
+    public function endMatch0623(Request $request, $id)
 {
     $match = LocalMatch::findOrFail($id);
 

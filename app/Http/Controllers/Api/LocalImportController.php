@@ -89,6 +89,266 @@ class LocalImportController extends Controller
     }
 
     public function store(Request $request)
+{
+    $data = $request->all();
+
+    // 🧠 Ambil nama turnamen dari data pertama
+    $tournamentName = $data[0]['tournament_name'] ?? null;
+
+    if (!$tournamentName) {
+        return response()->json(['error' => 'Tournament name is required.'], 422);
+    }
+
+    try {
+        DB::beginTransaction();
+
+        // 🧹 Hapus semua data yang berkaitan dengan turnamen yang sama
+        $matchIdsToDelete = DB::table('local_matches')
+            ->where('tournament_name', $tournamentName)
+            ->pluck('id');
+
+        if ($matchIdsToDelete->isNotEmpty()) {
+            DB::table('local_match_rounds')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('local_judge_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('local_valid_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('match_personnel_assignments')->where('tournament_name', $tournamentName)->delete();
+            DB::table('local_referee_actions')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('local_matches')->whereIn('id', $matchIdsToDelete)->delete();
+        }
+
+        // 🏗️ Mapping match_id pusat → id lokal
+        $matchIdMap = [];
+
+        foreach ($data as $match) {
+            $insert = [
+                'match_date'        => $match['scheduled_date'] ?? null,
+                'tournament_name'   => $tournamentName,
+                'remote_match_id'   => $match['match_id'] ?? null,
+                'arena_name'        => $match['arena_name'] ?? '-',
+                'pool_name'         => $match['pool_name'] ?? '-',
+                'class_name'        => $match['class_name'] ?? '-',
+                'match_code'        => 'M-' . strtoupper(Str::random(5)),
+                'total_rounds'      => 3,
+                'round_level'       => $match['round_level'] ?? 0,
+                'round_label'       => $match['round_label'] ?? '-',
+                'match_number'      => $match['match_number'] ?? 0,
+                'round_duration'    => $match['round_duration'] ?? 180,
+                'status'            => 'not_started',
+                'is_display_timer'  => !empty($match['is_display_timer']) && (string)$match['is_display_timer'] === '1' ? 1 : 0,
+
+                'red_id'            => $match['red_id'] ?? null,
+                'red_name'          => $match['red_name'] ?? 'TBD',
+                'red_contingent'    => $match['red_contingent'] ?? 'TBD',
+
+                'blue_id'           => $match['blue_id'] ?? null,
+                'blue_name'         => $match['blue_name'] ?? 'TBD',
+                'blue_contingent'   => $match['blue_contingent'] ?? 'TBD',
+
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ];
+
+            $localId = DB::table('local_matches')->insertGetId($insert);
+
+            if (isset($match['match_id'])) {
+                $matchIdMap[$match['match_id']] = $localId;
+            }
+        }
+
+        // 🔁 Update parent match
+        // RULE: Jika KEDUA peserta KOSONG (red_id=null & blue_id=null) → SWAP parent dari pusat.
+        //       Selain itu (ada ≥1 peserta) → JANGAN SWAP.
+        foreach ($data as $match) {
+            if (!isset($match['match_id'])) {
+                continue;
+            }
+            $localId = $matchIdMap[$match['match_id']] ?? null;
+            if (!$localId) {
+                continue;
+            }
+
+            // Deteksi "ada peserta" pakai ID saja (abaikan nama/placeholder)
+            $hasRedId  = array_key_exists('red_id', $match)  && !is_null($match['red_id']);
+            $hasBlueId = array_key_exists('blue_id', $match) && !is_null($match['blue_id']);
+
+            $presentCount = ($hasRedId ? 1 : 0) + ($hasBlueId ? 1 : 0);
+            $shouldSwap = ($presentCount === 0); // KEDUA peserta kosong → SWAP
+
+            $remoteRedParentId  = $match['parent_match_red_id']  ?? null;
+            $remoteBlueParentId = $match['parent_match_blue_id'] ?? null;
+
+            // Map remote → local
+            $mapToLocal = function ($remoteId) use ($matchIdMap) {
+                return ($remoteId && isset($matchIdMap[$remoteId])) ? $matchIdMap[$remoteId] : null;
+            };
+
+            if ($shouldSwap) {
+                // Kedua slot TBD → pusat ketuker → SWAP
+                $localParentRedId  = $mapToLocal($remoteBlueParentId); // local.parent_red  ← remote.parent_blue
+                $localParentBlueId = $mapToLocal($remoteRedParentId);  // local.parent_blue ← remote.parent_red
+            } else {
+                // Normal (tanpa SWAP)
+                $localParentRedId  = $mapToLocal($remoteRedParentId);  // local.parent_red  ← remote.parent_red
+                $localParentBlueId = $mapToLocal($remoteBlueParentId); // local.parent_blue ← remote.parent_blue
+            }
+
+            // Guard: jika resolve ke parent yang sama, kosongkan sisi blue
+            if (!is_null($localParentRedId) && !is_null($localParentBlueId) && $localParentRedId === $localParentBlueId) {
+                \Log::warning('Parent conflict: both parents resolve to same local match, clearing parent_match_blue_id', [
+                    'child_local_match_id' => $localId,
+                    'parent_local_match_id'=> $localParentRedId,
+                ]);
+                $localParentBlueId = null;
+            }
+
+            DB::table('local_matches')->where('id', $localId)->update([
+                'parent_match_red_id'  => $localParentRedId,
+                'parent_match_blue_id' => $localParentBlueId,
+                'updated_at'           => now(),
+            ]);
+        }
+
+        DB::commit();
+        return response()->json(['message' => 'Matches imported successfully.']);
+    } catch (\Throwable $e) {
+        if (DB::transactionLevel() > 0) {
+            DB::rollBack();
+        }
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
+    public function store0651(Request $request)
+{
+    $data = $request->all();
+
+    // 🧠 Ambil nama turnamen dari data pertama
+    $tournamentName = $data[0]['tournament_name'] ?? null;
+
+    if (!$tournamentName) {
+        return response()->json(['error' => 'Tournament name is required.'], 422);
+    }
+
+    try {
+        DB::beginTransaction();
+
+        // 🧹 Hapus semua data yang berkaitan dengan turnamen yang sama
+        $matchIdsToDelete = DB::table('local_matches')
+            ->where('tournament_name', $tournamentName)
+            ->pluck('id');
+
+        if ($matchIdsToDelete->isNotEmpty()) {
+            DB::table('local_match_rounds')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('local_judge_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('local_valid_scores')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('match_personnel_assignments')->where('tournament_name', $tournamentName)->delete();
+            DB::table('local_referee_actions')->whereIn('local_match_id', $matchIdsToDelete)->delete();
+            DB::table('local_matches')->whereIn('id', $matchIdsToDelete)->delete();
+        }
+
+        // 🏗️ Mapping match_id pusat → id lokal
+        $matchIdMap = [];
+
+        foreach ($data as $match) {
+            $insert = [
+                'match_date'        => $match['scheduled_date'] ?? null,
+                'tournament_name'   => $tournamentName,
+                'remote_match_id'   => $match['match_id'] ?? null,
+                'arena_name'        => $match['arena_name'] ?? '-',
+                'pool_name'         => $match['pool_name'] ?? '-',
+                'class_name'        => $match['class_name'] ?? '-',
+                'match_code'        => 'M-' . strtoupper(Str::random(5)),
+                'total_rounds'      => 3,
+                'round_level'       => $match['round_level'] ?? 0,
+                'round_label'       => $match['round_label'] ?? '-',
+                'match_number'      => $match['match_number'] ?? 0,
+                'round_duration'    => $match['round_duration'] ?? 180,
+                'status'            => 'not_started',
+                'is_display_timer'  => !empty($match['is_display_timer']) && (string)$match['is_display_timer'] === '1' ? 1 : 0,
+
+                'red_id'            => $match['red_id'] ?? null,
+                'red_name'          => $match['red_name'] ?? 'TBD',
+                'red_contingent'    => $match['red_contingent'] ?? 'TBD',
+
+                'blue_id'           => $match['blue_id'] ?? null,
+                'blue_name'         => $match['blue_name'] ?? 'TBD',
+                'blue_contingent'   => $match['blue_contingent'] ?? 'TBD',
+
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ];
+
+            $localId = DB::table('local_matches')->insertGetId($insert);
+
+            if (isset($match['match_id'])) {
+                $matchIdMap[$match['match_id']] = $localId;
+            }
+        }
+
+        // 🔁 Update parent match (Conditional swap sesuai kondisi peserta)
+        foreach ($data as $match) {
+            if (!isset($match['match_id'])) {
+                continue;
+            }
+            $localId = $matchIdMap[$match['match_id']] ?? null;
+            if (!$localId) {
+                continue;
+            }
+
+            // Deteksi “slot sudah berisi” di payload REMOTE (bukan dari DB)
+            $hasRed  = !empty($match['red_id'])  || (isset($match['red_name'])  && strtoupper((string)$match['red_name'])  !== 'TBD' && $match['red_name']  !== null && $match['red_name']  !== '');
+            $hasBlue = !empty($match['blue_id']) || (isset($match['blue_name']) && strtoupper((string)$match['blue_name']) !== 'TBD' && $match['blue_name'] !== null && $match['blue_name'] !== '');
+
+            // Rule dari kamu:
+            // - Jika salah satu peserta KOSONG (XOR) ⇒ parent dari REMOTE KETUKER → perlu SWAP.
+            // - Jika keduanya kosong ATAU keduanya terisi ⇒ parent REMOTE BENAR → JANGAN swap.
+            $presentCount = ($hasRed ? 1 : 0) + ($hasBlue ? 1 : 0);
+            $shouldSwap = ($presentCount === 1);
+
+            $remoteRedParentId  = $match['parent_match_red_id']  ?? null;
+            $remoteBlueParentId = $match['parent_match_blue_id'] ?? null;
+
+            // Map ke lokal
+            $mapToLocal = function ($remoteId) use ($matchIdMap) {
+                return ($remoteId && isset($matchIdMap[$remoteId])) ? $matchIdMap[$remoteId] : null;
+            };
+
+            if ($shouldSwap) {
+                // SWAP karena salah satu peserta kosong
+                $localParentRedId  = $mapToLocal($remoteBlueParentId); // parent RED lokal ← REMOTE BLUE
+                $localParentBlueId = $mapToLocal($remoteRedParentId);  // parent BLUE lokal ← REMOTE RED
+            } else {
+                // TANPA SWAP (keduanya kosong / keduanya terisi)
+                $localParentRedId  = $mapToLocal($remoteRedParentId);  // parent RED lokal ← REMOTE RED
+                $localParentBlueId = $mapToLocal($remoteBlueParentId); // parent BLUE lokal ← REMOTE BLUE
+            }
+
+            // Hindari parent ganda ke match yang sama
+            if (!is_null($localParentRedId) && !is_null($localParentBlueId) && $localParentRedId === $localParentBlueId) {
+                // Jika sama, prioritaskan tanpa swap (lebih aman), lalu kosongkan sisi biru
+                $localParentBlueId = null;
+            }
+
+            DB::table('local_matches')->where('id', $localId)->update([
+                'parent_match_red_id'  => $localParentRedId,
+                'parent_match_blue_id' => $localParentBlueId,
+                'updated_at'           => now(),
+            ]);
+        }
+
+        DB::commit();
+        return response()->json(['message' => 'Matches imported successfully.']);
+    } catch (\Throwable $e) {
+        if (DB::transactionLevel() > 0) {
+            DB::rollBack();
+        }
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
+
+
+    public function store0615(Request $request)
     {
         $data = $request->all();
 
