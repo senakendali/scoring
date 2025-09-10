@@ -192,6 +192,7 @@
                             <option value="240">4 Menit</option>
                             <option value="270">4.5 Menit</option>
                             <option value="300">5 Menit</option>
+                            <option value="600">10 Menit</option>
                         </select>
                     </div>
                     <div class="panel-header">
