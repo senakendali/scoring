@@ -281,9 +281,413 @@ class SeniMatchSetupController extends Controller
         ]);
     }
 
+    public function finish($id, \Illuminate\Http\Request $request)
+{
+    // Kumpulkan event untuk dibroadcast setelah commit (data sudah konsisten)
+    $eventsToBroadcast = [];
+
+    $result = \DB::transaction(function () use ($id, $request, &$eventsToBroadcast) {
+
+        /** @var \App\Models\LocalSeniMatch $match */
+        $match = \App\Models\LocalSeniMatch::findOrFail($id);
+
+        if ($match->status === 'finished') {
+            return response()->json(['message' => 'Pertandingan sudah selesai.'], 400);
+        }
+
+        // ========== 1) DURASI (detik) ==========
+        $durationSeconds = null;
+        if ($request->filled('duration')) {
+            $durationSeconds = (int) $request->input('duration'); // sudah detik
+        } elseif ($request->filled('performance_time_seconds')) {
+            $durationSeconds = (int) $request->input('performance_time_seconds');
+        } elseif ($request->filled('performance_time_input')) {
+            $durationSeconds = $this->parseDurationToSeconds((string) $request->input('performance_time_input')); // dukung 3,5 / 3.5 / 3:30
+            if ($durationSeconds === null) {
+                return response()->json([
+                    'message' => 'Format durasi tidak valid. Gunakan mm:ss atau menit desimal (mis. 3.5).'
+                ], 422);
+            }
+        }
+        if ($durationSeconds !== null) {
+            if ($durationSeconds < 0 || $durationSeconds > 600) {
+                return response()->json(['message' => 'Durasi di luar batas wajar (0 - 10 menit).'], 422);
+            }
+            $match->duration = $durationSeconds;
+        }
+
+        // ========== 2) FINAL SCORE (median - total penalty) ==========
+        $computeMedian = function (array $nums): float {
+            $n = count($nums);
+            if ($n === 0) return 0.0;
+            sort($nums, SORT_NUMERIC);
+            $mid = intdiv($n, 2);
+            return ($n % 2 === 1) ? (float) $nums[$mid] : (float) (($nums[$mid - 1] + $nums[$mid]) / 2);
+        };
+
+        $category  = strtolower((string) $match->category);
+        $baseScore = in_array($category, ['tunggal', 'regu']) ? 9.90 : 9.10;
+
+        $juris = \App\Models\MatchPersonnelAssignment::where('tipe_pertandingan', 'seni')
+            ->where('role', 'juri')
+            ->where('arena_name', $match->arena_name)
+            ->where('tournament_name', $match->tournament_name)
+            ->orderBy('juri_number')
+            ->get();
+
+        $perJudgeTotals = [];
+        foreach ($juris as $juri) {
+            $jnum = (int) $juri->juri_number;
+
+            $deduction = (float) \App\Models\LocalSeniScore::where('local_match_id', $match->id)
+                ->where('judge_number', $jnum)
+                ->sum('deduction');
+
+            $final = \App\Models\LocalSeniFinalScore::where('local_match_id', $match->id)
+                ->where('judge_number', $jnum)
+                ->first();
+
+            $component = \App\Models\LocalSeniComponentScore::where('local_match_id', $match->id)
+                ->where('judge_number', $jnum)
+                ->first();
+
+            $kemantapan = (float) ($final->kemantapan ?? 0);
+            $attack     = (float) ($component->attack_defense_technique ?? 0);
+            $firmness   = (float) ($component->firmness_harmony        ?? 0);
+            $soul       = (float) ($component->soulfulness             ?? 0);
+
+            $componentTotal = $attack + $firmness + $soul;
+            $total = (float) ($baseScore + $kemantapan + $componentTotal - $deduction);
+
+            $perJudgeTotals[] = $total;
+        }
+
+        $totalPenalty       = (float) \App\Models\LocalSeniPenalties::where('local_match_id', $match->id)->sum('penalty_value');
+        $medianScore        = $computeMedian($perJudgeTotals);
+        $match->final_score = round($medianScore - $totalPenalty, 6);
+        $match->status      = 'finished';
+        $match->end_time    = now();
+
+        \Log::debug('🎯 FINAL SCORE CALCULATION (median - penalty)', [
+            'match_id'       => $match->id,
+            'perJudgeTotals' => $perJudgeTotals,
+            'median'         => $medianScore,
+            'penalty'        => $totalPenalty,
+            'final_score'    => $match->final_score,
+            'duration'       => $match->duration ?? null,
+        ]);
+
+        $match->save();
+
+        // ========== 3) Jadwalkan broadcast timer selesai (after commit) ==========
+        $eventsToBroadcast[] = new \App\Events\SeniTimerFinished($match);
+
+        // ========== 4) Battle Group: Pairing via Parent (robust) + Promotion ==========
+        // NOTE: biarkan 0 valid → JANGAN pakai ?: null
+        $battleGroup = $match->battle_group;
+        \Log::info('🧭 battle_group?', ['group' => $battleGroup, 'match' => $match->id]);
+
+        $shouldBroadcastGroupResult = false;
+        $winnerCorner               = null; // 'blue'|'red'|null
+        $winners                    = [];
+        $promotedParentIds          = [];
+        $resultUrl                  = null;
+
+        if ($battleGroup !== null && $battleGroup !== '') {
+            $groupMatches = \App\Models\LocalSeniMatch::where('battle_group', $battleGroup)
+                ->where('tournament_name', $match->tournament_name)
+                ->get();
+
+            \Log::info('👀 Check group before broadcast', [
+                'battle_group' => $battleGroup,
+                'ids'          => $groupMatches->pluck('id')->all(),
+                'statuses'     => $groupMatches->pluck('status','id')->all(),
+                'corners'      => $groupMatches->mapWithKeys(fn($m)=>[$m->id => $m->corner])->all(),
+            ]);
+
+            // ---- Pairing via parent (akurasi utama)
+            $blue = null;
+            $red  = null;
+
+            // 4.1 coba cari parent yang menunjuk current match → dapatkan sibling
+            $parentTarget = \App\Models\LocalSeniMatch::query()
+                ->where('tournament_name', $match->tournament_name)
+                ->where(function ($q) use ($match) {
+                    $q->where('parent_match_red_id',  $match->id)
+                      ->orWhere('parent_match_blue_id', $match->id);
+                })
+                ->first();
+
+            $sibling = null;
+            if ($parentTarget) {
+                $otherId = ($parentTarget->parent_match_red_id == $match->id)
+                    ? $parentTarget->parent_match_blue_id
+                    : $parentTarget->parent_match_red_id;
+
+                $sibling = $otherId ? \App\Models\LocalSeniMatch::find($otherId) : null;
+            }
+
+            // 4.2 fallback: opposite corner, scope round yang sama, priority pasangan yang memang satu parent
+            if (!$sibling) {
+                $currentRound = (string) ($match->round_label ?? '');
+                $pairScope = $currentRound !== ''
+                    ? $groupMatches->filter(fn($m) => (string)($m->round_label ?? '') === $currentRound)
+                    : $groupMatches;
+
+                $cMatchId = $match->id;
+                $cCorner  = strtolower((string) $match->corner);
+
+                $sibling = $pairScope
+                    ->filter(fn($m) => $m->id !== $cMatchId)
+                    ->filter(fn($m) => strtolower((string) $m->corner) !== $cCorner) // corner kebalikan
+                    ->sortBy(function ($m) use ($match, $cMatchId) {
+                        // Skor sort: 0 kalau memang satu parent dengan current; selain itu jarak match_order
+                        $sameParent = \App\Models\LocalSeniMatch::query()
+                            ->where('tournament_name', $match->tournament_name)
+                            ->where(function ($q) use ($match, $m, $cMatchId) {
+                                $q->where(function ($q2) use ($match, $m, $cMatchId) {
+                                    $q2->where('parent_match_red_id',  $cMatchId)
+                                       ->where('parent_match_blue_id', $m->id);
+                                })->orWhere(function ($q2) use ($match, $m, $cMatchId) {
+                                    $q2->where('parent_match_red_id',  $m->id)
+                                       ->where('parent_match_blue_id', $cMatchId);
+                                });
+                            })
+                            ->exists();
+
+                        return $sameParent ? 0 : abs((int)($m->match_order ?? 0) - (int)($match->match_order ?? 0));
+                    })
+                    ->first();
+            }
+
+            // 4.3 tetapkan blue/red berdasarkan corner aktual
+            if ($sibling) {
+                $mCorner = strtolower((string) $match->corner);
+                $sCorner = strtolower((string) ($sibling->corner ?? ''));
+
+                if ($mCorner === 'blue') { $blue = $match;   $red  = $sibling; }
+                elseif ($mCorner === 'red') { $blue = $sibling; $red  = $match; }
+                else {
+                    if     ($sCorner === 'blue') { $blue = $sibling; $red = $match; }
+                    elseif ($sCorner === 'red')  { $blue = $match;   $red = $sibling; }
+                }
+            }
+
+            // Logging pairing
+            \Log::info('🎯 sibling pairing', [
+                'current_id'     => $match->id,
+                'current_corner' => $match->corner,
+                'sibling_id'     => $sibling?->id,
+                'sibling_corner' => $sibling?->corner ?? null,
+                'parent_target'  => $parentTarget?->id ?? null,
+            ]);
+
+            $pairDone = $blue && $red && $blue->status === 'finished' && $red->status === 'finished';
+            \Log::info('✅ pair status (via parent-first)', [
+                'round_label' => (string) ($match->round_label ?? ''),
+                'blue_id'     => $blue?->id,  'blue_status' => $blue?->status,
+                'red_id'      => $red?->id,   'red_status'  => $red?->status,
+                'pairDone'    => $pairDone,
+            ]);
+
+            if ($pairDone) {
+                // Optional: exclude DQ jika ada kolomnya
+                $eligible = collect([$blue, $red]);
+                if (\Schema::hasColumn($match->getTable(), 'disqualified')) {
+                    $eligible = $eligible->filter(fn($m) => (int)($m->disqualified ?? 0) !== 1);
+                }
+
+                // helper: total penalty per match
+                $sumPenalty = function($localMatchId) {
+                    return (float) \App\Models\LocalSeniPenalties::where('local_match_id', $localMatchId)->sum('penalty_value');
+                };
+
+                // --- Tentukan pemenang (score → penalty → delta 180s)
+                $blueScore = (float) ($blue->final_score ?? 0);
+                $redScore  = (float) ($red->final_score  ?? 0);
+
+                if     ($blueScore > $redScore) $winnerCorner = 'blue';
+                elseif ($redScore  > $blueScore) $winnerCorner = 'red';
+                else {
+                    $bluePenalty = $sumPenalty($blue->id);
+                    $redPenalty  = $sumPenalty($red->id);
+
+                    if     ($bluePenalty < $redPenalty) $winnerCorner = 'blue';
+                    elseif ($redPenalty  < $bluePenalty) $winnerCorner = 'red';
+                    else {
+                        $ideal = 180;
+                        $bDel = abs((int)($blue->duration ?? 0) - $ideal);
+                        $rDel = abs((int)($red->duration  ?? 0) - $ideal);
+                        if     ($bDel < $rDel) $winnerCorner = 'blue';
+                        elseif ($rDel < $bDel) $winnerCorner = 'red';
+                        else                   $winnerCorner = null; // draw absolut
+                    }
+                }
+
+                // Simpan winner_corner per match
+                if ($winnerCorner === 'blue') {
+                    $blue->winner_corner = 'blue'; $blue->save();
+                    $red->winner_corner  = null;   $red->save();
+                } elseif ($winnerCorner === 'red') {
+                    $red->winner_corner  = 'red';  $red->save();
+                    $blue->winner_corner = null;   $blue->save();
+                } else {
+                    $blue->winner_corner = null;   $blue->save();
+                    $red->winner_corner  = null;   $red->save();
+                }
+
+                // --- Medal assignment
+                $roundLabel = strtolower((string) ($match->round_label ?? ''));
+                $isFinal  = (str_contains($roundLabel, 'final')
+                            && !str_contains($roundLabel, 'semi')
+                            && !str_contains($roundLabel, '3')
+                            && !str_contains($roundLabel, 'bronze'));
+                $isBronze = (str_contains($roundLabel, 'bronze') || str_contains($roundLabel, '3'));
+
+                $setMedal = function (? \App\Models\LocalSeniMatch $m, ?string $medal) {
+                    if (!$m) return;
+                    $m->medal = $medal;
+                    $m->save();
+                };
+                if ($isFinal) {
+                    if     ($winnerCorner === 'blue') { $setMedal($blue, 'emas');  $setMedal($red,  'perak'); }
+                    elseif ($winnerCorner === 'red')  { $setMedal($red,  'emas');  $setMedal($blue, 'perak'); }
+                } elseif ($isBronze) {
+                    if     ($winnerCorner === 'blue') { $setMedal($blue, 'perunggu'); $setMedal($red, null); }
+                    elseif ($winnerCorner === 'red')  { $setMedal($red, 'perunggu');  $setMedal($blue, null); }
+                }
+
+                // --- Promote pemenang ke parent (isi slot sesuai parent_*_id)
+                $winnerMatch = $winnerCorner === 'blue' ? $blue : ($winnerCorner === 'red' ? $red : null);
+                if ($winnerMatch) {
+                    $parents = \App\Models\LocalSeniMatch::query()
+                        ->where(function ($q) use ($winnerMatch) {
+                            $q->where('parent_match_red_id',  $winnerMatch->id)
+                              ->orWhere('parent_match_blue_id', $winnerMatch->id);
+                        })
+                        ->where('tournament_name', $winnerMatch->tournament_name)
+                        ->get();
+
+                    if ($parents->isEmpty()) {
+                        \Log::info('ℹ️ No parent match found for winner (end of bracket?)', [
+                            'battle_group'    => $battleGroup,
+                            'winner_match_id' => $winnerMatch->id,
+                        ]);
+                    } else {
+                        foreach ($parents as $parent) {
+                            $slot = ($parent->parent_match_red_id == $winnerMatch->id) ? 'red' : 'blue';
+
+                            $stripInv = function (?string $s): ?string {
+                                if ($s === null) return null;
+                                return preg_replace('/[\x{200B}\x{200C}\x{200D}\x{2060}]/u', '', $s);
+                            };
+
+                            $parent->contingent_name = $stripInv($winnerMatch->contingent_name ?? $winnerMatch->contingent ?? null);
+                            $parent->participant_1   = $stripInv($winnerMatch->participant_1 ?? null);
+                            $parent->participant_2   = $stripInv($winnerMatch->participant_2 ?? null);
+                            $parent->participant_3   = $stripInv($winnerMatch->participant_3 ?? null);
+                            $parent->corner          = $slot;
+
+                            // Reset nilai parent agar siap dimainkan
+                            $parent->final_score = null;
+                            $parent->duration    = null;
+                            $parent->start_time  = null;
+                            $parent->pause_time  = null;
+                            $parent->end_time    = null;
+
+                            $parent->save();
+                            $promotedParentIds[] = $parent->id;
+                        }
+                    }
+                }
+
+                // --- winners payload (top-2 dari pasangan ini)
+                $eligibleSorted = $eligible->sortByDesc(function ($m) {
+                    return (float) ($m->final_score ?? 0);
+                })->values();
+
+                $winners = $eligibleSorted->take(2)->map(function ($m) {
+                    $contingent = $m->contingent_name ?? ($m->contingent ?? '-');
+                    $names = [];
+                    foreach (['participant_1','participant_2','participant_3'] as $col) {
+                        $v = is_string($m->{$col} ?? null) ? trim($m->{$col}) : null;
+                        if (!empty($v)) $names[] = $v;
+                    }
+                    if (empty($names) && !empty($m->participant_name)) {
+                        $parts = array_map('trim', preg_split('/,|\|/', $m->participant_name));
+                        $names = array_values(array_filter($parts, fn($x)=>$x!==''));
+                    }
+                    $joined = implode(', ', $names);
+
+                    $pen = (float) \App\Models\LocalSeniPenalties::where('local_match_id', $m->id)->sum('penalty_value');
+
+                    return [
+                        'match_id'      => $m->id,
+                        'corner'        => strtolower((string)$m->corner ?? ''),
+                        'contingent'    => $contingent ?: '-',
+                        'participants'  => $names,
+                        'display_name'  => trim(($contingent ?: '-') . ' — ' . ($joined ?: '-')),
+                        'final_score'   => number_format((float)($m->final_score ?? 0), 6, '.', ''),
+                        'penalty'       => $pen,
+                        'duration'      => (int) ($m->duration ?? 0),
+                        'medal'         => $m->medal ?? null,
+                    ];
+                })->all();
+
+                $shouldBroadcastGroupResult = true;
+                $resultUrl = url("/matches/seni/display-result-group/" . (string) $battleGroup);
+
+                // Jadwalkan broadcast result setelah commit
+                $eventsToBroadcast[] = new \App\Events\SeniBattleGroupCompleted(
+                    $match->tournament_name,
+                    $match->arena_name,
+                    (string) $battleGroup,
+                    $winners,
+                    $resultUrl,
+                    $winnerCorner
+                );
+            }
+        }
+
+        return [
+            'match'                     => $match,
+            'duration'                  => $match->duration ?? null,
+            'battle_group'              => $battleGroup,
+            'shouldBroadcastGroupResult'=> $shouldBroadcastGroupResult,
+            'winner_corner'             => $winnerCorner,
+            'promoted_parent_ids'       => $promotedParentIds,
+            'winners'                   => $winners,
+            'result_url'                => $resultUrl,
+        ];
+    });
+
+    // ========== Broadcast AFTER COMMIT ==========
+    \DB::afterCommit(function () use (&$eventsToBroadcast) {
+        foreach ($eventsToBroadcast as $evt) {
+            // NOTE: pakai ->toOthers() supaya tab pemicu tidak menerima echo sendiri
+            broadcast($evt)->toOthers();
+        }
+    });
+
+    // ========== Response ==========
+    return response()->json([
+        'message'                 => 'Pertandingan selesai.',
+        'final_score'             => $result['match']->final_score,
+        'duration'                => $result['duration'],
+        'battle_group'            => $result['battle_group'],
+        'battle_group_completed'  => $result['shouldBroadcastGroupResult'],
+        'winner_corner'           => $result['winner_corner'],
+        'promoted_parent_ids'     => $result['promoted_parent_ids'],
+        'winners'                 => $result['winners'],
+        'result_url'              => $result['result_url'],
+    ]);
+}
+
+
+
     
 
-   public function finish($id, Request $request)
+   public function finish0814($id, Request $request)
 {
     $match = \App\Models\LocalSeniMatch::findOrFail($id);
 

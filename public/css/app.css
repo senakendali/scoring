@@ -2333,6 +2333,14 @@ text-overflow: ellipsis;
 overflow: hidden;
 }
 
+/* tweak tambahan agar tetap proporsional di layar kecil */
+#winner-name.winner-compact { line-height: 1.1; letter-spacing: .2px; }
+@media (max-width: 576px) {
+  #winner-name.fs-2 { font-size: calc(1.5rem + 1.2vw) !important; }
+  #winner-name.fs-3 { font-size: calc(1.25rem + 1vw) !important; }
+}
+
+
 
 
 

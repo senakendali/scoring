@@ -95,14 +95,26 @@
       </div>
       <div class="modal-body">
         <label for="performance-time-input" class="form-label">Masukkan durasi perform</label>
-        <input 
-          type="text" 
-          id="performance-time-input" 
-          class="form-control bg-secondary text-white" 
-          placeholder="contoh: 3,5  atau  3.5  atau  3:30"
-          inputmode="decimal"
-        />
-        <div class="form-text text-light mt-2">
+
+        <div class="input-group">
+          <input
+            type="text"
+            id="performance-time-input"
+            class="form-control bg-secondary text-white"
+            placeholder="contoh: 3,5  atau  3.5  atau  3:30"
+            inputmode="decimal"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-describedby="performance-time-help"
+          />
+          <button type="button" id="inline-save-performance-time" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i>
+            <span class="d-none d-sm-inline"> Simpan</span>
+          </button>
+        </div>
+
+        <div id="performance-time-help" class="form-text text-light mt-2">
           Format yang didukung:
           <ul class="mb-0">
             <li><code>3,5</code> atau <code>3.5</code> = 3,5 menit</li>

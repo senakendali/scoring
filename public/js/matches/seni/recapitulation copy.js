@@ -20,9 +20,10 @@ $(document).ready(function () {
     }, 1500);*/
 
     const isKomponenType = (t) => {
-        t = normalizeMatchType(t);
-        return t === 'seni_ganda' || t === 'solo_kreatif';
-        };
+    t = (t || '').toLowerCase();
+    // kalau MAU hanya ganda+solo_kreatif, hapus 'seni_regu' di bawah
+    return t === 'seni_ganda' || t === 'solo_kreatif' || t === 'seni_regu';
+    };
 
     let currentMatchType = '';
 
@@ -35,19 +36,6 @@ $(document).ready(function () {
             .replace(/^-+/, '')        // Hapus - di awal
             .replace(/-+$/, '');       // Hapus - di akhir
     }
-
-    // 1) Normalizer: samakan berbagai variasi dari backend
-        function normalizeMatchType(s) {
-        s = (s || '').toString().toLowerCase().trim();
-        if (s.includes('ganda')) return 'seni_ganda';
-        if (s.includes('solo'))  return 'solo_kreatif';
-        if (s.includes('regu'))  return 'seni_regu';
-        if (s.includes('tunggal')) return 'seni_tunggal';
-        return s; // fallback
-        }
-
-        
-
 
     const host = window.location.hostname;
     const pusher = new Pusher('reverb', {
@@ -83,97 +71,99 @@ $(document).ready(function () {
         const judges = data.judges || [];
         const totalPenalty = parseFloat(data.penalty ?? 0);
         const penalties = data.penalties || [];
-        const matchType = (data.match_type || currentMatchType || '').toLowerCase();
+        const matchType = data.match_type || "";
 
+        // Update tabel hukuman
         updatePenaltyRecapTable(penalties);
 
-        judges.sort((a,b) => a.score - b.score);
+        // Urutkan skor dari kecil ke besar
+        judges.sort((a, b) => a.score - b.score);
         const scores = judges.map(j => j.score);
 
-        // Header kolom juri (tabel gabungan & tabel unsur)
-        const $jurisHeader = $(".mytable-gabungan thead tr").eq(1).find("th");
-        const $unsurHeader = $("#unsur-header").find("th");
-        judges.forEach((j, index) => {
-            $jurisHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
-            $unsurHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
-        });
-
-        if (isKomponenType(matchType)) {
-            // === Regu/Ganda/Solo Kreatif → Komponen ATTACK/FIRMNESS/SOUL ===
-            $("#unsur-tunggal-ganda").hide();
-            $("#unsur-regu-solo").show();
-
-            const $attackRow   = $("#attack-row td").slice(1);
-            const $firmnessRow = $("#firmness-row td").slice(1);
-            const $soulRow     = $("#soulfulness-row td").slice(1);
-            const $totalRow    = $("#total-row td").slice(1);
-
-            judges.forEach((j, i) => {
-            $attackRow.eq(i).text( (j.attack_defense_technique ?? 0).toFixed(2) ).addClass("text-center");
-            $firmnessRow.eq(i).text( (j.firmness_harmony ?? 0).toFixed(2) ).addClass("text-center");
-            $soulRow.eq(i).text( (j.soulfulness ?? 0).toFixed(2) ).addClass("text-center");
-            $totalRow.eq(i).text( (j.score ?? 0).toFixed(2) ).addClass("text-center");
-            });
-
-        } else {
-            // === Tunggal → Kebenaran & Kemantapan ===
+        // 🔹 Format Tunggal & Ganda → Kebenaran & Kemantapan
+        if (matchType === "seni_tunggal" || matchType === "seni_regu") {
+           
             $("#unsur-tunggal-ganda").show();
             $("#unsur-regu-solo").hide();
 
-            const $truthRow      = $("#truth-row td").slice(1);
+            const $truthRow = $("#truth-row td").slice(1);
             const $additionalRow = $("#additional-row td").slice(1);
-            const $totalRow      = $("#total-row td").slice(1);
+            const $totalRow = $("#total-row td").slice(1);
 
-            judges.forEach((j, i) => {
-            $truthRow.eq(i).text( (j.truth_score ?? 0).toFixed(2) ).addClass("text-center");
-            $additionalRow.eq(i).text( (j.additional_score ?? 0).toFixed(2) ).addClass("text-center");
-            $totalRow.eq(i).text( (j.score ?? 0).toFixed(2) ).addClass("text-center");
+            judges.forEach((j, index) => {
+                $truthRow.eq(index).text(j.truth_score?.toFixed(2) ?? "-").addClass("text-center");
+                $additionalRow.eq(index).text(j.additional_score?.toFixed(2) ?? "-").addClass("text-center");
+                $totalRow.eq(index).text(j.score?.toFixed(2) ?? "-").addClass("text-center");
+            });
+
+        // 🔹 Format Regu & Solo Kreatif → ATTACK, FIRMNESS, SOULFULNESS
+        } else if (matchType === "seni_regu" || matchType === "solo_kreatif") {
+            $("#unsur-tunggal-ganda").hide();
+            $("#unsur-regu-solo").show();
+
+            const $attackRow = $("#attack-row td").slice(1);
+            const $firmnessRow = $("#firmness-row td").slice(1);
+            const $soulRow = $("#soulfulness-row td").slice(1);
+            const $totalRow = $("#total-row td").slice(1);
+
+            judges.forEach((j, index) => {
+                $attackRow.eq(index).text(j.attack_defense_technique?.toFixed(2) ?? "-").addClass("text-center");
+                $firmnessRow.eq(index).text(j.firmness_harmony?.toFixed(2) ?? "-").addClass("text-center");
+                $soulRow.eq(index).text(j.soulfulness?.toFixed(2) ?? "-").addClass("text-center");
+                $totalRow.eq(index).text(j.score?.toFixed(2) ?? "-").addClass("text-center");
             });
         }
 
-        // ====== Bagian gabungan/statistik (tetap) ======
+        // 🔴 Update Tabel Nilai Gabungan Akhir
+        const $jurisHeader = $(".mytable-gabungan thead tr").eq(1).find("th");
+        const $unsurHeader = $("#unsur-header").find("th");
         const $jurisRow = $(".mytable-gabungan tbody tr").first().find("td");
+
         $jurisHeader.removeClass("median-cell");
         $jurisRow.removeClass("median-cell");
 
         judges.forEach((j, index) => {
-            $jurisRow.eq(index).text((j.score ?? 0).toFixed(2)).addClass("text-center");
+            $jurisHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
+            $unsurHeader.eq(index).text(`J${j.juri_number}`).addClass("text-center");
+            $jurisRow.eq(index).text(j.score.toFixed(2)).addClass("text-center");
         });
 
+        // 📊 Perhitungan statistik
         let median = 0;
-        if (scores.length) {
-            if (scores.length % 2 === 0) {
+        if (scores.length % 2 === 0) {
             const mid1 = (scores.length / 2) - 1;
             const mid2 = (scores.length / 2);
-            median = (scores[mid1] + scores[mid2]) / 2;
             $jurisRow.eq(mid1).addClass("median-cell");
             $jurisRow.eq(mid2).addClass("median-cell");
             $jurisHeader.eq(mid1).addClass("median-cell");
             $jurisHeader.eq(mid2).addClass("median-cell");
-            } else {
+            median = (scores[mid1] + scores[mid2]) / 2;
+        } else {
             const mid = Math.floor(scores.length / 2);
-            median = scores[mid];
             $jurisRow.eq(mid).addClass("median-cell");
             $jurisHeader.eq(mid).addClass("median-cell");
-            }
+            median = scores[mid];
         }
 
-        const mean = scores.reduce((a,b)=>a+b,0) / (scores.length || 1);
-        const variance = scores.reduce((sum,v)=> sum + Math.pow(v-mean,2), 0) / (scores.length || 1);
+        const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const variance = scores.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / scores.length;
         const stddev = Math.sqrt(variance);
 
         $("#median").text(median.toFixed(6)).addClass("text-center");
-        $("#punishment").text("-" + (Number.isFinite(totalPenalty)? totalPenalty:0).toFixed(2)).addClass("text-center");
+        $("#punishment").text("-" + totalPenalty.toFixed(2)).addClass("text-center");
         $("#standar-deviasi").text(stddev.toFixed(6)).addClass("text-center");
+        //$("#final-score").text(median.toFixed(6)).addClass("text-center"); <-- Pak deni
 
+        // FINAL SCORE: pakai data.final_score kalau tersedia, kalau tidak pakai (median - penalty)
         const backendFinalRaw = data?.final_score;
-        const computedFinal = median - (Number.isFinite(totalPenalty) ? totalPenalty : 0);
-        const finalScore = (backendFinalRaw != null && !Number.isNaN(Number(backendFinalRaw)))
-            ? Number(backendFinalRaw) : computedFinal;
+        const computedFinal   = median - (Number.isFinite(totalPenalty) ? totalPenalty : 0);
+        const finalScore      = (backendFinalRaw !== undefined && backendFinalRaw !== null && !Number.isNaN(Number(backendFinalRaw)))
+        ? Number(backendFinalRaw)
+        : computedFinal;
 
         $("#final-score").text(finalScore.toFixed(6)).addClass("text-center");
-        }
 
+    }
 
 
 
@@ -233,7 +223,6 @@ $(document).ready(function () {
                 $("#unsur-regu-solo").hide();
             }*/
            currentMatchType = (data.match_type || '').toLowerCase();
-           
 
             // TENTUKAN LAYOUT
             if (isKomponenType(currentMatchType)) {
@@ -418,37 +407,6 @@ $(document).ready(function () {
                 $unsurHeader.eq(i).text(`J${j.juri_number}`).addClass("text-center");
 
             });
-
-            const mt = (data?.match_type || currentMatchType || '').toLowerCase();
-            if (isKomponenType(mt)) {
-                $("#unsur-tunggal-ganda").hide();
-                $("#unsur-regu-solo").show();
-
-                const $attackRow   = $("#attack-row td").slice(1);
-                const $firmnessRow = $("#firmness-row td").slice(1);
-                const $soulRow     = $("#soulfulness-row td").slice(1);
-                const $totalRow    = $("#total-row td").slice(1);
-
-                judges.forEach((j,i) => {
-                    $attackRow.eq(i).text( (j.attack_defense_technique ?? 0).toFixed(2) ).addClass("text-center");
-                    $firmnessRow.eq(i).text( (j.firmness_harmony ?? 0).toFixed(2) ).addClass("text-center");
-                    $soulRow.eq(i).text( (j.soulfulness ?? 0).toFixed(2) ).addClass("text-center");
-                    $totalRow.eq(i).text( (j.score ?? 0).toFixed(2) ).addClass("text-center");
-                });
-                } else {
-                $("#unsur-tunggal-ganda").show();
-                $("#unsur-regu-solo").hide();
-
-                const truthRow      = $("#truth-row").find("td:not(:first)");
-                const additionalRow = $("#additional-row").find("td:not(:first)");
-                const totalRow      = $("#total-row").find("td:not(:first)");
-
-                judges.forEach((j,i) => {
-                    truthRow.eq(i).text( (j.truth_score ?? 0).toFixed(2) );
-                    additionalRow.eq(i).text( (j.additional_score ?? 0).toFixed(2) );
-                    totalRow.eq(i).text( (j.score ?? 0).toFixed(2) );
-                });
-                }
 
             // ✅ Tabel Kebenaran, Kemantapan, Total
             const truthRow = $("#truth-row").find("td:not(:first)");

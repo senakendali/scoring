@@ -202,9 +202,20 @@
                       <td style="border:none; "><input type="text" id="base-score" class="form-control text-center" readonly value="9.10"></td>
                     </tr>
                     <tr>
-                      <td colspan="2" style="font-size:14px; border:none;  text-align: left">Score</td>
-                      <td style="border:none; "><input type="text" id="final-score" class="form-control text-center" readonly value="9.10"></td>
+                      <!--td  style="font-size:14px; border:none;  text-align: left">Score</td-->
+                      <td colspan="3" style="border:none;  ">
+                        <div class="d-flex w-100 justify-content-center">
+                          <div class="input-group d-flex justify-content-center">
+                            <input type="text" id="final-score" class="form-control text-center" readonly value="9.10">
+                            <button type="button" id="btn-submit-final-score" class="btn btn-success" style="height:auto !important; width:100px !important; font-size:14px; ">
+                              Submit
+                            </button>
+                          </div>
+                        </div>
+                        
+                      </td>
                     </tr>
+
                   </tfoot>
               </table>
           </div>

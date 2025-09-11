@@ -113,108 +113,56 @@ $(document).ready(function () {
             }
         });
 
-   window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
+    window.Echo.channel(`seni-timer.${tournamentSlug}.${arenaSlug}`)
     .listen('.SeniTimerFinished', function (data) {
         console.log("🏁 Match selesai:", data);
-        clearInterval(countdownInterval);
 
-        // disable aksi penalti
         $(".wrong-move").prop("disabled", true);
 
-        // ✅ ENABLE tombol submit final score
-        $('#btn-submit-final-score')
-        .prop('disabled', false)
-        .removeClass('btn-secondary')
-        .addClass('btn-success');
+        const judgeNumbers = $('#judge-number').val(); // ✅ dipanggil DI SINI
 
-        // Modal info (tetap seperti semula)
-        const targetModalEl = (data.status === 'finished' && data.disqualified === true)
-        ? document.getElementById('disqualifiedModal')
-        : document.getElementById('finishedModal');
-
-        if (targetModalEl) {
-        const modal = new bootstrap.Modal(targetModalEl);
-        modal.show();
-        setTimeout(() => modal.hide(), 2000); // opsional, auto-close
-        }
-    });
-
-    async function submitComponentScores(matchId, judgeNumber, urlBase) {
-        // Kumpulkan request untuk tiap komponen
-        const reqs = [];
-        $(".judges_table tbody tr").each(function () {
-            const $row = $(this);
-            const component = $row.data("component");            // "attack_defense_technique" / "firmness_harmony" / "soulfulness"
-            // ambil dari input di kolom terakhir (class .component-total kalau ada)
-            const $inp = $row.find("input, .component-total");
-            const value = parseFloat($inp.val ? $inp.val() : $inp.text()) || 0;
-
-            // Endpoint yang sudah kamu pakai sebelumnya:
-            reqs.push($.post(`${urlBase}/api/seni-component-score`, {
-            match_id: matchId,
-            judge_number: judgeNumber,
-            component: component,
-            value: value,
-            }));
-        });
-
-        // (Opsional) kirim juga "kemantapan/penghayatan/stamina" jika perlu gabung di sini
-        // const addVal = parseFloat($('#additional_score').val());
-        // if (!Number.isNaN(addVal)) {
-        //   reqs.push($.post(`${urlBase}/api/seni/judges/additional-score`, {
-        //     match_id: matchId,
-        //     judge_number: judgeNumber,
-        //     value: addVal
-        //   }));
-        // }
-
-        const results = await Promise.allSettled(reqs);
-        const failed = results.filter(r => r.status === 'rejected');
-        if (failed.length) {
-            throw new Error(`Gagal menyimpan ${failed.length} komponen.`);
-        }
-        }
-
-        $(document).on('click', '#btn-submit-final-score', async function () {
-        const $btn = $(this);
-        const original = $btn.html();
-        const urlBase = APP?.baseUrl || '';
-        const matchId = Number($('#match-id').val());
-        const judgeNumber = $('#judge-number').val();
-
-        if (!matchId || !judgeNumber) {
-            $('#scoreSubmitModalBody').text('Data tidak lengkap: match/juri tidak ditemukan.');
-            new bootstrap.Modal(document.getElementById('scoreSubmitModal')).show();
+        if (!judgeNumbers) {
+            console.warn("❌ Juri number tidak ditemukan");
             return;
         }
 
-        // UI: spinner
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
+        if (data.status === 'finished' && data.disqualified === true) {
+           
 
-        try {
-            await submitComponentScores(matchId, judgeNumber, urlBase);
+            const disqualifiedModalEl = document.getElementById('disqualifiedModal');
+            if (disqualifiedModalEl) {
+                const modal = new bootstrap.Modal(disqualifiedModalEl);
+                modal.show();
+            }
+        } else {
 
-            // (Opsional) kalau kamu punya endpoint untuk "final-score" per juri, kirim di sini:
-            // const finalScore = Number($('#final-score').val());
-            // await $.post(`${urlBase}/api/seni/judges/final-score`, {
-            //   match_id: matchId, judge_number: judgeNumber, final_score: finalScore
-            // });
+            // ⬇️ Submit Component Scores
+            $(".judges_table tbody tr").each(function () {
+                const $row = $(this);
+                const component = $row.data("component");
+                const value = parseFloat($row.find("input").val()) || 0;
 
-            $('#scoreSubmitModalBody').text('Skor berhasil dikirim.');
-            new bootstrap.Modal(document.getElementById('scoreSubmitModal')).show();
+                $.post(url + '/api/seni-component-score', {
+                    match_id: matchId,
+                    judge_number: judgeNumbers,
+                    component: component,
+                    value: value,
+                }, function (res) {
+                    console.log(`✅ Component [${component}] submitted:`, res);
+                }).fail(function (xhr) {
+                    console.error(`❌ Gagal simpan komponen ${component}`);
+                });
+            });
 
-            // Kunci tombol agar tidak double submit
-            $btn.removeClass('btn-success').addClass('btn-secondary').text('Terkirim');
-        } catch (e) {
-            console.error(e);
-            $('#scoreSubmitModalBody').text(e?.message || 'Gagal menyimpan skor.');
-            new bootstrap.Modal(document.getElementById('scoreSubmitModal')).show();
-            // re-enable supaya juri bisa coba lagi
-            $btn.prop('disabled', false).html(original);
+            
+
+            const finishedModalEl = document.getElementById('finishedModal');
+            if (finishedModalEl) {
+                const modal = new bootstrap.Modal(finishedModalEl);
+                modal.show();
+            }
         }
-        });
-
-
+    });
 
     
     updateScoreUI();

@@ -1231,7 +1231,203 @@ public function setScoreManual(Request $request, $id)
         return response()->json($result);
     }
 
-   public function getBattleResults(Request $request, $battle_group)
+    public function getBattleResults(Request $request, $battle_group)
+{
+    $tournament = $request->query('tournament');
+    $arena      = $request->query('arena');
+    $roundParam = $request->query('round'); // opsional: paksa pilih round tertentu
+
+    // Ambil semua match dalam battle_group (+ scope tournament/arena kalau ada)
+    $query = \App\Models\LocalSeniMatch::query()
+        ->where('battle_group', $battle_group);
+
+    if (!empty($tournament)) {
+        $query->where('tournament_name', $tournament);
+    }
+    if (!empty($arena)) {
+        $query->where('arena_name', $arena);
+    }
+
+    $matches = $query->get();
+
+    if ($matches->isEmpty()) {
+        return response()->json([
+            'message'       => 'Battle group tidak ditemukan atau belum ada match.',
+            'battle_group'  => $battle_group,
+        ], 404);
+    }
+
+    // ========= Helpers =========
+    $extractMembers = function ($m) {
+        $names = [];
+        foreach (['participant_1', 'participant_2', 'participant_3'] as $col) {
+            $val = $m->{$col} ?? null;
+            if (is_string($val)) {
+                $val = trim($val);
+                if ($val !== '') $names[] = $val;
+            }
+        }
+        if (empty($names) && !empty($m->participant_name)) {
+            $parts = array_map('trim', preg_split('/,|\|/', $m->participant_name));
+            $names = array_values(array_filter($parts, fn ($x) => $x !== ''));
+        }
+        return $names;
+    };
+
+    // Preload total penalty per match (hindari N+1)
+    $penaltiesById = \App\Models\LocalSeniPenalties::whereIn('local_match_id', $matches->pluck('id'))
+        ->selectRaw('local_match_id, SUM(penalty_value) as total')
+        ->groupBy('local_match_id')
+        ->pluck('total', 'local_match_id');
+
+    $buildParticipant = function (\App\Models\LocalSeniMatch $m) use ($extractMembers, $penaltiesById) {
+        $totalPenalty = (float) ($penaltiesById[$m->id] ?? 0.0);
+        $members = $extractMembers($m);
+        $joined  = implode(', ', $members);
+        $contingentName = $m->contingent_name ?? '-';
+
+        // Durasi & formatting
+        $dur = isset($m->duration) ? (int) $m->duration : null;
+        $mm  = $dur !== null ? intdiv($dur, 60) : null;
+        $ss  = $dur !== null ? $dur % 60        : null;
+        $minutesDec = $dur !== null ? round($dur / 60, 2) : null;
+
+        return [
+            'match_id'             => $m->id,
+            'contingent'           => $contingentName,
+            'participants'         => $members,
+            'participants_joined'  => $joined,
+            'display_name'         => trim(($contingentName ?: '-') . ' — ' . ($joined ?: '-')),
+            'corner'               => strtolower((string)($m->corner ?? '')),
+
+            // === WAKTU PERFORMA ===
+            'performance_time'               => $dur ?? 0, // detik (back-compat)
+            'performance_time_seconds'       => $dur,
+            'performance_time_mmss'          => $dur !== null ? sprintf('%02d:%02d', $mm, $ss) : null,
+            'performance_time_minutes'       => $minutesDec, // contoh: 181 → 3.02
+            'performance_time_minutes_label' => $minutesDec !== null
+                                                ? number_format($minutesDec, 2, ',', '.')
+                                                : null,
+
+            'penalty'              => $totalPenalty,
+            'winning_point'        => isset($m->final_score)
+                                        ? number_format((float)$m->final_score, 6, '.', '')
+                                        : null,
+            'status'               => $m->status,
+            'winning_corner'       => strtolower((string)($m->winner_corner ?? '')),
+        ];
+    };
+
+    // ========= Pilih pasangan Blue/Red yang benar =========
+    $normRound = function ($s) {
+        return strtolower(trim((string) $s));
+    };
+
+    $blueMatch = null;
+    $redMatch  = null;
+    $pickedRound = null;
+
+    // 1) Kalau user kirim ?round=..., prioritaskan round itu
+    if (!empty($roundParam)) {
+        $scope = $matches->filter(fn($m) => $normRound($m->round_label) === $normRound($roundParam));
+        // pilih yang sudah finished dulu
+        $blueMatch = $scope->where(fn($m) => strtolower((string)$m->corner) === 'blue')
+                           ->sortByDesc(fn($m) => $m->status === 'finished')
+                           ->sortByDesc(fn($m) => $m->end_time ?? $m->updated_at ?? $m->id)
+                           ->first();
+        $redMatch  = $scope->where(fn($m) => strtolower((string)$m->corner) === 'red')
+                           ->sortByDesc(fn($m) => $m->status === 'finished')
+                           ->sortByDesc(fn($m) => $m->end_time ?? $m->updated_at ?? $m->id)
+                           ->first();
+        if ($blueMatch && $redMatch) {
+            $pickedRound = $scope->first()?->round_label ?? null;
+        }
+    }
+
+    // 2) Kalau belum dapat, cari round terbaru yang PARETNYA finished keduanya
+    if (!$blueMatch || !$redMatch) {
+        $finished = $matches->filter(fn($m) => $m->status === 'finished');
+        if ($finished->isNotEmpty()) {
+            // round paling baru = round dari match yang end_time terbaru
+            $latestRound = $finished->sortByDesc(fn($m) => $m->end_time ?? $m->updated_at ?? $m->id)
+                                    ->first()
+                                    ->round_label;
+            $pairScope = $matches->filter(fn($m) => $normRound($m->round_label) === $normRound($latestRound));
+
+            $blueMatch = $pairScope->filter(fn($m) => strtolower((string)$m->corner) === 'blue' && $m->status === 'finished')
+                                   ->sortByDesc(fn($m) => $m->end_time ?? $m->updated_at ?? $m->id)
+                                   ->first();
+            $redMatch  = $pairScope->filter(fn($m) => strtolower((string)$m->corner) === 'red' && $m->status === 'finished')
+                                   ->sortByDesc(fn($m) => $m->end_time ?? $m->updated_at ?? $m->id)
+                                   ->first();
+
+            if ($blueMatch && $redMatch) {
+                $pickedRound = $latestRound;
+            }
+        }
+    }
+
+    // 3) Fallback terakhir: pilih pasangan dengan status apapun di round terbaru (berbasis updated_at/id)
+    if (!$blueMatch || !$redMatch) {
+        $grouped = $matches->groupBy(fn($m) => $normRound($m->round_label));
+        // urutkan round berdasarkan "recentness" (ada end_time paling baru)
+        $roundOrder = $grouped->keys()->sortByDesc(function ($r) use ($grouped) {
+            $g = $grouped[$r];
+            $t = $g->max(fn($m) => $m->end_time ?? $m->updated_at ?? $m->id);
+            return $t;
+        })->values();
+
+        foreach ($roundOrder as $r) {
+            $scope = $grouped[$r];
+            $blue = $scope->first(fn($m) => strtolower((string)$m->corner) === 'blue');
+            $red  = $scope->first(fn($m) => strtolower((string)$m->corner) === 'red');
+            if ($blue && $red) {
+                $blueMatch = $blue;
+                $redMatch  = $red;
+                $pickedRound = $scope->first()?->round_label ?? null;
+                break;
+            }
+        }
+    }
+
+    // Bangun response peserta
+    $respBlue = $blueMatch ? $buildParticipant($blueMatch) : null;
+    $respRed  = $redMatch  ? $buildParticipant($redMatch)  : null;
+
+    // Ringkasan
+    $summary = [
+        'total_matches' => $matches->count(),
+        'all_finished'  => $matches->every(fn ($m) => $m->status === 'finished'),
+        'round_picked'  => $pickedRound,
+    ];
+
+    // Debug optional (matikan kalau tidak perlu)
+    // \Log::info('🎯 getBattleResults pair picked', [
+    //     'battle_group' => $battle_group,
+    //     'round'        => $pickedRound,
+    //     'blue_id'      => $respBlue['match_id'] ?? null,
+    //     'red_id'       => $respRed['match_id'] ?? null,
+    //     'blue_sec'     => $respBlue['performance_time'] ?? null,
+    //     'red_sec'      => $respRed['performance_time'] ?? null,
+    // ]);
+
+    return response()->json([
+        'battle_group' => $battle_group,
+        'filters' => [
+            'tournament' => $tournament,
+            'arena'      => $arena,
+            'round'      => $roundParam,
+        ],
+        'participants' => [
+            'blue' => $respBlue,
+            'red'  => $respRed,
+        ],
+        'summary' => $summary,
+    ]);
+}
+
+
+   public function getBattleResults0849(Request $request, $battle_group)
     {
         $tournament = $request->query('tournament');
         $arena      = $request->query('arena');
@@ -1288,6 +1484,11 @@ public function setScoreManual(Request $request, $id)
             // gunakan contingent_name sesuai skema DB
             $contingentName = $m->contingent_name ?? '-';
 
+            $dur = isset($m->duration) ? (int) $m->duration : null;
+            $mm  = $dur !== null ? intdiv($dur, 60) : null;
+            $ss  = $dur !== null ? $dur % 60        : null;
+            $minutesDec = $dur !== null ? round($dur / 60, 2) : null; // 181 -> 3.02, 185 -> 3.08
+
             return [
                 'match_id'             => $m->id,
                 'contingent'           => $contingentName,                     // ✅ nama kontingen
@@ -1295,7 +1496,15 @@ public function setScoreManual(Request $request, $id)
                 'participants_joined'  => $joined,                             // ✅ "A, B, C"
                 'display_name'         => trim(($contingentName ?: '-') . ' — ' . ($joined ?: '-')),
                 'corner'               => strtolower((string)($m->corner ?? '')),
-                'performance_time'     => (int)($m->duration ?? 0),            // detik
+                // === WAKTU PERFORMA ===
+    // Backward-compat: tetap kirim detik di 'performance_time'
+    'performance_time'               => $dur ?? 0,                                   // detik (int)
+    'performance_time_seconds'       => $dur,                                        // detik (int|null)
+    'performance_time_mmss'          => $dur !== null ? sprintf('%02d:%02d', $mm, $ss) : null, // "03:01"
+    'performance_time_minutes'       => $minutesDec,                                  // 3.02 (float|null)
+    'performance_time_minutes_label' => $minutesDec !== null
+                                         ? number_format($minutesDec, 2, ',', '.')   // "3,02" (string)
+                                         : null,           // detik
                 'penalty'              => (float)$totalPenalty,
                 'winning_point'        => isset($m->final_score)
                                 ? number_format((float)$m->final_score, 6, '.', '')
@@ -1366,6 +1575,213 @@ public function setScoreManual(Request $request, $id)
     }
 
     public function groupContestants(\App\Models\LocalSeniMatch $match)
+{
+    $norm = fn($s) => strtolower(trim((string)$s));
+    $slug = fn($s) => preg_replace('/[-_\s]+/', '', strtolower(trim((string)$s)));
+
+    // Samakan variasi penulisan round
+    $roundKey = function ($s) use ($slug) {
+        $x = $slug($s);
+        $map = [
+            'final'          => ['final','grandfinal'],
+            'semifinal'      => ['semifinal','semi-final','semifnl','semif'],
+            'perempatfinal'  => ['perempatfinal','quarterfinal','quarter-final','quarterfinals','perempat'],
+            'bronze'         => ['perebutan3','perebutan3rd','perunggu','bronze','3rdplace','thirdplace','tempatketiga'],
+        ];
+        foreach ($map as $key => $alts) {
+            foreach ($alts as $alt) {
+                if ($x === $slug($alt)) return $key;
+            }
+        }
+        return $x;
+    };
+
+    // Scope aman
+    $rows = \App\Models\LocalSeniMatch::query()
+        ->where('mode', 'battle')
+        ->where('battle_group', $match->battle_group)
+        ->where('tournament_name', $match->tournament_name)
+        ->when($match->arena_name ?? null, fn($q) => $q->where('arena_name', $match->arena_name))
+        ->when($match->pool_id ?? null, fn($q) => $q->where('pool_id', $match->pool_id))
+        ->when($match->match_category_id ?? null, fn($q) => $q->where('match_category_id', $match->match_category_id))
+        ->when($match->age_category_id ?? null,   fn($q) => $q->where('age_category_id', $match->age_category_id))
+        ->when($match->gender ?? null,            fn($q) => $q->where('gender', $match->gender))
+        ->orderByRaw('COALESCE(match_order, id) asc')
+        ->get();
+
+    if ($rows->isEmpty()) {
+        return response()->json([
+            'match_id'     => $match->id,
+            'battle_group' => $match->battle_group,
+            'contestants'  => [],
+            'message'      => 'Battle group tidak ditemukan di scope ini.'
+        ], 404);
+    }
+
+    // helper nama
+    $extractNames = function ($m) {
+        $names = array_values(array_filter([
+            filled($m->participant_1 ?? null) ? trim($m->participant_1) : null,
+            filled($m->participant_2 ?? null) ? trim($m->participant_2) : null,
+            filled($m->participant_3 ?? null) ? trim($m->participant_3) : null,
+        ]));
+        if (empty($names) && is_array($m->team_members ?? null)) {
+            $names = array_values(array_filter(array_map('trim', $m->team_members)));
+        }
+        if (empty($names) && filled($m->participant_name ?? null)) {
+            $parts = array_map('trim', preg_split('/,|\|/', (string)$m->participant_name));
+            $names = array_values(array_filter($parts, fn($x) => $x !== ''));
+        }
+        return $names;
+    };
+
+    // builder output (tanpa ubah DB)
+    $toOut = function ($m, $forcedCorner = null) use ($extractNames) {
+        $names = $extractNames($m);
+        return [
+            'match_id'        => $m->id,
+            'display_name'    => $names ? implode(' & ', $names) : ($m->display_name ?? 'Peserta'),
+            'contingent_name' => $m->contingent_name ?? $m->contingent ?? '-',
+            'corner'          => $forcedCorner ?? (in_array(strtolower((string)$m->corner), ['blue','red'], true) ? strtolower($m->corner) : null),
+            'status'          => $m->status,
+            'is_present'      => $m->is_present ?? null,
+            'round_label'     => $m->round_label,
+            'match_order'     => $m->match_order ?? null,
+        ];
+    };
+
+    $current = $rows->firstWhere('id', $match->id) ?: $match;
+    $rkCurrent = $roundKey($current->round_label);
+    $rowsSameRound = $rows->filter(fn($r) => $roundKey($r->round_label) === $rkCurrent)->values();
+
+    $opp = function ($c) use ($norm) {
+        $c = $norm($c);
+        return $c === 'blue' ? 'red' : ($c === 'red' ? 'blue' : null);
+    };
+
+    $sibling = null;
+
+    // (A0) PRIORITAS: match_order yang sama
+    $curOrder = $current->match_order ?? null;
+    if ($curOrder !== null) {
+        // Pool kandidat: match_order sama (utamakan round sama)
+        $sameOrder = $rows->filter(fn($r) => $r->id !== $current->id && (int)($r->match_order ?? -1) === (int)$curOrder);
+        $sameOrderSameRound = $sameOrder->filter(fn($r) => $roundKey($r->round_label) === $rkCurrent);
+        $pool = $sameOrderSameRound->isNotEmpty() ? $sameOrderSameRound : $sameOrder;
+
+        if ($pool->isNotEmpty()) {
+            $targetCorner = $opp($current->corner);
+            if ($targetCorner) {
+                $sibling = $pool->first(fn($r) => $norm($r->corner) === $targetCorner);
+            }
+            if (!$sibling) {
+                // kalau belum ada corner/ga ketemu lawan kebalikan, ambil siapa pun di match_order yg sama
+                $sibling = $pool->first();
+            }
+        }
+    }
+
+    // (A1) Via parent (kalau belum dapat)
+    if (!$sibling) {
+        $parent = \App\Models\LocalSeniMatch::query()
+            ->where('tournament_name', $match->tournament_name)
+            ->where(function ($q) use ($match) {
+                $q->where('parent_match_red_id', $match->id)
+                  ->orWhere('parent_match_blue_id', $match->id);
+            })
+            ->first();
+
+        if ($parent) {
+            $otherId = ($parent->parent_match_red_id == $match->id)
+                ? $parent->parent_match_blue_id
+                : $parent->parent_match_red_id;
+
+            if ($otherId) {
+                $sibling = $rowsSameRound->firstWhere('id', $otherId)
+                        ?: $rows->firstWhere('id', $otherId)
+                        ?: \App\Models\LocalSeniMatch::find($otherId);
+            }
+        }
+    }
+
+    // (B) Round sama + corner kebalikan
+    if (!$sibling) {
+        $targetCorner = $opp($current->corner);
+        $cands = $rowsSameRound->where('id', '!=', $current->id);
+        if ($targetCorner) {
+            $cands = $cands->filter(fn($r) => $norm($r->corner) === $targetCorner);
+        }
+        $curKey = $current->match_order ?? $current->id;
+        $sibling = $cands->sortBy(function ($r) use ($curKey) {
+            $o = $r->match_order ?? $r->id;
+            return abs($o - $curKey);
+        })->first();
+    }
+
+    // (C) Fallback terakhir di round sama: status → punya corner → urutan
+    if (!$sibling) {
+        $priority = ['ongoing','ready','scheduled','finished'];
+        $sorted = $rowsSameRound->sort(function ($a, $b) use ($priority) {
+            $ai = array_search($a->status, $priority, true); $ai = $ai === false ? 99 : $ai;
+            $bi = array_search($b->status, $priority, true); $bi = $bi === false ? 99 : $bi;
+
+            if ($ai !== $bi) return $ai <=> $bi;
+
+            $ac = in_array(strtolower((string)$a->corner), ['blue','red'], true) ? 0 : 1;
+            $bc = in_array(strtolower((string)$b->corner), ['blue','red'], true) ? 0 : 1;
+            if ($ac !== $bc) return $ac <=> $bc;
+
+            return ($a->match_order ?? $a->id) <=> ($b->match_order ?? $b->id);
+        })->values();
+
+        $current = $sorted->firstWhere('id', $current->id) ?: ($sorted[0] ?? $current);
+        $sibling = $sorted->firstWhere(fn($r) => $r->id !== $current->id) ?: ($sorted[1] ?? null);
+    }
+
+    // Tentukan corner untuk output (tanpa tulis DB)
+    $cCorner = $norm($current->corner);
+    $sCorner = $sibling ? $norm($sibling->corner) : null;
+
+    $outCurrentCorner = $cCorner ?: ($sCorner ? ($sCorner === 'blue' ? 'red' : 'blue') : 'blue');
+    $outSiblingCorner = $sibling ? ($sCorner ?: ($outCurrentCorner === 'blue' ? 'red' : 'blue')) : null;
+
+    $contestants = [$toOut($current, $outCurrentCorner)];
+    if ($sibling) $contestants[] = $toOut($sibling, $outSiblingCorner);
+
+    // Urut Blue → Red
+    usort($contestants, function ($a, $b) {
+        $ra = $a['corner'] === 'blue' ? 0 : ($a['corner'] === 'red' ? 1 : 2);
+        $rb = $b['corner'] === 'blue' ? 0 : ($b['corner'] === 'red' ? 1 : 2);
+        return $ra <=> $rb;
+    });
+
+    // Log bantu debug
+    \Log::info('🎯 groupContestants resolved', [
+        'match_id'        => $match->id,
+        'battle_group'    => $match->battle_group,
+        'round_label_key' => $rkCurrent,
+        'cur_order'       => $curOrder,
+        'rows_same_round' => $rowsSameRound->pluck('id')->all(),
+        'same_order_ids'  => isset($curOrder)
+            ? $rows->filter(fn($r) => $r->id !== $match->id && (int)($r->match_order ?? -1) === (int)$curOrder)->pluck('id')->all()
+            : [],
+        'current'         => ['id' => $current->id, 'corner' => $outCurrentCorner, 'order' => $current->match_order ?? $current->id],
+        'sibling'         => $sibling ? ['id' => $sibling->id, 'corner' => $outSiblingCorner, 'order' => $sibling->match_order ?? $sibling->id] : null,
+    ]);
+
+    return response()->json([
+        'match_id'     => $match->id,
+        'battle_group' => $match->battle_group,
+        'tournament'   => $match->tournament_name,
+        'arena'        => $match->arena_name,
+        'round_label'  => $match->round_label,
+        'contestants'  => $contestants,
+    ]);
+}
+
+
+
+    public function groupContestants0914(\App\Models\LocalSeniMatch $match)
     {
         // Ambil semua entry di battle_group yang sama
         $q = \App\Models\LocalSeniMatch::query()

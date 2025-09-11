@@ -174,6 +174,10 @@ $(document).ready(function () {
     return options;
     }
 
+    $(document).on('performance:save:done', function () {
+    $('#inline-save-performance-time').prop('disabled', false);
+    });
+
     // ==== Open modal & isi select ====
     $(document).on('click', '.set-winner', async function () {
         const matchId = $("#match-id").val();
@@ -670,12 +674,22 @@ $(document).ready(function () {
         const $btnStop = $(this).data('ref', $(this));
         // Buka modal input waktu
         const modal = new bootstrap.Modal(document.getElementById('performanceTimeModal'));
+        const modalEl = document.getElementById('performanceTimeModal');
         $('#performance-time-input').val('');                // reset input
         $('#performance-time-error').addClass('d-none').text('');
+
+        $(modalEl).one('shown.bs.modal', function () {
+            const input = document.getElementById('performance-time-input');
+            input.focus({ preventScroll: true });
+            input.select();
+            // jaga-jaga kalau viewport perlu digeser
+            input.scrollIntoView({ block: 'center' });
+        });
+        
         modal.show();
 
         // Fokus ke input saat modal tampil
-        setTimeout(() => { $('#performance-time-input').trigger('focus'); }, 250);
+        //setTimeout(() => { $('#performance-time-input').trigger('focus'); }, 250);
     });
 
     $(document).on('click', '#save-performance-time', function () {
@@ -739,8 +753,25 @@ $(document).ready(function () {
             $err.removeClass('d-none').text(xhr.responseJSON?.message || 'Gagal menyimpan waktu perform.');
         }).always(function () {
             $btn.prop('disabled', false).html(original);
+            $(document).trigger('performance:save:done');
         });
     });
+
+    // Klik tombol inline = jalankan tombol utama di footer
+    $(document).on('click', '#inline-save-performance-time', function () {
+    const $inline = $(this).prop('disabled', true);
+    // Trigger tombol utama
+    $('#save-performance-time').trigger('click');
+    });
+
+    // Tekan Enter/Go di keyboard = jalankan simpan juga
+    $(document).on('keydown', '#performance-time-input', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        $('#save-performance-time').trigger('click');
+    }
+    });
+
 
     // Enter untuk submit di modal
     $('#performanceTimeModal').on('shown.bs.modal', function () {

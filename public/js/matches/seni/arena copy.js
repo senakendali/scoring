@@ -22,8 +22,7 @@ $(document).ready(function () {
 
     $.ajaxSetup({
         headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-            cache: false // 🔒 no cache untuk semua request jQuery
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         }
     });
 
@@ -42,75 +41,6 @@ $(document).ready(function () {
         enabledTransports: ['ws'],
         disableStats: true,
     });
-
-    let groupResultPoll = null;
-    let groupResultPollState = { group: null, errors: 0 };
-
-    function stopGroupResultPolling() {
-        if (groupResultPoll) {
-            clearInterval(groupResultPoll);
-            groupResultPoll = null;
-            groupResultPollState = { group: null, errors: 0 };
-            console.log('🛑 Stop polling group result');
-        }
-    }
-
-    function startGroupResultPolling(group, tournament, arena, intervalMs = 1500) {
-    // kalau sudah jalan untuk group yang sama, jangan dobel
-    if (groupResultPoll && groupResultPollState.group === String(group)) {
-        console.log('⏳ Polling sudah aktif untuk group', group);
-        return;
-    }
-    stopGroupResultPolling(); // pastikan tidak dobel
-    groupResultPollState.group = String(group);
-
-    const base = (typeof APP !== 'undefined' && APP.baseUrl) ? APP.baseUrl : '';
-    const reqUrl = `${base}/api/local-matches/seni/battle-group/${encodeURIComponent(group)}`;
-
-    const doFetch = () => {
-        // kalau modal udah ketutup, auto stop
-        const $modal = $('#groupResultModal');
-        if (!$modal.hasClass('show')) { stopGroupResultPolling(); return; }
-
-        // hemat: kalau tab disembunyikan, skip polling (opsional)
-        if (document.hidden) return;
-
-        $.get(reqUrl, { tournament, arena, _: Date.now() }) // cache-bust
-        .done(function (res) {
-            groupResultPollState.errors = 0;
-            // update UI pakai helper yang sudah ada
-            setHeaderNames(res);
-            applyWinner(res);
-
-            const blue = res?.participants?.blue ?? {};
-            const red  = res?.participants?.red  ?? {};
-
-            $('#blue-performance').text(blue.performance_time != null ? fmtSeconds(blue.performance_time) : '-');
-            $('#blue-penalty').text(blue.penalty ?? '-');
-            $('#blue-winning').text(blue.winning_point != null ? Number(blue.winning_point).toFixed(6) : '-');
-
-            $('#red-performance').text(red.performance_time != null ? fmtSeconds(red.performance_time) : '-');
-            $('#red-penalty').text(red.penalty ?? '-');
-            $('#red-winning').text(red.winning_point != null ? Number(red.winning_point).toFixed(6) : '-');
-        })
-        .fail(function (xhr, status, err) {
-            groupResultPollState.errors++;
-            console.warn('⚠️ Poll group result gagal', { status, err, code: xhr?.status });
-            // kalau error berturut-turut 5x, stop polling
-            if (groupResultPollState.errors >= 5) stopGroupResultPolling();
-        });
-    };
-
-    // panggil sekali dulu biar gak nunggu interval pertama
-    doFetch();
-    groupResultPoll = setInterval(doFetch, intervalMs);
-    console.log('▶️ Start polling group result:', { group, tournament, arena, intervalMs });
-    }
-
-    $('#groupResultModal').on('hidden.bs.modal', function () {
-    stopGroupResultPolling();
-    });
-
 
     const channel = pusher.subscribe(`match.${matchId}`);
     //const globalChannel = pusher.subscribe('global.seni.match');
@@ -204,15 +134,8 @@ const GROUP_RESULT_TEMPLATE = `
 // ---- helper render header participants ----
 function setHeaderNames(res) {
   try {
-    let blue = res?.participants?.blue ?? null;
-    let red  = res?.participants?.red  ?? null;
-
-    // 🔁 fallback: kalau key 'blue'/'red' nggak ada, ambil 2 item pertama apa adanya
-    if ((!blue || !red) && res?.participants && typeof res.participants === 'object') {
-        const values = Object.values(res.participants).filter(Boolean);
-        blue = blue || values[0] || {};
-        red  = red  || values[1] || {};
-    }
+    const blue = res?.participants?.blue ?? {};
+    const red  = res?.participants?.red ?? {};
 
     // isi nama peserta (gabungan array jadi string)
     $('#participant-blue-name').text(blue.participants_joined || '-');
@@ -414,8 +337,7 @@ function loadGroupResults(group) {
   $('#groupResultBody').html(GROUP_RESULT_TEMPLATE);
 
   // Baru fetch data dan isi nilai
-  //$.get(reqUrl, { tournament, arena })
-  $.get(reqUrl, { tournament, arena, _: Date.now() })
+  $.get(reqUrl, { tournament, arena })
     .done(function (res) {
       console.log('✅ Battle result loaded:', res);
         
@@ -436,9 +358,6 @@ function loadGroupResults(group) {
       $('#red-winning').text(
         red.winning_point != null ? Number(red.winning_point).toFixed(6) : '-'
       );
-
-      // ▶langsung start polling setelah fetch pertama (aman, ada guard duplikat)
-        startGroupResultPolling(group, tournament, arena, 1500);
     })
     .fail(function (xhr, status, err) {
       console.error('❌ Gagal load battle result:', { reqUrl, status, err, response: xhr?.responseText });
@@ -459,10 +378,6 @@ function loadGroupResults(group) {
     if (battleGroup) {
       console.log('🔗 battle_group terdeteksi di URL:', battleGroup);
       loadGroupResults(battleGroup);
-           // 🔁 start polling juga saat reload
-            const tournament = $("#session-tournament").val();
-            const arena      = $("#session-arena").val();
-            startGroupResultPolling(battleGroup, tournament, arena, 1500);
     }
   } catch (e) {
     console.warn('URL parse error (on load):', e);
@@ -493,11 +408,6 @@ globalChannel.bind('seni.group.completed', function (data) {
 
   // Load & render
   loadGroupResults(group);
-
-  // 🔁 Mulai polling auto-update isi modal
-  const tournament = $("#session-tournament").val();
-  const arena      = $("#session-arena").val();
-  startGroupResultPolling(group, tournament, arena, 1500);
 });
 
 function showModalById(id) {
