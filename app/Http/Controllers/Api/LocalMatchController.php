@@ -199,7 +199,7 @@ class LocalMatchController extends Controller
             'tournament' => $tournament,
             'from'       => is_numeric($from) ? (int)$from : null,
             'to'         => is_numeric($to)   ? (int)$to   : null,
-        ])->setPaper('a4', 'landscape');
+        ])->setPaper('a4', 'portrait');
 
         $suffixArena = $selectedArena ? ('-'.$selectedArena) : '';
         $suffixRange = (is_numeric($from) || is_numeric($to))
