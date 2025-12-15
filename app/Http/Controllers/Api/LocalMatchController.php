@@ -3475,6 +3475,58 @@ public function endMatch__bisa(Request $request, $id)
             'corner' => 'required|in:red,blue',
         ]);
 
+        // ✅ Ambil jatuhan terakhir (1x = 3 poin)
+        $last = \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->where('corner', $data['corner'])
+            ->where('action', 'jatuhan')
+            ->orderByDesc('id') // atau created_at kalau ada
+            ->first();
+
+        if (!$last) {
+            return response()->json(['message' => 'Tidak ada jatuhan untuk dihapus'], 404);
+        }
+
+        $last->delete();
+
+        // 🔢 Hitung ulang skor (saran: samain scope round juga, lihat catatan di bawah)
+        $blueScore = \App\Models\LocalValidScore::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'blue')
+            ->sum('point');
+
+        $redScore = \App\Models\LocalValidScore::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'red')
+            ->sum('point');
+
+        $blueAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'blue')
+            ->sum('point_change');
+
+        $redAdjustment = \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
+            ->where('corner', 'red')
+            ->sum('point_change');
+
+        broadcast(new \App\Events\ScoreUpdated(
+            $data['local_match_id'],
+            $data['round_id'],
+            $blueScore + $blueAdjustment,
+            $redScore + $redAdjustment,
+            $blueAdjustment,
+            $redAdjustment
+        ))->toOthers();
+
+        return response()->json(['message' => '1 jatuhan terakhir berhasil dihapus (3 poin) dan skor diperbarui']);
+    }
+
+
+    public function removeJatuhan__(Request $request)
+    {
+        $data = $request->validate([
+            'local_match_id' => 'required|exists:local_matches,id',
+            'round_id' => 'required|exists:local_match_rounds,id',
+            'corner' => 'required|in:red,blue',
+        ]);
+
         // 🔥 Hapus semua jatuhan untuk sudut & ronde ini
         \App\Models\LocalRefereeAction::where('local_match_id', $data['local_match_id'])
             ->where('round_id', $data['round_id'])
