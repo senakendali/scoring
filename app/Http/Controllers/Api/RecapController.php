@@ -10,8 +10,160 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class RecapController extends Controller
 {
+    public function medalRecap(Request $request)
+{
+    $result = $this->buildMedalRecap($request->input('full_prestasi', []));
+    return response()->json($result);
+}
 
-    public function medalRecap()
+private function buildMedalRecap(array $fullPrestasiCats = []): array
+{
+    $tournamentName = session('tournament_name');
+
+    $matches = DB::table('local_matches')
+        ->where('status', 'finished')
+        ->whereIn('round_label', ['Final', 'Semifinal'])
+        ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
+        ->get();
+
+    $seniMatches = DB::table('local_seni_matches')
+        ->whereNotNull('medal')
+        ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
+        ->get();
+
+    // hitung peserta unik per class_name
+    $participantCountByClass = [];
+    $allForCount = DB::table('local_matches')
+        ->select('class_name', 'red_id', 'blue_id')
+        ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
+        ->get();
+
+    foreach ($allForCount as $m) {
+        $cls = (string) ($m->class_name ?? '');
+        if (!isset($participantCountByClass[$cls])) $participantCountByClass[$cls] = [];
+        if (!empty($m->red_id))  $participantCountByClass[$cls][$m->red_id] = true;
+        if (!empty($m->blue_id)) $participantCountByClass[$cls][$m->blue_id] = true;
+    }
+    foreach ($participantCountByClass as $cls => $ids) {
+        $participantCountByClass[$cls] = count($ids);
+    }
+
+    // grouping
+    $grouped = [];
+
+    foreach ($matches as $match) {
+        $baseCategory = match (true) {
+            Str::startsWith($match->class_name, 'Usia Dini') => 'Usia Dini',
+            Str::startsWith($match->class_name, 'Pra Remaja') => 'Pra Remaja',
+            Str::startsWith($match->class_name, 'Remaja') => 'Remaja',
+            Str::startsWith($match->class_name, 'Dewasa') => 'Dewasa',
+            Str::startsWith($match->class_name, 'Master') => 'Master',
+            default => 'Lainnya',
+        };
+        $grouped[$baseCategory]['tanding'][] = $match;
+    }
+
+    foreach ($seniMatches as $match) {
+        $age = Str::of($match->age_category)->trim()->ucfirst();
+        $baseCategory = match (true) {
+            Str::startsWith($age, 'Usia Dini') => 'Usia Dini',
+            Str::startsWith($age, 'Pra Remaja') => 'Pra Remaja',
+            Str::startsWith($age, 'Remaja') => 'Remaja',
+            Str::startsWith($age, 'Dewasa') => 'Dewasa',
+            Str::startsWith($age, 'Master') => 'Master',
+            default => 'Lainnya',
+        };
+        $grouped[$baseCategory]['seni'][] = $match;
+    }
+
+    $result = [];
+
+    foreach ($grouped as $ageCategory => $sources) {
+        $emas = [];
+        $perak = [];
+        $perunggu = [];
+
+        $isFullPrestasiCategory = in_array($ageCategory, $fullPrestasiCats);
+
+        foreach ($sources['tanding'] ?? [] as $match) {
+            $isInvalidMedal = in_array($match->win_reason, ['forfeit', 'disqualify']);
+
+            $cls = (string) ($match->class_name ?? '');
+            $isTwoParticipantClass = (($participantCountByClass[$cls] ?? 0) === 2);
+            $excludeGold = $isFullPrestasiCategory && $isTwoParticipantClass;
+
+            if ($match->round_label === 'Final') {
+                $winner = $match->winner_corner === 'red' ? $match->red_contingent : $match->blue_contingent;
+                $loser  = $match->winner_corner === 'red' ? $match->blue_contingent : $match->red_contingent;
+
+                if (!$excludeGold && $winner) $emas[] = $winner;
+                if (!$isInvalidMedal && $loser) $perak[] = $loser;
+            }
+
+            if ($match->round_label === 'Semifinal') {
+                $loser = $match->winner_corner === 'red' ? $match->blue_contingent : $match->red_contingent;
+                if (!$isInvalidMedal && $loser) $perunggu[] = $loser;
+            }
+        }
+
+        foreach ($sources['seni'] ?? [] as $match) {
+            $kontingen = $match->contingent_name;
+            if ($match->medal === 'emas') $emas[] = $kontingen;
+            if ($match->medal === 'perak') $perak[] = $kontingen;
+            if ($match->medal === 'perunggu') $perunggu[] = $kontingen;
+        }
+
+        $rekap = [];
+
+        foreach ($emas as $c) {
+            if (!$c) continue;
+            $rekap[$c]['emas'] = ($rekap[$c]['emas'] ?? 0) + 1;
+        }
+        foreach ($perak as $c) {
+            if (!$c) continue;
+            $rekap[$c]['perak'] = ($rekap[$c]['perak'] ?? 0) + 1;
+        }
+        foreach ($perunggu as $c) {
+            if (!$c) continue;
+            $rekap[$c]['perunggu'] = ($rekap[$c]['perunggu'] ?? 0) + 1;
+        }
+
+        $rekapList = [];
+        foreach ($rekap as $kontingen => $d) {
+            $e = $d['emas'] ?? 0;
+            $p = $d['perak'] ?? 0;
+            $pg = $d['perunggu'] ?? 0;
+
+            $rekapList[] = [
+                'kontingen' => $kontingen,
+                'emas' => $e,
+                'perak' => $p,
+                'perunggu' => $pg,
+                'total' => $e + $p + $pg,
+                'keterangan' => '',
+            ];
+        }
+
+        usort($rekapList, fn($a, $b) =>
+            [$b['emas'], $b['perak'], $b['perunggu']]
+            <=> [$a['emas'], $a['perak'], $a['perunggu']]
+        );
+
+        foreach ($rekapList as $i => &$row) {
+            if ($i === 0) $row['keterangan'] = 'JUARA UMUM 1';
+            else if ($i === 1) $row['keterangan'] = 'JUARA UMUM 2';
+            else if ($i === 2) $row['keterangan'] = 'JUARA UMUM 3';
+        }
+        unset($row);
+
+        $result[$ageCategory] = $rekapList;
+    }
+
+    return $result;
+}
+
+
+    public function medalRecap_asli()
     {
         $tournamentName = session('tournament_name'); // ✅ Ambil dari session
 
@@ -151,9 +303,21 @@ class RecapController extends Controller
     }
 
 
+public function exportAllPDF(Request $request)
+{
+    $fullPrestasiCats = $request->input('full_prestasi', []);
+    $data = $this->buildMedalRecap($fullPrestasiCats);
+
+    $pdf = Pdf::loadView('exports.medal-recap-all', [
+        'rekapPerUsia' => $data,
+        'fullPrestasi' => $fullPrestasiCats,
+    ]);
+
+    return $pdf->download('rekap_medali_semua_kategori.pdf');
+}
 
 
-    public function exportAllPDF()
+    public function exportAllPDF_asli()
     {
         $data = $this->medalRecap()->getData(true); // panggil fungsi yang sama
         $pdf = Pdf::loadView('exports.medal-recap-all', [
@@ -163,8 +327,28 @@ class RecapController extends Controller
         return $pdf->download('rekap_medali_semua_kategori.pdf');
     }
 
+    public function exportPDF(Request $request, $ageCategory)
+    {
+        // ✅ ambil filter dari query param (?full_prestasi[]=Remaja...)
+        $fullPrestasiCats = $request->input('full_prestasi', []);
 
-    public function exportPDF($ageCategory)
+        // ✅ pakai logic yang sama persis dengan API recap
+        $all = $this->buildMedalRecap($fullPrestasiCats);
+
+        // ✅ ambil hanya kategori yang diminta
+        $rekapList = $all[$ageCategory] ?? [];
+
+        $pdf = Pdf::loadView('exports.medal-recap', [
+            'ageCategory'  => $ageCategory,
+            'rekap'        => $rekapList,
+            'fullPrestasi' => $fullPrestasiCats, // optional kalau mau ditampilkan di header pdf
+        ]);
+
+        return $pdf->download('rekap_medali_' . strtolower(str_replace(' ', '_', $ageCategory)) . '.pdf');
+    }
+
+
+    public function exportPDF_asli($ageCategory)
     {
         $tournamentName = session('tournament_name'); // ✅ Ambil dari session
 
