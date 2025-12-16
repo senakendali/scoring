@@ -3920,6 +3920,135 @@ public function endMatch__bisa(Request $request, $id)
         return response()->json(['message' => 'Vote recorded']);
     }
 
+    public function getRoundPenalties(Request $request)
+    {
+        $data = $request->validate([
+            'local_match_id' => 'required|exists:local_matches,id',
+            'round_id'       => 'required|exists:local_match_rounds,id',
+        ]);
+
+        $matchId = (int) $data['local_match_id'];
+        $roundId = (int) $data['round_id'];
+
+        // Ambil round_number dari round yg dipilih
+        $selectedRound = \App\Models\LocalMatchRound::query()
+            ->where('id', $roundId)
+            ->where('local_match_id', $matchId)
+            ->first();
+
+        if (!$selectedRound) {
+            return response()->json(['message' => 'Round tidak valid untuk match ini'], 422);
+        }
+
+        $selectedRoundNumber = (int) $selectedRound->round_number;
+
+        // Ambil semua round ID sampai round_number yg dipilih (<=)
+        $roundIdsUpToSelected = \App\Models\LocalMatchRound::query()
+            ->where('local_match_id', $matchId)
+            ->where('round_number', '<=', $selectedRoundNumber)
+            ->pluck('id')
+            ->all();
+
+        // Actions: per-round vs persistent
+        $perRoundActions = ['binaan_1','binaan_2','teguran_1','teguran_2'];
+        $persistentActions = ['peringatan_1','peringatan_2'];
+
+        $result = [
+            'blue' => ['active' => [], 'jatuhan_total' => 0],
+            'red'  => ['active' => [], 'jatuhan_total' => 0],
+        ];
+
+        // 1) Per-round toggles: ambil hanya dari round yg dipilih
+        $perRoundRows = \App\Models\LocalRefereeAction::query()
+            ->where('local_match_id', $matchId)
+            ->where('round_id', $roundId)
+            ->whereIn('action', $perRoundActions)
+            ->get(['corner','action']);
+
+        foreach ($perRoundRows as $r) {
+            $result[$r->corner]['active'][] = $r->action;
+        }
+
+        // 2) Persistent toggles: ambil dari semua round sampai selected (<=)
+        $persistentRows = \App\Models\LocalRefereeAction::query()
+            ->where('local_match_id', $matchId)
+            ->whereIn('round_id', $roundIdsUpToSelected)
+            ->whereIn('action', $persistentActions)
+            ->get(['corner','action']);
+
+        foreach ($persistentRows as $r) {
+            $result[$r->corner]['active'][] = $r->action;
+        }
+
+        // 3) (Optional) jatuhan_total: kalau lu mau total jatuhan sampai selected round
+        $jatuhanTotalRows = \App\Models\LocalRefereeAction::query()
+            ->where('local_match_id', $matchId)
+            ->whereIn('round_id', $roundIdsUpToSelected)
+            ->where('action', 'jatuhan')
+            ->get(['corner','point_change']);
+
+        foreach ($jatuhanTotalRows as $r) {
+            $result[$r->corner]['jatuhan_total'] += (int) $r->point_change;
+        }
+
+        // unique
+        $result['blue']['active'] = array_values(array_unique($result['blue']['active']));
+        $result['red']['active']  = array_values(array_unique($result['red']['active']));
+
+        return response()->json($result);
+    }
+
+
+    public function getRoundPenalties_(Request $request)
+    {
+        $data = $request->validate([
+            'local_match_id' => 'required|exists:local_matches,id',
+            'round_id'       => 'required|exists:local_match_rounds,id',
+        ]);
+
+        $rows = \App\Models\LocalRefereeAction::query()
+            ->where('local_match_id', $data['local_match_id'])
+            ->where('round_id', $data['round_id'])
+            ->get(['corner', 'action', 'point_change']);
+
+        // Toggle actions yang memang “nyala/mati”
+        $toggleActions = [
+            'binaan_1','binaan_2',
+            'teguran_1','teguran_2',
+            'peringatan_1','peringatan_2',
+        ];
+
+        $result = [
+            'blue' => [
+                'active' => [],
+                'jatuhan_total' => 0,
+            ],
+            'red' => [
+                'active' => [],
+                'jatuhan_total' => 0,
+            ],
+        ];
+
+        foreach ($rows as $r) {
+            if ($r->action === 'jatuhan') {
+                // jatuhan itu counter, bukan toggle
+                $result[$r->corner]['jatuhan_total'] += (int) $r->point_change; // biasanya 3 per row
+                continue;
+            }
+
+            if (in_array($r->action, $toggleActions, true)) {
+                $result[$r->corner]['active'][] = $r->action;
+            }
+        }
+
+        // rapihin biar unik
+        $result['blue']['active'] = array_values(array_unique($result['blue']['active']));
+        $result['red']['active']  = array_values(array_unique($result['red']['active']));
+
+        return response()->json($result);
+    }
+
+
 
 
 

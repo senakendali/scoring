@@ -193,6 +193,8 @@ Route::prefix('api')->group(function () {
     Route::post('/local-matches/{match}/set-winner-manual', [LocalMatchController::class, 'setWinnerManual']);
     Route::post('/local-seni-matches/{id}/set-score-manual', [LocalMatchSeniController::class, 'setScoreManual']);
 
+    Route::get('/local-referee-actions/round-penalties', [LocalMatchController::class, 'getRoundPenalties']);
+
     
 
 

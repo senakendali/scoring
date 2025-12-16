@@ -10,8 +10,179 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class RecapController extends Controller
 {
-
     public function medalRecap()
+    {
+        $tournamentName = session('tournament_name'); // ✅ Ambil dari session
+
+        // ====== Ambil sumber data ======
+        $matches = DB::table('local_matches')
+            ->where('status', 'finished')
+            ->whereIn('round_label', ['Final', 'Semifinal'])
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
+            ->get();
+
+        $seniMatches = DB::table('local_seni_matches')
+            ->whereNotNull('medal')
+            ->when($tournamentName, fn($q) => $q->where('tournament_name', $tournamentName))
+            ->get();
+
+        // ====== Validasi kelas TANDING: minimal 4 peserta ⇒ minimal ada 2 Semifinal di class ======
+        // key = class_name
+        $tandingByClass = collect($matches)->groupBy('class_name');
+
+        // Kelas yang valid: punya >= 2 semifinal
+        $validTandingClasses = $tandingByClass->filter(function ($rows) {
+            $semiCount = $rows->where('round_label', 'Semifinal')->count();
+            return $semiCount >= 2;
+        })->keys()->all();
+
+        // ====== Validasi pool/kelas SENI: minimal 4 peserta dalam pool ======
+        // Prefer group by pool_id; fallback kalau kolom tidak ada
+        $seniGroupKey = function ($m) {
+            if (isset($m->pool_id) && $m->pool_id !== null) {
+                return 'pool:' . $m->pool_id;
+            }
+            // fallback yang masih “masuk akal” kalau struktur ada:
+            $age = $m->age_category ?? 'UnknownAge';
+            $gender = $m->gender ?? 'UnknownGender';
+            $type = $m->match_type ?? ($m->category ?? 'UnknownType'); // sesuaikan kalau ada
+            return "grp:{$age}|{$gender}|{$type}";
+        };
+
+        $seniGrouped = collect($seniMatches)->groupBy($seniGroupKey);
+
+        // Hitung distinct peserta per group (pakai participant_name / contingent_name yang tersedia)
+        $validSeniGroups = $seniGrouped->filter(function ($rows) {
+            // prioritas nama peserta; kalau tidak ada, pakai kontingen
+            $names = $rows->map(function ($r) {
+                return $r->participant_name
+                    ?? $r->athlete_name
+                    ?? $r->contingent_name
+                    ?? $r->team_name
+                    ?? null;
+            })->filter()->unique();
+
+            return $names->count() >= 4;
+        });
+
+        // ====== Gabungkan sumber yang SUDAH tervalidasi ======
+        $grouped = [];
+
+        // Tanding → hanya class yang valid
+        foreach ($matches as $match) {
+            if (!in_array($match->class_name, $validTandingClasses, true)) {
+                continue; // skip kelas yang pesertanya < 4
+            }
+
+            $baseCategory = match (true) {
+                Str::startsWith($match->class_name, 'Usia Dini') => 'Usia Dini',
+                Str::startsWith($match->class_name, 'Pra Remaja') => 'Pra Remaja',
+                Str::startsWith($match->class_name, 'Remaja') => 'Remaja',
+                Str::startsWith($match->class_name, 'Dewasa') => 'Dewasa',
+                Str::startsWith($match->class_name, 'Master') => 'Master',
+                default => 'Lainnya',
+            };
+
+            $grouped[$baseCategory]['tanding'][] = $match;
+        }
+
+        // Seni → hanya group/pool yang valid (≥4 peserta)
+        $validSeniMatches = $validSeniGroups->flatten(1);
+        foreach ($validSeniMatches as $match) {
+            $age = Str::of($match->age_category)->trim()->ucfirst();
+            $baseCategory = match (true) {
+                Str::startsWith($age, 'Usia Dini') => 'Usia Dini',
+                Str::startsWith($age, 'Pra Remaja') => 'Pra Remaja',
+                Str::startsWith($age, 'Remaja') => 'Remaja',
+                Str::startsWith($age, 'Dewasa') => 'Dewasa',
+                Str::startsWith($age, 'Master') => 'Master',
+                default => 'Lainnya',
+            };
+
+            $grouped[$baseCategory]['seni'][] = $match;
+        }
+
+        // ====== Rekapitulasi ======
+        $result = [];
+
+        foreach ($grouped as $ageCategory => $sources) {
+            $emas = [];
+            $perak = [];
+            $perunggu = [];
+
+            // --- Tanding ---
+            foreach ($sources['tanding'] ?? [] as $match) {
+                $isInvalidMedal = in_array($match->win_reason, ['forfeit', 'disqualify']);
+
+                if ($match->round_label === 'Final') {
+                    $winner = $match->winner_corner === 'red' ? $match->red_contingent : $match->blue_contingent;
+                    $loser  = $match->winner_corner === 'red' ? $match->blue_contingent : $match->red_contingent;
+
+                    if ($winner) $emas[] = $winner;
+                    if (!$isInvalidMedal && $loser) $perak[] = $loser;
+                }
+
+                if ($match->round_label === 'Semifinal') {
+                    $loser = $match->winner_corner === 'red' ? $match->blue_contingent : $match->red_contingent;
+                    if (!$isInvalidMedal && $loser) $perunggu[] = $loser;
+                }
+            }
+
+            // --- Seni ---
+            foreach ($sources['seni'] ?? [] as $match) {
+                $kontingen = $match->contingent_name
+                    ?? $match->team_name
+                    ?? $match->participant_team
+                    ?? null;
+                if (!$kontingen) continue;
+
+                if ($match->medal === 'emas')     $emas[] = $kontingen;
+                elseif ($match->medal === 'perak')   $perak[] = $kontingen;
+                elseif ($match->medal === 'perunggu')$perunggu[] = $kontingen;
+            }
+
+            // Hitung jumlah medali
+            $rekap = [];
+
+            foreach ($emas as $c)     { $rekap[$c]['emas']     = ($rekap[$c]['emas']     ?? 0) + 1; }
+            foreach ($perak as $c)    { $rekap[$c]['perak']    = ($rekap[$c]['perak']    ?? 0) + 1; }
+            foreach ($perunggu as $c) { $rekap[$c]['perunggu'] = ($rekap[$c]['perunggu'] ?? 0) + 1; }
+
+            // Format final per kontingen
+            $rekapList = [];
+            foreach ($rekap as $kontingen => $data) {
+                $g = $data['emas'] ?? 0;
+                $s = $data['perak'] ?? 0;
+                $b = $data['perunggu'] ?? 0;
+
+                $rekapList[] = [
+                    'kontingen'   => $kontingen,
+                    'emas'        => $g,
+                    'perak'       => $s,
+                    'perunggu'    => $b,
+                    'total'       => $g + $s + $b,
+                    'keterangan'  => '',
+                ];
+            }
+
+            usort($rekapList, fn($a, $b) =>
+                [$b['emas'], $b['perak'], $b['perunggu']] <=> [$a['emas'], $a['perak'], $a['perunggu']]
+            );
+
+            foreach ($rekapList as $i => &$row) {
+                if ($i === 0) $row['keterangan'] = 'JUARA UMUM 1';
+                else if ($i === 1) $row['keterangan'] = 'JUARA UMUM 2';
+                else if ($i === 2) $row['keterangan'] = 'JUARA UMUM 3';
+            }
+
+            $result[$ageCategory] = $rekapList;
+        }
+
+        return response()->json($result);
+    }
+
+
+    public function medalRecap__()
     {
         $tournamentName = session('tournament_name'); // ✅ Ambil dari session
 
