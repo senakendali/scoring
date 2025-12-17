@@ -64,7 +64,7 @@
 
                 <div class="modal-footer">
                     <small class="text-secondary">
-                        Timer tetap ngikut round aktif operator. Pilihan round ini hanya buat input Dewan.
+                        Pilih round berapa yang akan anda lihat
                     </small>
                 </div>
             </div>

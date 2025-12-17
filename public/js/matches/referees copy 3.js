@@ -68,6 +68,7 @@ $(document).ready(function () {
             updateRoundLabel();
             loadRoundPenalties(selectedRoundId);
         } else {
+            // tetep update label biar konsisten (kalau selectedRoundId kosong)
             updateRoundLabel();
         }
 
@@ -213,21 +214,11 @@ $(document).ready(function () {
         return selectedRoundId ?? activeRoundId;
     }
 
-    // ✅ normalize: ambil angka dari "1", "Round 1", "round1", dll
-    function normalizeRoundNumber(val) {
-        if (val === null || val === undefined) return null;
-        const m = String(val).match(/\d+/);
-        return m ? parseInt(m[0], 10) : null;
-    }
-
     function updateRoundLabel() {
         const selected = roundsCache.find(r => parseInt(r.id) === parseInt(selectedRoundId));
         const active = roundsCache.find(r => parseInt(r.id) === parseInt(activeRoundId));
 
-        const selNum = normalizeRoundNumber(selected?.round_number ?? selected?.round_label ?? selected?.name);
-        const actNum = normalizeRoundNumber(active?.round_number ?? active?.round_label ?? active?.name);
-
-        const labelNumber = selNum ?? actNum ?? 1;
+        const labelNumber = selected?.round_number ?? active?.round_number ?? 1;
         $("#current-round").text(`ROUND ${labelNumber}`);
     }
 
@@ -241,6 +232,7 @@ $(document).ready(function () {
             local_match_id: matchId,
             round_id: roundId,
         }).done(function (res) {
+            // res: { blue:{active:[], jatuhan_total}, red:{active:[], jatuhan_total} }
             (res.blue?.active || []).forEach(action => {
                 $(`[data-action="${action}"][data-corner="blue"]`).addClass('active');
             });
@@ -254,37 +246,36 @@ $(document).ready(function () {
         });
     }
 
-    // ✅ click round label -> open picker (DEDUPED)
+
+    function loadRoundPenalties_(roundId) {
+        if (!roundId) return;
+
+        // reset semua toggle
+        $('[data-action][data-corner]').removeClass('active');
+
+        $.get(url + `/api/local-referee-actions/round-penalties`, {
+            local_match_id: matchId,
+            round_id: roundId,
+        }).done(function (res) {
+            // res: { blue:{active:[], jatuhan_total}, red:{active:[], jatuhan_total} }
+            (res.blue?.active || []).forEach(action => {
+                $(`[data-action="${action}"][data-corner="blue"]`).addClass('active');
+            });
+
+            (res.red?.active || []).forEach(action => {
+                $(`[data-action="${action}"][data-corner="red"]`).addClass('active');
+            });
+        }).fail(function (xhr) {
+            console.error("❌ Gagal load penalty round:", roundId, xhr.responseJSON?.message || xhr.statusText);
+        });
+    }
+
     $("#current-round").css("cursor", "pointer").on("click", function () {
         if (!roundsCache.length) return;
 
-        // DEDUPE by normalized round number
-        const map = new Map();
+        const sorted = [...roundsCache].sort((a, b) => (a.round_number || 0) - (b.round_number || 0));
 
-        roundsCache.forEach(r => {
-            const num = normalizeRoundNumber(r.round_number ?? r.round_label ?? r.name);
-            if (!num) return;
-
-            const existing = map.get(num);
-
-            const isActive = activeRoundId && parseInt(r.id) === parseInt(activeRoundId);
-            const isSelected = selectedRoundId && parseInt(r.id) === parseInt(selectedRoundId);
-
-            if (!existing) {
-                map.set(num, { ...r, _num: num });
-            } else {
-                const existingIsActive = activeRoundId && parseInt(existing.id) === parseInt(activeRoundId);
-                const existingIsSelected = selectedRoundId && parseInt(existing.id) === parseInt(selectedRoundId);
-
-                // prioritas: ACTIVE > SELECTED > yang pertama
-                if (isActive && !existingIsActive) map.set(num, { ...r, _num: num });
-                else if (isSelected && !existingIsSelected && !existingIsActive) map.set(num, { ...r, _num: num });
-            }
-        });
-
-        const uniqueSorted = Array.from(map.values()).sort((a, b) => a._num - b._num);
-
-        const html = uniqueSorted.map(r => {
+        const html = sorted.map(r => {
             const isActive = activeRoundId && parseInt(r.id) === parseInt(activeRoundId);
             const isSelected = selectedRoundId && parseInt(r.id) === parseInt(selectedRoundId);
 
@@ -292,7 +283,7 @@ $(document).ready(function () {
               <button type="button"
                 class="list-group-item list-group-item-action bg-dark text-white round-pick ${isSelected ? 'active' : ''}"
                 data-id="${r.id}">
-                ROUND ${r._num}
+                ROUND ${r.round_number}
                 ${isActive ? '<span class="badge bg-success ms-2">ACTIVE</span>' : ''}
               </button>
             `;
@@ -302,7 +293,6 @@ $(document).ready(function () {
         $("#roundPickerModal").modal("show");
     });
 
-    // pilih round
     $(document).on("click", ".round-pick", function () {
         selectedRoundId = parseInt($(this).data("id"));
         isManualRoundSelection = true;
@@ -325,6 +315,23 @@ $(document).ready(function () {
         const effectiveRoundId = getEffectiveRoundId();
         if (!effectiveRoundId) {
             console.warn("⚠️ roundId belum ada, abaikan action:", action);
+            return;
+        }
+
+        // 🔁 DROP boleh diklik berkali-kali
+        if (action === 'drop') {
+            $.post(url + "/api/local-referee-actions", {
+                local_match_id: matchId,
+                round_id: effectiveRoundId,
+                action: action,
+                point_change: point,
+                corner: corner,
+            }).done(function (res) {
+                console.log("✅ Drop action sent", res);
+            }).fail(function (xhr) {
+                console.error("❌ Gagal kirim drop:", xhr.responseJSON?.message || xhr.statusText);
+            });
+
             return;
         }
 
@@ -366,7 +373,7 @@ $(document).ready(function () {
             return;
         }
 
-        // 🔄 Aksi penalty toggle (binaan/teguran/peringatan + verifikasi)
+        // 🔄 Aksi penalty toggle (binaan/teguran/peringatan)
         if ($btn.hasClass("active")) {
             $btn.removeClass("active");
 
@@ -381,10 +388,12 @@ $(document).ready(function () {
                 },
                 success: function (res) {
                     console.log("🧹 Undo berhasil:", res);
+                    // reload state supaya konsisten
                     loadRoundPenalties(effectiveRoundId);
                 },
                 error: function (xhr) {
                     console.error("❌ Gagal undo:", xhr.responseJSON?.message || xhr.statusText);
+                    // revert UI kalau gagal
                     $btn.addClass("active");
                 }
             });
@@ -412,6 +421,7 @@ $(document).ready(function () {
                     corner: corner,
                 }).done(function (res) {
                     console.log("✅ Referee action sent", res);
+                    // reload state supaya konsisten
                     loadRoundPenalties(effectiveRoundId);
                 }).fail(function (xhr) {
                     console.error("❌ Gagal kirim tindakan:", xhr.responseJSON?.message || xhr.statusText);
@@ -422,6 +432,8 @@ $(document).ready(function () {
     });
 
     function resetRefereeActions() {
+        // Reset UI hanya tampilan, bukan data.
+        // Toggle state akan di-load lagi dari selectedRoundId
         $(".item, .drop").each(function () {
             const action = $(this).data('action');
             if (action !== 'peringatan_1' && action !== 'peringatan_2') {
@@ -429,6 +441,7 @@ $(document).ready(function () {
             }
         });
 
+        // reload state round yang sedang dipilih
         const rid = getEffectiveRoundId();
         if (rid) loadRoundPenalties(rid);
     }
@@ -480,6 +493,7 @@ $(document).ready(function () {
             const activeRound = roundsCache.find(r => r.status === 'in_progress') || roundsCache[0];
             activeRoundId = activeRound?.id || null;
 
+            // default: selected round ikut active round saat load pertama
             if (!selectedRoundId) {
                 selectedRoundId = activeRoundId;
                 isManualRoundSelection = false;
